@@ -1187,9 +1187,29 @@ function Notebook({
 }) {
   const [selected, setSelected] = useState(progress.lastLesson || lessons[0].id);
   const [filter, setFilter] = useState('');
+  const chapterList = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const list = chapterList.current;
+    const active = list?.querySelector<HTMLElement>('[aria-pressed="true"]');
+    if (!list || !active) return;
+    const container = list.getBoundingClientRect();
+    const item = active.getBoundingClientRect();
+    if (item.top < container.top || item.bottom > container.bottom) {
+      list.scrollTop += item.top - container.top - (list.clientHeight - item.height) / 2;
+    }
+  }, [selected, filter]);
   const saved = lessons.filter((l) => progress.notes[l.id]?.trim());
+  const filteredModules = modules
+    .map((module) => ({
+      ...module,
+      lessons: module.lessons.filter((lesson) =>
+        (lesson.title + ' ' + module.title).toLowerCase().includes(filter.trim().toLowerCase()),
+      ),
+    }))
+    .filter((module) => module.lessons.length);
   const current = lessons.find((l) => l.id === selected) || lessons[0];
   const exportNotes = () => {
+    if (!saved.length) return;
     const text =
       '# My Zero to Hero notebook\n\n' +
       saved
@@ -1203,72 +1223,93 @@ function Notebook({
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   return (
-    <div className="page-container">
+    <div className="page-container notebook-page">
       <PageIntro
         eyebrow="YOUR PERSONAL NOTEBOOK"
         title="Make the ideas your own."
         description="Connections, questions, and those little aha moments. A place to keep your thinking."
       >
-        <button className="secondary-button" onClick={exportNotes} disabled={!saved.length}>
-          <ArrowDownToLine size={15} />
-          Export notes
-        </button>
+        <div className="notebook-export">
+          <button
+            className="notebook-export-button"
+            onClick={exportNotes}
+            disabled={!saved.length}
+            aria-describedby="notes-export-hint"
+          >
+            <ArrowDownToLine size={16} aria-hidden="true" />
+            Export notes
+          </button>
+          <span id="notes-export-hint">
+            {saved.length
+              ? `${saved.length} lesson${saved.length === 1 ? '' : 's'} · Markdown (.md)`
+              : 'Add a note to enable export.'}
+          </span>
+        </div>
       </PageIntro>
       <div className="notebook-layout">
         <aside className="notebook-list">
-          <label className="input-search">
-            <Search size={15} />
-            <input
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              placeholder="Find a lesson…"
-              aria-label="Filter notebook lessons"
-            />
-          </label>
-          <span className="eyebrow">
-            {saved.length} LESSON{saved.length === 1 ? '' : 'S'} WITH NOTES
-          </span>
-          {modules.map((m) => {
-            const filtered = m.lessons.filter((l) =>
-              (l.title + ' ' + m.title).toLowerCase().includes(filter.toLowerCase()),
-            );
-            return filtered.length ? (
-              <div key={m.id}>
+          <div className="notebook-list-header">
+            <label className="input-search">
+              <Search size={16} aria-hidden="true" />
+              <input
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                placeholder="Find a lesson…"
+                aria-label="Filter notebook lessons"
+              />
+            </label>
+            <p>
+              {saved.length} lesson{saved.length === 1 ? '' : 's'} with notes
+            </p>
+          </div>
+          <div className="notebook-chapters" ref={chapterList}>
+            {filteredModules.map((module) => (
+              <div className="notebook-chapter" key={module.id}>
                 <h3>
-                  {m.number}. {m.title}
+                  {String(module.number).padStart(2, '0')} · {module.title}
                 </h3>
-                {filtered.map((l) => (
+                {module.lessons.map((lesson) => (
                   <button
-                    key={l.id}
-                    className={selected === l.id ? 'active' : ''}
-                    onClick={() => setSelected(l.id)}
+                    key={lesson.id}
+                    className={selected === lesson.id ? 'active' : ''}
+                    aria-pressed={selected === lesson.id}
+                    onClick={() => setSelected(lesson.id)}
                   >
-                    {progress.notes[l.id]?.trim() ? (
-                      <FileText size={14} />
-                    ) : (
-                      <span className="empty-note-dot" />
+                    <span>{lesson.title}</span>
+                    {progress.notes[lesson.id]?.trim() && (
+                      <FileText size={14} aria-label="Has notes" />
                     )}
-                    {l.title}
                   </button>
                 ))}
               </div>
-            ) : null;
-          })}
+            ))}
+            {!filteredModules.length && (
+              <p className="notebook-no-results">
+                No lessons found. Try a different word or chapter name.
+              </p>
+            )}
+          </div>
         </aside>
         <div className="notebook-editor">
-          <span className="eyebrow">
-            CHAPTER {String(current.module.number).padStart(2, '0')} ·{' '}
-            {current.module.title.toUpperCase()}
-          </span>
-          <h2>{current.title}</h2>
-          <a href={'#/lesson/' + current.id}>
-            Revisit this lesson
-            <ArrowUpRight size={14} />
-          </a>
+          <div className="notebook-editor-heading">
+            <span className="eyebrow">
+              CHAPTER {String(current.module.number).padStart(2, '0')} ·{' '}
+              {current.module.title.toUpperCase()}
+            </span>
+            <h2>{current.title}</h2>
+            <a href={'#/lesson/' + current.id}>
+              Open lesson
+              <ArrowUpRight size={14} aria-hidden="true" />
+            </a>
+          </div>
+          <label className="notebook-writing-label" htmlFor="lesson-notes">
+            Your notes
+          </label>
           <textarea
+            id="lesson-notes"
             value={progress.notes[current.id] || ''}
             placeholder={
-              'Start with what you noticed.\n\nWhat’s the idea in your own words?\nWhat would you like to try next?'
+              'What clicked? What would you like to try next?\n\nWrite a thought, a question, or an idea in your own words…'
             }
             aria-label="Your notes for this lesson"
             onChange={(e) =>
@@ -1277,8 +1318,12 @@ function Notebook({
           />
           <div className="notebook-status">
             <span>
-              <span className="live-dot" />
-              Saved on this device
+              <span
+                className={'live-dot' + (progress.notes[current.id]?.trim() ? '' : ' is-empty')}
+              />
+              {progress.notes[current.id]?.trim()
+                ? 'Saved on this device'
+                : 'Notes save automatically'}
             </span>
             <span>
               {(progress.notes[current.id] || '').trim().split(/\s+/).filter(Boolean).length} words

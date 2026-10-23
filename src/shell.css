@@ -1,6 +1,8 @@
 /* Workspace chrome: compact controls and a separately scrolling navigation. */
 html {
   scroll-padding-top: 80px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) var(--paper);
 }
 
 .app-shell {

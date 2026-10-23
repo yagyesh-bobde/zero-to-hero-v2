@@ -172,6 +172,8 @@ export default function App() {
   }, [sidebarCollapsed, courseExpanded]);
   const [searchOpen, setSearchOpen] = useState(false);
   const [saveError, setSaveError] = useState(false);
+  const [saveNoticeId, setSaveNoticeId] = useState(0);
+  const initialProgress = useRef(progress);
   const current = lessons.find((l) => l.id === route.id);
   const view = (
     route.view === 'lesson'
@@ -193,8 +195,26 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
   useEffect(() => {
-    setSaveError(!writeProgress(progress));
+    const saved = writeProgress(progress);
+    setSaveError(!saved);
+    if (!saved) {
+      setSaveNoticeId(0);
+      return;
+    }
+    // Loading existing progress isn't a new save. Group consecutive edits into one notice.
+    if (progress === initialProgress.current) return;
+    const notice = window.setTimeout(() => setSaveNoticeId((id) => id + 1), 450);
+    return () => window.clearTimeout(notice);
   }, [progress]);
+  useEffect(() => {
+    if (!saveNoticeId) return;
+    // Also dismiss when reduced-motion settings disable CSS animation events.
+    const dismiss = window.setTimeout(
+      () => setSaveNoticeId((id) => (id === saveNoticeId ? 0 : id)),
+      2800,
+    );
+    return () => window.clearTimeout(dismiss);
+  }, [saveNoticeId]);
   useEffect(() => {
     document.body.style.overflow = mobile ? 'hidden' : '';
     return () => {
@@ -441,6 +461,19 @@ export default function App() {
               Y<span />
             </a>
           </div>
+          {saveNoticeId > 0 && (
+            <div
+              key={saveNoticeId}
+              className="save-confirmation"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              onAnimationEnd={() => setSaveNoticeId((id) => (id === saveNoticeId ? 0 : id))}
+            >
+              <CheckCircle2 size={14} aria-hidden="true" />
+              <span>Progress saved locally</span>
+            </div>
+          )}
         </header>
         {saveError && (
           <div className="save-error" role="alert">

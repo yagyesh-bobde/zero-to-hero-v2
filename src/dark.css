@@ -85,7 +85,7 @@
   border-radius: 10px;
 }
 
-:root[data-theme='dark'] :is(.resource-feature-icon, .search-result-icon, .module-index) {
+:root[data-theme='dark'] :is(.resource-feature-icon, .module-index) {
   background: var(--surface-hover);
   color: var(--muted);
 }
@@ -319,19 +319,8 @@
   color: var(--accent);
 }
 
-:root[data-theme='dark'] .search-dialog {
-  background: var(--surface);
-  border-color: var(--line-strong);
-  box-shadow: 0 24px 80px rgb(0 0 0 / 50%);
-}
-
-:root[data-theme='dark'] .search-dialog::backdrop,
 :root[data-theme='dark'] .completion-dialog::backdrop {
   background: rgb(5 7 11 / 70%);
-}
-
-:root[data-theme='dark'] .search-results > a:hover {
-  background: var(--surface-hover);
 }
 
 :root[data-theme='dark'] .sidebar-backdrop {

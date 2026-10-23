@@ -6,6 +6,7 @@ import './theme.css';
 import './shell.css';
 import './components/notebook.css';
 import './dark.css';
+import './components/search.css';
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />

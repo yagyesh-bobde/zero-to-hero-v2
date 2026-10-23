@@ -11,7 +11,7 @@ import {
   ChevronRight,
   Clock3,
   Code2,
-  Command,
+  CornerDownLeft,
   FileText,
   FlaskConical,
   Github,
@@ -1503,8 +1503,10 @@ function Resources({ focusLectures }: { focusLectures: boolean }) {
 
 function SearchDialog({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState('');
+  const [activeIndex, setActiveIndex] = useState(0);
   const dialog = useRef<HTMLDialogElement>(null);
   const input = useRef<HTMLInputElement>(null);
+  const results = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const instance = dialog.current;
     const previousFocus = document.activeElement;
@@ -1516,23 +1518,34 @@ function SearchDialog({ onClose }: { onClose: () => void }) {
     };
   }, []);
   const term = query.trim().toLowerCase();
-  const matches = lessons
-    .map((lesson) => ({
-      lesson,
-      score: !term
-        ? 1
-        : (lesson.title.toLowerCase().includes(term) ? 8 : 0) +
-          (lesson.summary.toLowerCase().includes(term) ? 4 : 0) +
-          (lesson.module.title.toLowerCase().includes(term) ? 2 : 0) +
-          (lesson.module.topics.join(' ').toLowerCase().includes(term) ? 1 : 0) +
-          (lesson.sections.some((s) => (s.title + ' ' + s.body).toLowerCase().includes(term))
-            ? 0.5
-            : 0),
-    }))
-    .filter(({ score }) => score > 0)
-    .sort((a, b) => b.score - a.score)
-    .map(({ lesson }) => lesson)
-    .slice(0, 9);
+  const suggestedIds = [
+    'micrograd-derivatives',
+    'bigram-count-matrix',
+    'mlp-embeddings',
+    'gpt-self-attention',
+    'tokenizer-bpe-training',
+  ];
+  const matches = term
+    ? lessons
+        .map((lesson) => ({
+          lesson,
+          score:
+            (lesson.title.toLowerCase().includes(term) ? 8 : 0) +
+            (lesson.summary.toLowerCase().includes(term) ? 4 : 0) +
+            (lesson.module.title.toLowerCase().includes(term) ? 2 : 0) +
+            (lesson.module.topics.join(' ').toLowerCase().includes(term) ? 1 : 0) +
+            (lesson.sections.some((s) => (s.title + ' ' + s.body).toLowerCase().includes(term))
+              ? 0.5
+              : 0),
+        }))
+        .filter(({ score }) => score > 0)
+        .sort((a, b) => b.score - a.score)
+        .map(({ lesson }) => lesson)
+        .slice(0, 9)
+    : suggestedIds.flatMap((id) => lessons.filter((l) => l.id === id));
+  useEffect(() => {
+    results.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
+  }, [activeIndex, term]);
   return (
     <dialog
       className="search-dialog"
@@ -1544,36 +1557,83 @@ function SearchDialog({ onClose }: { onClose: () => void }) {
       }}
     >
       <div className="search-dialog-input">
-        <Search size={21} />
+        <Search size={20} />
         <input
           ref={input}
+          role="combobox"
+          aria-expanded="true"
+          aria-autocomplete="list"
+          aria-controls="course-search-results"
+          aria-activedescendant={
+            matches[activeIndex] ? 'search-result-' + matches[activeIndex].id : undefined
+          }
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="What would you like to understand?"
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setActiveIndex(0);
+          }}
+          onKeyDown={(e) => {
+            if (e.nativeEvent.isComposing || !matches.length) return;
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+              e.preventDefault();
+              setActiveIndex(
+                (index) =>
+                  (index + (e.key === 'ArrowDown' ? 1 : -1) + matches.length) % matches.length,
+              );
+            } else if (e.key === 'Enter' && matches[activeIndex]) {
+              e.preventDefault();
+              window.location.hash = '/lesson/' + matches[activeIndex].id;
+              onClose();
+            }
+          }}
+          placeholder="Search lessons and concepts…"
           aria-label="Search lessons"
+          autoComplete="off"
+          spellCheck={false}
         />
         <button onClick={onClose} className="search-escape" aria-label="Close search">
-          esc
+          <span>esc</span>
+          <X size={15} />
         </button>
       </div>
-      <div className="search-results">
-        <span className="eyebrow">{query ? 'MATCHING LESSONS' : 'A FEW PLACES TO START'}</span>
-        {matches.map((l) => (
-          <a key={l.id} href={'#/lesson/' + l.id} onClick={onClose}>
+      <div className="search-results-heading">
+        <span>{term ? 'Search results' : 'Explore a concept'}</span>
+        <span aria-live="polite">
+          {term ? `${matches.length} ${matches.length === 1 ? 'result' : 'results'}` : 'Suggested'}
+        </span>
+      </div>
+      <div
+        className="search-results"
+        ref={results}
+        id="course-search-results"
+        role="listbox"
+        aria-label="Lessons"
+      >
+        {matches.map((l, index) => (
+          <a
+            key={l.id}
+            id={'search-result-' + l.id}
+            role="option"
+            aria-selected={activeIndex === index}
+            tabIndex={-1}
+            href={'#/lesson/' + l.id}
+            onClick={onClose}
+            onPointerMove={() => setActiveIndex(index)}
+          >
             <span className="search-result-icon">
               <BookOpen size={17} />
             </span>
-            <div>
+            <div className="search-result-copy">
               <strong>{l.title}</strong>
               <p>
                 {l.module.title} <span>·</span> {l.minutes} min
               </p>
             </div>
-            <ArrowUpRight size={16} />
+            <CornerDownLeft className="search-result-enter" size={16} />
           </a>
         ))}
         {matches.length === 0 && (
-          <div className="empty-state">
+          <div className="empty-state" role="presentation">
             <Search size={23} />
             <h3>No lessons found.</h3>
             <p>Try “attention”, “gradient”, or “token”.</p>
@@ -1581,10 +1641,20 @@ function SearchDialog({ onClose }: { onClose: () => void }) {
         )}
       </div>
       <div className="search-dialog-footer">
-        <span>
-          <Command size={12} /> K to search from anywhere
-        </span>
-        <span>{lessons.length} lessons. One connected story.</span>
+        <div className="search-keyboard-hints">
+          <span>
+            <kbd>↑</kbd>
+            <kbd>↓</kbd> Navigate
+          </span>
+          <span>
+            <kbd>
+              <CornerDownLeft size={11} />
+            </kbd>{' '}
+            Open lesson
+          </span>
+        </div>
+        <span className="search-touch-hint">Tap a lesson to open</span>
+        <span>{lessons.length} lessons to explore</span>
       </div>
     </dialog>
   );

@@ -28,6 +28,7 @@ Use Node.js 22.12+, 24, or 26+ (the test runner supports LTS releases). Open htt
 - A persistent Python sandbox, searchable course, per-lesson notebook, Markdown notes export, JSON progress backup, a glossary, and downloadable complete chapter projects.
 - All eight original YouTube lectures, with Andrej Karpathy credited on each video card. Lessons and chapters include their matching source video; Resources collects the full series. Players load when you choose to watch, with direct YouTube links alongside them.
 - Readable Inter typography, larger lesson text and code, and a light/dark switch in the top bar. Dark mode is the default; your choice is remembered on this device and applied before the page renders. The GitHub button links to this public repository if you want to explore the code or leave a star.
+- A compact sidebar with a collapsible chapter list, a thin scrollbar, and progress pinned at the bottom. Use the sidebar icon or **⌘B / Ctrl+B** to show or hide navigation; sidebar and chapter-list preferences are remembered. The shortcut leaves code and note editing alone. **⌘K / Ctrl+K** opens course search, and **Esc** closes search or mobile navigation.
 - Local progress, code, answers, and notes are saved in browser localStorage. Data stays on this browser/device; clearing site storage clears it. No account or cloud sync. Export a backup from My notebook. This release exports backups; it does not import them.
 
 ## Full projects
@@ -47,7 +48,7 @@ Tests check complete lecture/lesson coverage, all challenge reference solutions 
 
 ## Structure
 
-`src/data/modules/` contains the independently written curriculum and exercise checks. `src/components/VisualLab.tsx` contains the visual teaching tools. `public/python-worker.js` loads and executes Python. `src/storage.ts` manages local learning data. `src/theme.css` defines the shared color themes and readable typography. The app uses React, TypeScript, Vite, and Lucide icons, with Inter and JetBrains Mono from Google Fonts (system font fallbacks included).
+`src/data/modules/` contains the independently written curriculum and exercise checks. `src/components/VisualLab.tsx` contains the visual teaching tools. `public/python-worker.js` loads and executes Python. `src/storage.ts` manages local learning data. `src/theme.css` defines the shared color themes and readable typography; `src/shell.css` handles the sidebar and header layout. The app uses React, TypeScript, Vite, and Lucide icons, with Inter and JetBrains Mono from Google Fonts (system font fallbacks included).
 
 ## Attribution
 

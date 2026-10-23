@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowDownToLine,
   ArrowLeft,
@@ -18,10 +18,10 @@ import {
   GraduationCap,
   LayoutDashboard,
   ListTree,
-  Menu,
   Moon,
   NotebookPen,
   PanelLeftClose,
+  PanelLeftOpen,
   Search,
   Sparkles,
   Star,
@@ -103,6 +103,15 @@ function Wordmark() {
   );
 }
 
+function readLayoutPreference(key: string, fallback: boolean) {
+  try {
+    const value = localStorage.getItem(key);
+    return value === null ? fallback : value === 'true';
+  } catch {
+    return fallback;
+  }
+}
+
 export default function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() =>
     document.documentElement.dataset.theme === 'light' ? 'light' : 'dark',
@@ -121,6 +130,46 @@ export default function App() {
   const [route, setRoute] = useState(parseRoute);
   const [progress, setProgress] = useState<Progress>(readProgress);
   const [mobile, setMobile] = useState(false);
+  const sidebarToggle = useRef<HTMLButtonElement>(null);
+  const sidebarClose = useRef<HTMLButtonElement>(null);
+  const [isCompact, setIsCompact] = useState(() => window.matchMedia('(max-width: 760px)').matches);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
+    readLayoutPreference('zero-to-hero-sidebar-collapsed', false),
+  );
+  const [courseExpanded, setCourseExpanded] = useState(() =>
+    readLayoutPreference('zero-to-hero-course-expanded', true),
+  );
+  const sidebarVisible = isCompact ? mobile : !sidebarCollapsed;
+  const toggleSidebar = useCallback(() => {
+    if (isCompact) setMobile((v) => !v);
+    else {
+      sidebarToggle.current?.focus();
+      setSidebarCollapsed((v) => !v);
+    }
+  }, [isCompact]);
+  useEffect(() => {
+    if (!mobile) return;
+    document.querySelector('.sidebar-scroll')?.scrollTo({ top: 0 });
+    sidebarClose.current?.focus({ preventScroll: true });
+    return () => sidebarToggle.current?.focus({ preventScroll: true });
+  }, [mobile]);
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 760px)');
+    const onChange = () => {
+      setIsCompact(query.matches);
+      setMobile(false);
+    };
+    query.addEventListener('change', onChange);
+    return () => query.removeEventListener('change', onChange);
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem('zero-to-hero-sidebar-collapsed', String(sidebarCollapsed));
+      localStorage.setItem('zero-to-hero-course-expanded', String(courseExpanded));
+    } catch {
+      // Layout controls also work without browser storage.
+    }
+  }, [sidebarCollapsed, courseExpanded]);
   const [searchOpen, setSearchOpen] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const current = lessons.find((l) => l.id === route.id);
@@ -168,11 +217,20 @@ export default function App() {
         e.preventDefault();
         setSearchOpen((v) => !v);
       }
+      const target = e.target;
+      const editing =
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          !!target.closest('input, textarea, select, [contenteditable="true"]'));
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'b' && !editing) {
+        e.preventDefault();
+        if (!e.repeat) toggleSidebar();
+      }
       if (e.key === 'Escape') setMobile(false);
     };
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
-  }, []);
+  }, [toggleSidebar]);
   useEffect(() => {
     document.title =
       current && route.view === 'lesson'
@@ -181,7 +239,7 @@ export default function App() {
   }, [view, current, route.view]);
   const openLesson = (_moduleId: string, id: string) => navigate('lesson', id);
   return (
-    <>
+    <div className={'app-shell' + (sidebarCollapsed ? ' app-shell--collapsed' : '')}>
       <a
         className="skip-link"
         href="#main-content"
@@ -199,82 +257,89 @@ export default function App() {
           aria-label="Close navigation"
         />
       )}
-      <aside className={'sidebar ' + (mobile ? 'sidebar-open' : '')} aria-label="Main navigation">
-        <a className="brand-link" href="#/overview" aria-label="Zero to Hero home">
-          <Wordmark />
-        </a>
-        <button
-          className="sidebar-close icon-button"
-          aria-label="Close navigation"
-          onClick={() => setMobile(false)}
-        >
-          <PanelLeftClose size={20} />
-        </button>
-        <div className="course-edition">
-          <span className="live-dot" />
-          THE INTERACTIVE EDITION
-        </div>
-        <div className="nav-label">YOUR WORKSPACE</div>
-        <nav>
-          {navItems.map(({ id, label, icon: Icon }) => (
-            <a
-              href={'#/' + id}
-              key={id}
-              className={'nav-item ' + (view === id ? 'active' : '')}
-              aria-current={view === id ? 'page' : undefined}
-            >
-              <Icon size={18} strokeWidth={1.65} />
-              <span>{label}</span>
-              {id === 'playground' && <span className="nav-new">LAB</span>}
-              {id === 'notes' && Object.values(progress.notes).some(Boolean) && (
-                <span className="nav-count">
-                  {Object.values(progress.notes).filter((v) => v.trim()).length}
-                </span>
-              )}
+      <aside
+        id="main-sidebar"
+        className={'sidebar ' + (mobile ? 'sidebar-open' : '')}
+        aria-label="Main navigation"
+        inert={!sidebarVisible}
+      >
+        <div className="sidebar-heading">
+          <div className="sidebar-brand-row">
+            <a className="brand-link" href="#/overview" aria-label="Zero to Hero home">
+              <Wordmark />
             </a>
-          ))}
-        </nav>
-        <div className="sidebar-course">
-          <div className="nav-label">
-            THE COURSE <span>08 CHAPTERS</span>
+            <button
+              className="sidebar-close icon-button"
+              ref={sidebarClose}
+              aria-label="Close navigation"
+              onClick={() => setMobile(false)}
+            >
+              <PanelLeftClose size={18} />
+            </button>
           </div>
-          {modules.map((m) => (
-            <a
-              className={
-                'chapter-shortcut ' +
-                (current?.module.id === m.id && route.view === 'lesson' ? 'current' : '')
-              }
-              href={'#/curriculum/' + m.id}
-              key={m.id}
-            >
-              <span
-                className={
-                  'chapter-dot ' +
-                  (m.lessons.every((l) => progress.completed.includes(l.id)) ? 'done' : '')
-                }
-              >
-                {m.lessons.every((l) => progress.completed.includes(l.id)) ? (
-                  <Check size={11} />
-                ) : (
-                  String(m.number).padStart(2, '0')
-                )}
-              </span>
-              <span>{m.title}</span>
-            </a>
-          ))}
+          <div className="course-edition">
+            <span className="live-dot" />
+            THE INTERACTIVE EDITION
+          </div>
         </div>
-        <div className="sidebar-bottom">
-          <div className="sidebar-progress">
-            <div>
-              <span>Your progress</span>
-              <strong>{percentage}%</strong>
+        <div className="sidebar-scroll">
+          <div className="nav-label">YOUR WORKSPACE</div>
+          <nav aria-label="Workspace">
+            {navItems.map(({ id, label, icon: Icon }) => (
+              <a
+                href={'#/' + id}
+                key={id}
+                className={'nav-item ' + (view === id ? 'active' : '')}
+                aria-current={view === id ? 'page' : undefined}
+              >
+                <Icon size={18} strokeWidth={1.65} />
+                <span>{label}</span>
+                {id === 'playground' && <span className="nav-new">LAB</span>}
+                {id === 'notes' && Object.values(progress.notes).some(Boolean) && (
+                  <span className="nav-count">
+                    {Object.values(progress.notes).filter((v) => v.trim()).length}
+                  </span>
+                )}
+              </a>
+            ))}
+          </nav>
+          <div className="sidebar-course">
+            <button
+              className="sidebar-course-toggle"
+              aria-expanded={courseExpanded}
+              aria-controls="sidebar-chapters"
+              onClick={() => setCourseExpanded((v) => !v)}
+            >
+              <span>THE COURSE</span>
+              <span className="sidebar-course-count">08</span>
+              <ChevronDown size={14} className={courseExpanded ? '' : 'is-collapsed'} />
+            </button>
+            <div id="sidebar-chapters" hidden={!courseExpanded}>
+              {modules.map((m) => (
+                <a
+                  className={
+                    'chapter-shortcut ' +
+                    (current?.module.id === m.id && route.view === 'lesson' ? 'current' : '')
+                  }
+                  href={'#/curriculum/' + m.id}
+                  key={m.id}
+                >
+                  <span
+                    className={
+                      'chapter-dot ' +
+                      (m.lessons.every((l) => progress.completed.includes(l.id)) ? 'done' : '')
+                    }
+                  >
+                    {m.lessons.every((l) => progress.completed.includes(l.id)) ? (
+                      <Check size={11} />
+                    ) : (
+                      String(m.number).padStart(2, '0')
+                    )}
+                  </span>
+                  <span>{m.title}</span>
+                </a>
+              ))}
             </div>
-            <div className="progress-track">
-              <span style={{ width: percentage + '%' }} />
-            </div>
-            <p>
-              {completedCount} of {lessons.length} lessons completed
-            </p>
           </div>
           <a
             className="source-credit"
@@ -284,22 +349,48 @@ export default function App() {
           >
             <div className="credit-avatar">AK</div>
             <div>
-              <span>Inspired by Andrej Karpathy</span>
-              <small>Built for the curious.</small>
+              <small>Inspired by</small>
+              <span>Andrej Karpathy</span>
             </div>
-            <ArrowUpRight size={14} />
+            <ArrowUpRight size={13} />
           </a>
         </div>
+        <div className="sidebar-bottom">
+          <div className="sidebar-progress">
+            <div>
+              <span>Your progress</span>
+              <strong>{percentage}%</strong>
+            </div>
+            <div
+              className="progress-track"
+              role="progressbar"
+              aria-label="Course completion"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={percentage}
+            >
+              <span style={{ width: percentage + '%' }} />
+            </div>
+            <p>
+              {completedCount} of {lessons.length} lessons completed
+            </p>
+          </div>
+        </div>
       </aside>
-      <div className="app-body">
+      <div className="app-body" inert={mobile}>
         <header className="topbar">
           <div className="topbar-location">
             <button
-              className="mobile-menu icon-button"
-              aria-label="Open navigation"
-              onClick={() => setMobile(true)}
+              className="sidebar-toggle icon-button"
+              ref={sidebarToggle}
+              aria-label={sidebarVisible ? 'Hide sidebar' : 'Show sidebar'}
+              aria-expanded={sidebarVisible}
+              aria-controls="main-sidebar"
+              aria-keyshortcuts="Meta+B Control+B"
+              title={(sidebarVisible ? 'Hide sidebar' : 'Show sidebar') + ' (⌘B / Ctrl+B)'}
+              onClick={toggleSidebar}
             >
-              <Menu size={21} />
+              {sidebarVisible ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
             </button>
             <span className="breadcrumb-root">Your workspace</span>
             <ChevronRight size={13} />
@@ -316,6 +407,15 @@ export default function App() {
             )}
           </div>
           <div className="topbar-actions">
+            <button
+              className="search-trigger"
+              aria-label="Search lessons"
+              onClick={() => setSearchOpen(true)}
+            >
+              <Search size={16} />
+              <span>Search lessons</span>
+              <kbd>⌘ K</kbd>
+            </button>
             <a
               className="github-star"
               href="https://github.com/yagyesh-bobde/zero-to-hero-v2"
@@ -335,22 +435,8 @@ export default function App() {
               title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-              <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
-            </button>
-            <button
-              className="search-trigger"
-              aria-label="Search lessons"
-              onClick={() => setSearchOpen(true)}
-            >
-              <Search size={16} />
-              <span>Search anything</span>
-              <kbd>⌘ K</kbd>
             </button>
             <span className="header-divider" />
-            <span className="local-badge">
-              <span className="live-dot" />
-              Progress saved locally
-            </span>
             <a className="profile-avatar" href="#/notes" aria-label="Open your notebook">
               Y<span />
             </a>
@@ -406,7 +492,7 @@ export default function App() {
         </footer>
       </div>
       {searchOpen && <SearchDialog onClose={() => setSearchOpen(false)} />}
-    </>
+    </div>
   );
 }
 

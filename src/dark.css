@@ -1,0 +1,343 @@
+/* Dark surfaces follow the same hierarchy across every learning activity. */
+:root[data-theme='dark'] :is(.topbar, .app-footer) {
+  background: var(--paper);
+}
+
+:root[data-theme='dark'] .sidebar {
+  background: var(--surface-soft);
+}
+
+:root[data-theme='dark'] :is(.sidebar-bottom, .sidebar-heading) {
+  background: var(--surface-soft);
+}
+
+:root[data-theme='dark'] :is(.nav-new, .credit-avatar) {
+  color: var(--muted);
+  background: var(--surface);
+}
+
+:root[data-theme='dark'] .progress-track {
+  background: var(--line);
+}
+
+:root[data-theme='dark'] .profile-avatar {
+  background: var(--surface-hover);
+  box-shadow: 0 0 0 1px var(--line-strong);
+  color: var(--ink);
+}
+
+:root[data-theme='dark'] .ch-canvas {
+  box-shadow: 0 12px 36px rgb(0 0 0 / 18%);
+}
+
+:root[data-theme='dark'] :is(.ch-btn--primary, .lab-btn--primary) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+:root[data-theme='dark'] :is(.ch-btn--primary, .lab-btn--primary):hover:not(:disabled) {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+:root[data-theme='dark'] .ch-card:hover {
+  border-color: var(--line-strong);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 16%);
+}
+
+:root[data-theme='dark'] .ch-node circle {
+  stroke: var(--line-strong);
+}
+
+:root[data-theme='dark'] .ch-node--out circle {
+  stroke: none;
+}
+
+:root[data-theme='dark'] .ch-node--out .ch-node__halo {
+  stroke: var(--accent);
+}
+
+:root[data-theme='dark'] :is(.primary-button, .secondary-button, .small-button) {
+  border-radius: 8px;
+}
+
+:root[data-theme='dark'] :is(.secondary-button, .small-button) {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+:root[data-theme='dark'] :is(.secondary-button, .small-button):hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--line-strong);
+}
+
+:root[data-theme='dark'] :is(.primary-button, .secondary-button, .small-button):disabled {
+  opacity: 1;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  color: #8993a3;
+  box-shadow: none;
+}
+
+:root[data-theme='dark'] :is(.path-callout, .rail-source, .resource-feature, .lesson-project-card) {
+  background: var(--surface-soft);
+  border-radius: 10px;
+}
+
+:root[data-theme='dark'] :is(.resource-feature-icon, .search-result-icon, .module-index) {
+  background: var(--surface-hover);
+  color: var(--muted);
+}
+
+:root[data-theme='dark'] .module-index.completed {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+:root[data-theme='dark'] :is(.curriculum-module, .quiz-card, .original-lecture) {
+  border-radius: 12px;
+}
+
+:root[data-theme='dark'] .curriculum-heading:hover {
+  background: var(--surface-hover);
+}
+
+:root[data-theme='dark'] .original-lecture--compact {
+  background: var(--surface-soft);
+}
+
+:root[data-theme='dark'] .original-lecture__watch {
+  color: var(--ink);
+}
+
+:root[data-theme='dark'] :is(.formula-block, .takeaway-box, .solution-panel) {
+  background: var(--surface);
+  border-radius: 10px;
+}
+
+:root[data-theme='dark'] :is(.formula-block, .solution-panel pre) {
+  color: var(--code-ink);
+}
+
+:root[data-theme='dark'] .takeaway-box li {
+  color: var(--ink);
+}
+
+:root[data-theme='dark']
+  :is(.lesson-article p code, .lesson-article li code, .getting-started-grid code) {
+  background: var(--surface-hover);
+  color: #ddc4a6;
+}
+
+:root[data-theme='dark'] .challenge-prompt code {
+  background: var(--surface-hover);
+  color: #ddc4a6;
+}
+
+:root[data-theme='dark'] .section-overline {
+  color: var(--muted);
+}
+
+:root[data-theme='dark'] .path-callout {
+  color: var(--accent);
+}
+
+:root[data-theme='dark'] .save-error {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+:root[data-theme='dark'] :is(.original-lecture__video, .original-lecture__poster) {
+  background: var(--code-surface);
+}
+
+:root[data-theme='dark'] .original-lecture__poster > span {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+:root[data-theme='dark'] .original-lecture__poster:hover > span {
+  background: var(--accent-strong);
+}
+
+:root[data-theme='dark'] .hint-panel {
+  background: var(--warning-soft);
+  color: var(--warning);
+  border-color: #53452e;
+  border-radius: 8px;
+}
+
+:root[data-theme='dark'] .note-drawer {
+  background: var(--surface);
+  box-shadow: 0 16px 60px rgb(0 0 0 / 35%);
+}
+
+:root[data-theme='dark'] .note-drawer textarea {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+:root[data-theme='dark'] .code-output {
+  background: var(--surface-soft);
+  border-radius: 8px;
+}
+
+:root[data-theme='dark'] .code-output pre {
+  color: var(--code-ink);
+}
+
+:root[data-theme='dark'] .output-error {
+  background: var(--danger-soft);
+  border-color: #5b3543;
+}
+
+:root[data-theme='dark'] .output-error pre {
+  color: var(--danger);
+}
+
+:root[data-theme='dark'] .quiz-option {
+  background: var(--surface-soft);
+  border-radius: 8px;
+}
+
+:root[data-theme='dark'] .quiz-option:hover {
+  background: var(--surface-hover);
+  border-color: var(--line-strong);
+}
+
+:root[data-theme='dark'] .quiz-option.selected {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+:root[data-theme='dark'] .quiz-option.correct {
+  background: var(--green-soft);
+  border-color: #47715d;
+  color: var(--green);
+}
+
+:root[data-theme='dark'] .quiz-option.incorrect {
+  background: var(--danger-soft);
+  border-color: #96576a;
+  color: var(--danger);
+}
+
+:root[data-theme='dark'] .incorrect-feedback {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+:root[data-theme='dark'] .segmented-control {
+  background: var(--surface-soft);
+  border-radius: 10px;
+}
+
+:root[data-theme='dark'] .segmented-control > button {
+  border-radius: 6px;
+}
+
+:root[data-theme='dark'] .segmented-control > button.active {
+  background: var(--surface-hover);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 16%);
+}
+
+:root[data-theme='dark'] .lab-picker > button:hover {
+  background: var(--surface);
+}
+
+:root[data-theme='dark'] .lab-picker > button.active {
+  background: var(--accent-soft);
+  border-color: #624334;
+  color: var(--accent);
+}
+
+:root[data-theme='dark'] .lab {
+  box-shadow: 0 12px 32px rgb(0 0 0 / 12%);
+}
+
+:root[data-theme='dark'] :is(.lab-stage, .lab-panel) {
+  border-color: var(--line);
+}
+
+:root[data-theme='dark'] .lab-takeaway {
+  background: var(--surface-soft);
+  color: var(--ink);
+  border-left-color: var(--accent);
+}
+
+:root[data-theme='dark'] .lab-takeaway strong {
+  color: var(--accent);
+}
+
+:root[data-theme='dark'] :is(.input-search, .notebook-editor textarea, .note-drawer textarea),
+:root[data-theme='dark'] .lab-field :is(input, select, textarea) {
+  border-color: var(--line-strong);
+}
+
+:root[data-theme='dark'] .input-search:focus-within,
+:root[data-theme='dark'] .lab-field :is(input, select, textarea):focus-visible,
+:root[data-theme='dark'] .note-drawer textarea:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+:root[data-theme='dark'] .completion-card {
+  background: var(--surface);
+  border-color: var(--line-strong);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 50%);
+}
+
+:root[data-theme='dark'] :is(.lab-embcell, .lab-token.is-merged) {
+  border-color: var(--line-strong);
+  stroke: var(--line);
+}
+
+:root[data-theme='dark'] .lab-mcell.is-masked {
+  background: repeating-linear-gradient(135deg, var(--paper) 0 4px, var(--line) 4px 5px);
+}
+
+:root[data-theme='dark'] .lab-mrow.is-on .lab-mcell {
+  outline-color: var(--accent);
+}
+
+:root[data-theme='dark'] :is(.tensor-table td > span, .tensor-table td > button) {
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+
+:root[data-theme='dark'] .tensor-table td > button:hover {
+  background: var(--surface-hover);
+}
+
+:root[data-theme='dark'] .tensor-table td > button.selected {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+:root[data-theme='dark'] .search-dialog {
+  background: var(--surface);
+  border-color: var(--line-strong);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 50%);
+}
+
+:root[data-theme='dark'] .search-dialog::backdrop,
+:root[data-theme='dark'] .completion-dialog::backdrop {
+  background: rgb(5 7 11 / 70%);
+}
+
+:root[data-theme='dark'] .search-results > a:hover {
+  background: var(--surface-hover);
+}
+
+:root[data-theme='dark'] .sidebar-backdrop {
+  background: rgb(5 7 11 / 65%);
+}
+
+:root[data-theme='dark'] .save-confirmation {
+  box-shadow: 0 6px 24px rgb(0 0 0 / 30%);
+}

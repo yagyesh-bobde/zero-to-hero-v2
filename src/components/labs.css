@@ -7,8 +7,8 @@
   --lab-line: var(--line, #e5e5dd);
   --lab-accent: var(--accent, #dd6042);
   --lab-green: var(--green, #6e8466);
-  --lab-accent-soft: rgba(221, 96, 66, 0.1);
-  --lab-green-soft: rgba(110, 132, 102, 0.12);
+  --lab-accent-soft: var(--accent-soft);
+  --lab-green-soft: var(--green-soft);
   --lab-serif: var(--serif, 'Inter', system-ui, sans-serif);
   --lab-sans: var(--sans, 'Inter', system-ui, sans-serif);
   --lab-mono: var(--mono, 'JetBrains Mono', ui-monospace, monospace);

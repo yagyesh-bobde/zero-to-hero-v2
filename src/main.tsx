@@ -5,6 +5,7 @@ import './styles.css';
 import './theme.css';
 import './shell.css';
 import './components/notebook.css';
+import './dark.css';
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />

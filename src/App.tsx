@@ -120,7 +120,7 @@ export default function App() {
     document.documentElement.dataset.theme = theme;
     document
       .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', theme === 'dark' ? '#171d1a' : '#f8f7f3');
+      ?.setAttribute('content', theme === 'dark' ? '#111316' : '#f8f7f3');
     try {
       localStorage.setItem('zero-to-hero-theme', theme);
     } catch {

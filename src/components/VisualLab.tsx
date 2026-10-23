@@ -1125,9 +1125,7 @@ const EMB = (() => {
 const ALPHA = ['.', ...'abcdefghijklmnopqrstuvwxyz'];
 const cidx = (ch: string) => (ch === '.' ? 0 : ch.charCodeAt(0) - 96);
 const tint = (v: number, s = 1.6) =>
-  v >= 0
-    ? `rgba(221,96,66,${Math.min(1, Math.abs(v) / s)})`
-    : `rgba(110,132,102,${Math.min(1, Math.abs(v) / s)})`;
+  `color-mix(in srgb, var(${v >= 0 ? '--accent' : '--negative'}) ${Math.min(1, Math.abs(v) / s) * 100}%, transparent)`;
 
 function MlpLab() {
   const [block, setBlock] = useState(3);
@@ -2095,7 +2093,9 @@ function AttentionLab() {
                     className={causal && j > i ? 'lab-mcell is-masked' : 'lab-mcell'}
                     style={{
                       background:
-                        causal && j > i ? undefined : `rgba(221,96,66,${0.06 + 0.94 * w})`,
+                        causal && j > i
+                          ? undefined
+                          : `color-mix(in srgb, var(--accent) ${6 + 94 * w}%, transparent)`,
                     }}
                   >
                     {!(causal && j > i) && <span className="lab-mcell-value">{fmt(w, 2)}</span>}

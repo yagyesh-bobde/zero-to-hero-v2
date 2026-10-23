@@ -48,7 +48,7 @@ Tests check complete lecture/lesson coverage, all challenge reference solutions 
 
 ## Structure
 
-`src/data/modules/` contains the independently written curriculum and exercise checks. `src/components/VisualLab.tsx` contains the visual teaching tools. `public/python-worker.js` loads and executes Python. `src/storage.ts` manages local learning data. `src/theme.css` defines the shared color themes and readable typography; `src/shell.css` handles the sidebar and header layout. The app uses React, TypeScript, Vite, and Lucide icons, with Inter and JetBrains Mono from Google Fonts (system font fallbacks included).
+`src/data/modules/` contains the independently written curriculum and exercise checks. `src/components/VisualLab.tsx` contains the visual teaching tools. `public/python-worker.js` loads and executes Python. `src/storage.ts` manages local learning data. `src/theme.css` defines the shared color themes and readable typography; `src/dark.css` applies neutral charcoal surfaces, coral actions, and distinct feedback colors across the learning activities; `src/shell.css` handles the sidebar and header layout. The app uses React, TypeScript, Vite, and Lucide icons, with Inter and JetBrains Mono from Google Fonts (system font fallbacks included).
 
 ## Attribution
 

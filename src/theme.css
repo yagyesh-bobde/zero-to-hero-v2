@@ -16,6 +16,7 @@
   --accent-soft: #f7e6df;
   --green: #396841;
   --green-soft: #e5eddf;
+  --negative: #3c6ac2;
   --warning: #795522;
   --warning-soft: #f2e9d5;
   --on-accent: #ffffff;
@@ -24,6 +25,11 @@
   --token-purple: #e9e0f4;
   --token-blue: #dcebf0;
   --token-pink: #f3dee6;
+  --code-surface: #13161c;
+  --code-chrome: #1a1e26;
+  --code-ink: #e1e7f0;
+  --code-muted: #a0aabc;
+  --code-line: #333b49;
   --sidebar-width: 260px;
   font-family: var(--sans);
   font-size: 16px;
@@ -34,27 +40,30 @@
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --paper: #171d1a;
-  --surface: #202923;
-  --surface-soft: #26322a;
-  --surface-hover: #324136;
-  --ink: #edf2eb;
-  --muted: #b7c5b8;
-  --line: #3d4e41;
-  --line-strong: #7d9381;
-  --accent: #f5987b;
-  --accent-strong: #ffab91;
-  --accent-soft: #452e27;
-  --green: #a9d49b;
-  --green-soft: #2a3c2c;
-  --warning: #e8c58b;
-  --warning-soft: #3d3526;
-  --on-accent: #172019;
-  --grid: rgba(218, 237, 217, 0.08);
-  --token-coral: #56382e;
-  --token-purple: #42344f;
-  --token-blue: #2a424c;
-  --token-pink: #4c303e;
+  --paper: #111316;
+  --surface: #1a1d23;
+  --surface-soft: #16191e;
+  --surface-hover: #252a33;
+  --ink: #edf0f5;
+  --muted: #a6aebb;
+  --line: #2c323c;
+  --line-strong: #596474;
+  --accent: #f4a080;
+  --accent-strong: #ffb89d;
+  --accent-soft: #34251f;
+  --green: #8ed4b0;
+  --green-soft: #192e26;
+  --negative: #7aa7ff;
+  --warning: #e6c58c;
+  --warning-soft: #30291d;
+  --danger: #f29aaa;
+  --danger-soft: #321f29;
+  --on-accent: #231812;
+  --grid: rgba(222, 232, 255, 0.045);
+  --token-coral: #422b25;
+  --token-purple: #312b46;
+  --token-blue: #24364c;
+  --token-pink: #3d293d;
 }
 
 body {
@@ -141,15 +150,15 @@ body {
 
 .article-code,
 .code-editor {
-  background: #19221d;
-  color: #ecf2e8;
-  border-color: #48584a;
+  background: var(--code-surface);
+  color: var(--code-ink);
+  border-color: var(--code-line);
 }
 
 .article-code,
 .code-input textarea,
 .editor-toolbar {
-  color: #ecf2e8;
+  color: var(--code-ink);
 }
 
 .editor-language,
@@ -157,12 +166,37 @@ body {
 .editor-icon,
 .editor-shortcut,
 .line-numbers {
-  color: #b5c5ae;
+  color: var(--code-muted);
 }
 
 .editor-toolbar,
 .editor-actions {
-  border-color: #48584a;
+  border-color: var(--code-line);
+  background: var(--code-chrome);
+}
+
+.line-numbers {
+  color: #8290a5;
+}
+
+.code-input textarea {
+  caret-color: #f4a080;
+}
+
+.python-dot {
+  background: #f4a080;
+}
+
+.run-button {
+  border-color: #f4a080;
+  border-radius: 6px;
+  background: #f4a080;
+  color: #231812;
+}
+
+.run-button:hover:not(:disabled) {
+  background: #ffb89d;
+  border-color: #ffb89d;
 }
 
 .editor-actions {
@@ -351,6 +385,10 @@ body {
 }
 
 @media (max-width: 380px) {
+  .lesson-tabs > button > svg {
+    display: none;
+  }
+
   .topbar-location > span,
   .topbar-location > svg {
     display: none;

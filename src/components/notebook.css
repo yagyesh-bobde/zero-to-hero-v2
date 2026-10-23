@@ -5,9 +5,9 @@
 }
 
 :root[data-theme='dark'] .notebook-page {
-  --notebook-panel: #1e2321;
-  --notebook-list: #1a1f1d;
-  --notebook-writing: #191e1c;
+  --notebook-panel: var(--surface);
+  --notebook-list: var(--surface-soft);
+  --notebook-writing: var(--paper);
 }
 
 .notebook-page .page-intro {

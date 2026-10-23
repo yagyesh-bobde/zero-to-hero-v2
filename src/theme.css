@@ -11,6 +11,8 @@
   --muted: #536255;
   --line: #d6ddd2;
   --line-strong: #99a897;
+  --focus-ring: #6e7b6f;
+  --focus-halo: rgb(110 123 111 / 15%);
   --accent: #b7472c;
   --accent-strong: #ac3c24;
   --accent-soft: #f7e6df;
@@ -48,6 +50,8 @@
   --muted: #a6aebb;
   --line: #2c323c;
   --line-strong: #596474;
+  --focus-ring: #8290a5;
+  --focus-halo: rgb(130 144 165 / 15%);
   --accent: #f4a080;
   --accent-strong: #ffb89d;
   --accent-soft: #34251f;

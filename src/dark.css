@@ -281,9 +281,9 @@
 :root[data-theme='dark'] .input-search:focus-within,
 :root[data-theme='dark'] .lab-field :is(input, select, textarea):focus-visible,
 :root[data-theme='dark'] .note-drawer textarea:focus-visible {
-  border-color: var(--accent);
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  border-color: var(--focus-ring);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--focus-halo);
 }
 
 :root[data-theme='dark'] .completion-card {

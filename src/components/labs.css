@@ -323,8 +323,8 @@
   transform: scale(1.15);
 }
 .lab-slider input[type='range']:focus-visible {
-  outline: 2px solid var(--lab-accent);
-  outline-offset: 3px;
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
   border-radius: 6px;
 }
 
@@ -372,7 +372,7 @@
 .lab-examples button:focus-visible,
 .lab-heat:focus-visible,
 .lab-tnode:focus-visible {
-  outline: 2px solid var(--lab-accent);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -437,8 +437,8 @@
 .lab-field textarea:focus,
 .lab-field input:focus {
   outline: none;
-  border-color: var(--lab-accent);
-  box-shadow: 0 0 0 3px var(--lab-accent-soft);
+  border-color: var(--focus-ring);
+  box-shadow: 0 0 0 3px var(--focus-halo);
 }
 
 /* stats */

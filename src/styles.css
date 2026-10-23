@@ -54,8 +54,8 @@ a:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 4px;
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 button,
 input,
@@ -66,6 +66,10 @@ select {
 button {
   background: none;
   border: 0;
+  border-radius: 6px;
+}
+a {
+  border-radius: 3px;
 }
 h1,
 h2,
@@ -347,6 +351,13 @@ svg {
   color: var(--muted);
   font-size: 14px;
   white-space: nowrap;
+  padding-inline: 8px;
+  border-radius: 8px;
+}
+.search-trigger:hover,
+.search-trigger:focus-visible {
+  background: var(--surface-hover);
+  color: var(--ink);
 }
 .search-trigger kbd {
   font: 14px var(--sans);
@@ -1641,6 +1652,12 @@ svg {
 .input-search input::placeholder {
   color: var(--muted);
 }
+.input-search:focus-within,
+.note-drawer textarea:focus-visible {
+  border-color: var(--focus-ring);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--focus-halo);
+}
 .notebook-layout {
   display: grid;
   grid-template-columns: 245px minmax(0, 1fr);
@@ -1950,6 +1967,9 @@ svg {
 }
 .search-dialog-input input::placeholder {
   color: var(--muted);
+}
+.search-dialog-input:focus-within {
+  border-bottom-color: var(--focus-ring);
 }
 .search-escape {
   border: 1px solid var(--line);

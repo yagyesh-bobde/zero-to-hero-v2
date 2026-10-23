@@ -1,0 +1,358 @@
+/* Shared colors keep the entire learning workspace consistent in both themes. */
+:root {
+  color-scheme: light;
+  --sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --serif: var(--sans);
+  --paper: #f8f7f3;
+  --surface: #ffffff;
+  --surface-soft: #f0f1eb;
+  --surface-hover: #e4e8df;
+  --ink: #202a24;
+  --muted: #536255;
+  --line: #d6ddd2;
+  --line-strong: #99a897;
+  --accent: #b7472c;
+  --accent-strong: #ac3c24;
+  --accent-soft: #f7e6df;
+  --green: #396841;
+  --green-soft: #e5eddf;
+  --warning: #795522;
+  --warning-soft: #f2e9d5;
+  --on-accent: #ffffff;
+  --grid: rgba(32, 42, 36, 0.07);
+  --token-coral: #f6d9cf;
+  --token-purple: #e9e0f4;
+  --token-blue: #dcebf0;
+  --token-pink: #f3dee6;
+  --sidebar-width: 260px;
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --paper: #171d1a;
+  --surface: #202923;
+  --surface-soft: #26322a;
+  --surface-hover: #324136;
+  --ink: #edf2eb;
+  --muted: #b7c5b8;
+  --line: #3d4e41;
+  --line-strong: #7d9381;
+  --accent: #f5987b;
+  --accent-strong: #ffab91;
+  --accent-soft: #452e27;
+  --green: #a9d49b;
+  --green-soft: #2a3c2c;
+  --warning: #e8c58b;
+  --warning-soft: #3d3526;
+  --on-accent: #172019;
+  --grid: rgba(218, 237, 217, 0.08);
+  --token-coral: #56382e;
+  --token-purple: #42344f;
+  --token-blue: #2a424c;
+  --token-pink: #4c303e;
+}
+
+body {
+  font-family: var(--sans);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+.app-body :is(h1, h2, h3, h4),
+.lab .lab-title {
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+}
+
+.ch-hero__title {
+  font-size: clamp(36px, 4.8cqi, 64px);
+  font-weight: 650;
+  line-height: 1.12;
+  letter-spacing: -0.045em;
+}
+
+.ch-hero__title em {
+  font-style: normal;
+}
+
+.ch-card__title,
+.ch-section-title,
+.ch-section__title {
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.ch-canvas {
+  box-shadow: 0 16px 40px -24px rgb(0 0 0 / 25%);
+}
+
+.lesson-summary,
+.lesson-article p,
+.lesson-article li,
+.lesson-article section li,
+.challenge-prompt p,
+.challenge-prompt li,
+.quiz-card h3,
+.quiz-option,
+.quiz-feedback,
+.takeaway-box li,
+.section-description,
+.notebook-editor textarea,
+.note-drawer textarea,
+.glossary-grid p,
+.getting-started-grid p,
+.projects-description,
+.resource-feature p,
+.sandbox-intro p,
+.ch-card__subtitle,
+.lab-intro,
+.lab-takeaway p {
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.lesson-article p,
+.lesson-article li,
+.quiz-option,
+.challenge-prompt p {
+  color: var(--ink);
+}
+
+.lesson-article :is(p, li) code,
+.formula-block,
+.article-code,
+.solution-panel pre,
+.code-output pre,
+.code-input textarea,
+.line-numbers {
+  font-size: 14px;
+}
+
+.article-code,
+.code-editor {
+  background: #19221d;
+  color: #ecf2e8;
+  border-color: #48584a;
+}
+
+.article-code,
+.code-input textarea,
+.editor-toolbar {
+  color: #ecf2e8;
+}
+
+.editor-language,
+.editor-language > span,
+.editor-icon,
+.editor-shortcut,
+.line-numbers {
+  color: #b5c5ae;
+}
+
+.editor-toolbar,
+.editor-actions {
+  border-color: #48584a;
+}
+
+.editor-actions {
+  height: auto;
+  min-height: 56px;
+  gap: 16px;
+  padding-block: 10px;
+}
+
+.editor-shortcut {
+  line-height: 1.5;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.theme-toggle:hover {
+  background: var(--surface-hover);
+  border-color: var(--line-strong);
+}
+
+.github-star {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.github-star:hover {
+  background: var(--surface-hover);
+  border-color: var(--muted);
+}
+
+.github-star__icon {
+  color: var(--accent);
+}
+
+.sidebar {
+  background: var(--surface-soft);
+}
+
+.nav-label {
+  gap: 12px;
+  flex-wrap: wrap;
+  line-height: 1.5;
+}
+
+.source-credit > div:nth-child(2) {
+  min-width: 0;
+}
+
+.ch-node--out .ch-node__sym {
+  fill: var(--on-accent);
+}
+
+.topbar-actions {
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.topbar-location {
+  min-width: 0;
+}
+
+.topbar-location > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar-location > button {
+  flex-shrink: 0;
+}
+
+.lab {
+  --lab-accent-soft: var(--accent-soft);
+  --lab-green-soft: var(--green-soft);
+}
+
+.lab-field :is(input, select, textarea) {
+  font-size: 16px;
+}
+
+.lab .lab-btn {
+  font-size: 14px;
+  min-height: 44px;
+}
+
+.lab-num {
+  min-height: 24px;
+}
+
+.lab-mcell {
+  color: var(--ink);
+}
+
+.lab-mcell-value {
+  padding: 2px 3px;
+  border-radius: 3px;
+  background: var(--lab-surface);
+  color: var(--lab-ink);
+}
+
+@media (max-width: 1200px) {
+  .local-badge,
+  .header-divider {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .page-intro h1,
+  .lesson-title {
+    font-size: 36px;
+    line-height: 1.2;
+  }
+  .theme-toggle {
+    width: 44px;
+    padding: 8px;
+  }
+  .theme-toggle > span {
+    display: none;
+  }
+  .github-star {
+    gap: 6px;
+    padding: 8px 10px;
+  }
+  .github-star__logo {
+    display: none;
+  }
+  .topbar-actions {
+    gap: 10px;
+  }
+  .topbar-location {
+    min-width: 0;
+    white-space: nowrap;
+  }
+  .topbar {
+    height: auto;
+    min-height: 72px;
+    gap: 10px;
+    padding-block: 10px;
+  }
+  .editor-shortcut {
+    max-width: 150px;
+    font-size: 12px;
+  }
+  .editor-language {
+    display: none;
+  }
+  .lab-eyebrow,
+  .section-overline {
+    line-height: 1.5;
+    flex-wrap: wrap;
+  }
+  .lab-picker {
+    grid-template-columns: 1fr;
+  }
+  .tensor-table td > :is(button, span) {
+    font-size: 12px;
+    min-width: 58px;
+  }
+}
+
+@media (max-width: 380px) {
+  .topbar-location > span,
+  .topbar-location > svg {
+    display: none;
+  }
+}

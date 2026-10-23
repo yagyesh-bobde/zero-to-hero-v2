@@ -1,0 +1,207 @@
+.tensor-stage-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  border-bottom: 1px solid var(--lab-line);
+  padding-bottom: 14px;
+}
+.tensor-stage-label > span {
+  font: 12px var(--lab-mono);
+  letter-spacing: 0.8px;
+  color: var(--lab-accent);
+  white-space: nowrap;
+}
+.tensor-stage-label > strong {
+  font-size: 12px;
+  font-weight: 500;
+  text-align: right;
+}
+.tensor-matrices,
+.tensor-results {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.tensor-operator {
+  font: 20px var(--lab-mono);
+  color: var(--lab-muted);
+}
+.tensor-table {
+  border-collapse: separate;
+  border-spacing: 4px;
+  max-width: 100%;
+  font: 12px var(--lab-mono);
+}
+.tensor-table caption {
+  text-align: left;
+  padding: 8px 4px;
+  white-space: nowrap;
+}
+.tensor-table caption > strong {
+  font-weight: 500;
+  color: var(--lab-ink);
+  margin-right: 10px;
+}
+.tensor-table caption > span {
+  color: var(--lab-muted);
+  font-size: 12px;
+}
+.tensor-table td {
+  padding: 0;
+}
+.tensor-table td > span,
+.tensor-table td > button {
+  display: block;
+  padding: 9px 7px;
+  background: var(--green-soft);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  text-align: center;
+  font: 12px var(--lab-mono);
+  color: var(--muted);
+  min-width: 56px;
+  width: 100%;
+}
+.tensor-table td > button:hover {
+  background: var(--green-soft);
+}
+.tensor-table td > button.selected {
+  border-color: var(--lab-accent);
+  background: var(--accent-soft);
+  color: var(--lab-accent);
+}
+.tensor-table-gradient td > span {
+  background: var(--green-soft);
+  color: var(--muted);
+  border-color: var(--line);
+}
+.tensor-loss {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 18px;
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: 12px var(--lab-mono);
+  color: var(--warning);
+}
+.tensor-loss > strong {
+  font: 26px var(--lab-serif);
+  color: var(--lab-accent);
+}
+.tensor-backward {
+  display: grid;
+  justify-content: center;
+  animation: appear 0.3s;
+}
+.tensor-gradient-grid {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-top: 1px dashed var(--lab-line);
+  padding-top: 15px;
+  animation: appear 0.3s;
+}
+.tensor-gradient-grid > div {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  min-width: 0;
+}
+.tensor-gradient-grid .lab-formula {
+  font-size: 12px;
+  margin: 0;
+}
+.tensor-check {
+  padding: 18px;
+  background: var(--green-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+}
+.tensor-check > span {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 500;
+}
+.tensor-check p {
+  font: 12px/2 var(--lab-mono);
+  margin: 12px 0;
+}
+.tensor-check strong {
+  color: var(--green);
+}
+.tensor-check small {
+  font: 12px var(--lab-mono);
+  line-height: 1.8;
+}
+.lab-field select {
+  width: 100%;
+  background: var(--lab-paper);
+  border: 1px solid var(--lab-line);
+  border-radius: 5px;
+  padding: 10px;
+  font-size: 12px;
+  color: var(--lab-ink);
+}
+@media (max-width: 520px) {
+  .tensor-stage {
+    padding: 10px;
+  }
+  .tensor-stage-label {
+    display: block;
+  }
+  .tensor-stage-label > strong {
+    display: block;
+    margin-top: 8px;
+    text-align: left;
+    font-size: 12px;
+  }
+  .tensor-matrices {
+    gap: 8px;
+  }
+  .tensor-matrices .tensor-table td > button {
+    min-width: 40px;
+    padding: 8px 3px;
+    font-size: 12px;
+  }
+  .tensor-matrices .tensor-operator {
+    font-size: 12px;
+  }
+  .tensor-table caption > strong {
+    font-size: 12px;
+    margin-right: 6px;
+  }
+  .tensor-table caption > span {
+    font-size: 12px;
+  }
+  .tensor-table {
+    border-spacing: 3px;
+  }
+  .tensor-check small {
+    font-size: 12px;
+  }
+  .tensor-loss {
+    gap: 12px;
+    font-size: 12px;
+  }
+  .tensor-results {
+    gap: 8px;
+  }
+  .tensor-gradient-grid .lab-formula {
+    font-size: 12px;
+  }
+  .tensor-table td > span {
+    font-size: 12px;
+    min-width: 47px;
+    padding: 8px 5px;
+  }
+}

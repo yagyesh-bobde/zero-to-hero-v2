@@ -1,0 +1,3773 @@
+:root {
+  color-scheme: dark;
+  --ota-bg: #141416;
+  --ota-sidebar: #19191c;
+  --ota-surface: #1b1b1f;
+  --ota-raised: #222226;
+  --ota-hover: #28282d;
+  --ota-line: #303034;
+  --ota-line-soft: #27272b;
+  --ota-text: #f0efed;
+  --ota-muted: #a5a3aa;
+  --ota-faint: #75737d;
+  --ota-accent: #f2a088;
+  --ota-accent-hover: #ffb39c;
+  --ota-accent-bg: #352721;
+  --ota-on-accent: #2a1b16;
+  --ota-green: #95ccac;
+  --ota-green-bg: #202f27;
+  --ota-red: #eea3a3;
+  --ota-red-bg: #352426;
+  --ota-code: #111114;
+  --ota-code-text: #d4d1dd;
+  --ota-radius: 12px;
+  --ota-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --ota-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+  font-family: var(--ota-font);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  background: var(--ota-bg);
+  color: var(--ota-text);
+}
+:root[data-ota-theme='light'] {
+  color-scheme: light;
+  --ota-bg: #faf9f6;
+  --ota-sidebar: #f2f1ed;
+  --ota-surface: #ffffff;
+  --ota-raised: #f4f3ef;
+  --ota-hover: #eae8e3;
+  --ota-line: #dddcd6;
+  --ota-line-soft: #e8e6df;
+  --ota-text: #242427;
+  --ota-muted: #626168;
+  --ota-faint: #77747c;
+  --ota-accent: #b64f33;
+  --ota-accent-hover: #a84329;
+  --ota-accent-bg: #f5e8e1;
+  --ota-on-accent: #fff8f2;
+  --ota-green: #306b48;
+  --ota-green-bg: #e8f1e8;
+  --ota-red: #b13c42;
+  --ota-red-bg: #faeaea;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+button {
+  cursor: pointer;
+}
+button,
+select {
+  color: inherit;
+}
+button {
+  background: transparent;
+  border: 0;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+button,
+a,
+select {
+  touch-action: manipulation;
+}
+:focus-visible {
+  outline: 2px solid var(--ota-accent);
+  outline-offset: 4px;
+  border-radius: 5px;
+}
+::selection {
+  background: var(--ota-accent-bg);
+  color: var(--ota-accent);
+}
+svg {
+  flex-shrink: 0;
+  vertical-align: middle;
+  stroke-width: 1.7;
+}
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+code,
+pre,
+kbd,
+.ota-mono {
+  font-family: var(--ota-mono);
+}
+code {
+  font-size: 0.85em;
+}
+pre {
+  margin: 0;
+}
+.ota-muted {
+  color: var(--ota-muted);
+}
+.ota-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.ota-skip {
+  position: fixed;
+  top: -100px;
+  left: 20px;
+  z-index: 200;
+  background: var(--ota-accent);
+  color: var(--ota-on-accent);
+  padding: 12px;
+}
+.ota-skip:focus {
+  top: 10px;
+}
+.ota-loading {
+  padding: 60px;
+  color: var(--ota-muted);
+}
+.ota-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 264px;
+  background: var(--ota-sidebar);
+  border-right: 1px solid var(--ota-line);
+  display: flex;
+  flex-direction: column;
+  z-index: 40;
+  transition: transform 0.2s;
+}
+.ota-sidebar-brand {
+  height: 74px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.ota-sidebar-brand > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 21px;
+  letter-spacing: -0.9px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.ota-brand-mark {
+  font-size: 31px;
+  line-height: 1;
+  color: var(--ota-accent);
+  font-weight: 400;
+}
+.ota-brand-to {
+  color: var(--ota-muted);
+  font-size: 15px;
+  font-weight: 450;
+  letter-spacing: -1px;
+}
+.ota-brand-period {
+  color: var(--ota-accent);
+}
+.ota-course-identity {
+  margin: 6px 16px 17px;
+  padding: 13px 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--ota-line);
+  border-radius: 9px;
+}
+.ota-course-icon {
+  display: grid;
+  place-items: center;
+  width: 33px;
+  height: 36px;
+  border-radius: 7px;
+  background: var(--ota-accent-bg);
+  color: var(--ota-accent);
+}
+.ota-course-identity strong {
+  display: block;
+  font-size: 12px;
+  letter-spacing: -0.1px;
+  font-weight: 600;
+}
+.ota-course-identity div > span {
+  display: block;
+  color: var(--ota-muted);
+  font-size: 9px;
+  margin-top: 4px;
+}
+.ota-new-pill {
+  font-family: var(--ota-mono);
+  font-size: 8px;
+  color: var(--ota-accent);
+  margin-left: auto;
+  align-self: flex-start;
+  margin-top: 3px;
+}
+.ota-sidebar-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ota-muted);
+  margin: 0 18px 17px;
+  padding: 9px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--ota-line);
+  font-size: 11px;
+  text-align: left;
+}
+.ota-sidebar-search:hover {
+  border-color: var(--ota-faint);
+}
+.ota-sidebar-search kbd {
+  font-size: 9px;
+  margin-left: auto;
+  color: var(--ota-faint);
+}
+.ota-sidebar-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ota-line) transparent;
+  padding: 0 14px 22px;
+}
+.ota-nav {
+  display: grid;
+  gap: 3px;
+}
+.ota-nav a {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--ota-muted);
+  border-radius: 6px;
+}
+.ota-nav a:hover {
+  background: var(--ota-hover);
+  color: var(--ota-text);
+}
+.ota-nav a.is-active {
+  background: var(--ota-accent-bg);
+  color: var(--ota-accent);
+}
+.ota-nav-count {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--ota-faint);
+}
+.ota-sidebar-section {
+  display: flex;
+  justify-content: space-between;
+  color: var(--ota-faint);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 30px 12px 15px;
+}
+.ota-sidebar-section > span:last-child {
+  font-family: var(--ota-mono);
+}
+.ota-chapter-nav {
+  display: grid;
+  gap: 4px;
+}
+.ota-chapter-toggle {
+  display: flex;
+  width: 100%;
+  gap: 9px;
+  align-items: center;
+  text-align: left;
+  padding: 10px 10px;
+  font-size: 11px;
+  line-height: 1.5;
+  border-radius: 6px;
+  color: var(--ota-muted);
+}
+.ota-chapter-toggle:hover,
+.ota-chapter-toggle.is-current {
+  color: var(--ota-text);
+  background: var(--ota-raised);
+}
+.ota-chapter-toggle > span:nth-child(2) {
+  flex: 1;
+}
+.ota-chapter-number {
+  font: 9px var(--ota-mono);
+  color: var(--ota-faint);
+}
+.ota-chapter-toggle .is-open {
+  transform: rotate(90deg);
+}
+.ota-lesson-nav {
+  margin: 2px 0 8px 21px;
+  border-left: 1px solid var(--ota-line);
+}
+.ota-lesson-nav a {
+  display: flex;
+  align-items: flex-start;
+  padding: 8px 7px 8px 14px;
+  gap: 7px;
+  font-size: 10px;
+  line-height: 1.7;
+  color: var(--ota-muted);
+  margin-left: -1px;
+  border-left: 1px solid transparent;
+}
+.ota-lesson-nav a > span:first-child {
+  min-width: 20px;
+  color: var(--ota-faint);
+  font: 9px/1.8 var(--ota-mono);
+}
+.ota-lesson-nav a:hover {
+  color: var(--ota-text);
+}
+.ota-lesson-nav a.is-active {
+  color: var(--ota-accent);
+  border-left-color: var(--ota-accent);
+  background: var(--ota-accent-bg);
+  border-radius: 0 5px 5px 0;
+}
+.ota-lesson-nav a.is-active > span:first-child {
+  color: var(--ota-accent);
+}
+.ota-sidebar-bottom {
+  padding: 20px 24px 16px;
+  border-top: 1px solid var(--ota-line);
+}
+.ota-progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: var(--ota-muted);
+}
+.ota-progress-label strong {
+  color: var(--ota-text);
+  font: 11px var(--ota-mono);
+}
+.ota-progress-label strong span {
+  color: var(--ota-faint);
+}
+.ota-progress-track {
+  height: 3px;
+  border-radius: 4px;
+  background: var(--ota-line);
+  margin: 12px 0 8px;
+  overflow: hidden;
+}
+.ota-progress-track > span {
+  display: block;
+  height: 100%;
+  background: var(--ota-accent);
+  transition: width 0.3s;
+}
+.ota-local-note {
+  color: var(--ota-faint);
+  font-size: 9px;
+}
+.ota-back-course {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 9px;
+  color: var(--ota-muted);
+  padding-top: 18px;
+  margin-top: 17px;
+  border-top: 1px solid var(--ota-line);
+}
+.ota-back-course svg:last-child {
+  margin-left: auto;
+}
+.ota-back-course:hover {
+  color: var(--ota-accent);
+}
+.ota-workspace {
+  margin-left: 264px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: margin-left 0.2s;
+}
+.ota-sidebar-collapsed .ota-sidebar {
+  transform: translateX(-100%);
+  visibility: hidden;
+}
+.ota-sidebar-collapsed .ota-workspace {
+  margin-left: 0;
+}
+.ota-topbar {
+  height: 65px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 30px;
+  gap: 15px;
+  border-bottom: 1px solid var(--ota-line-soft);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--ota-bg);
+}
+.ota-topbar > div {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+.ota-topbar-crumb {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--ota-faint);
+}
+.ota-topbar-crumb strong {
+  font-weight: 450;
+  color: var(--ota-muted);
+}
+.ota-topbar-page {
+  margin-right: 12px;
+  color: var(--ota-faint);
+  font-size: 10px;
+}
+.ota-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  height: 32px;
+  width: 32px;
+  padding: 0;
+  color: var(--ota-muted);
+}
+.ota-icon-button:hover {
+  background: var(--ota-hover);
+  color: var(--ota-text);
+}
+.ota-icon-button.is-active {
+  color: var(--ota-accent);
+  background: var(--ota-accent-bg);
+}
+.ota-main {
+  flex: 1;
+  outline: 0;
+  min-width: 0;
+}
+.ota-footer {
+  padding: 24px 46px;
+  border-top: 1px solid var(--ota-line-soft);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  color: var(--ota-faint);
+  font-size: 10px;
+  line-height: 1.8;
+}
+.ota-footer a {
+  color: var(--ota-muted);
+}
+.ota-footer a:hover {
+  color: var(--ota-accent);
+}
+.ota-footer span:last-child a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ota-mobile-close,
+.ota-backdrop {
+  display: none;
+}
+.ota-overview {
+  max-width: 1510px;
+  margin: 0 auto;
+  padding: 58px 54px 50px;
+}
+.ota-kicker {
+  font-size: 9px;
+  font-weight: 550;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  color: var(--ota-muted);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  line-height: 1.6;
+}
+.ota-live-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--ota-accent);
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ota-accent) 8%, transparent);
+}
+.ota-hero {
+  display: grid;
+  grid-template-columns: 1.04fr 1fr;
+  align-items: center;
+  gap: 42px;
+}
+.ota-hero-copy {
+  padding: 15px 0;
+}
+.ota-hero-copy > .ota-kicker {
+  font-size: 9px;
+  letter-spacing: 1.2px;
+  margin-bottom: 25px;
+}
+.ota-hero h1 {
+  font-size: clamp(40px, 4.2vw, 67px);
+  line-height: 1.08;
+  letter-spacing: -0.052em;
+  font-weight: 600;
+}
+.ota-hero h1 em {
+  font-style: normal;
+  color: var(--ota-accent);
+}
+.ota-hero-break {
+  display: none;
+}
+.ota-hero-copy > p {
+  margin-top: 24px;
+  line-height: 1.8;
+  font-size: 15px;
+  color: var(--ota-text);
+  letter-spacing: -0.2px;
+}
+.ota-hero-copy > .ota-hero-secondary {
+  color: var(--ota-muted);
+  font-size: 13px;
+  line-height: 1.85;
+  max-width: 430px;
+  margin-top: 13px;
+}
+.ota-hero-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 27px;
+}
+.ota-btn {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--ota-line);
+  border-radius: 7px;
+  padding: 11px 17px;
+  line-height: 1.5;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ota-text);
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.ota-btn:hover:not(:disabled) {
+  background: var(--ota-hover);
+  border-color: var(--ota-faint);
+}
+.ota-btn-primary {
+  background: var(--ota-accent);
+  color: var(--ota-on-accent);
+  border-color: var(--ota-accent);
+}
+.ota-btn-primary:hover:not(:disabled) {
+  background: var(--ota-accent-hover);
+  border-color: var(--ota-accent-hover);
+}
+.ota-btn-ghost {
+  border-color: transparent;
+  color: var(--ota-muted);
+  padding-left: 12px;
+  padding-right: 12px;
+}
+.ota-btn-small {
+  padding: 8px 12px;
+  font-size: 11px;
+  gap: 8px;
+}
+.ota-start-hint {
+  display: grid;
+  gap: 5px;
+  margin-top: 20px;
+}
+.ota-start-hint > span:first-child {
+  font-size: 8px;
+  letter-spacing: 1.2px;
+  color: var(--ota-faint);
+}
+.ota-start-hint > span:last-child {
+  font-size: 10px;
+  color: var(--ota-muted);
+}
+.ota-start-hint > span:last-child > span {
+  padding: 0 4px;
+  color: var(--ota-faint);
+}
+.ota-hero-stats {
+  display: flex;
+  gap: 33px;
+  margin-top: 34px;
+}
+.ota-hero-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.ota-hero-stats strong {
+  font-size: 25px;
+  font-weight: 500;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.ota-hero-stats span {
+  color: var(--ota-faint);
+  font-size: 9px;
+}
+.ota-hero-visual {
+  border: 1px solid var(--ota-line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--ota-surface);
+  box-shadow: 0 20px 80px -55px #0008;
+}
+.ota-hero-visual-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--ota-line);
+  font: 8px var(--ota-mono);
+  color: var(--ota-muted);
+  letter-spacing: 0.5px;
+}
+.ota-hero-visual-top > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.ota-hero-visual .ota-lab-body {
+  padding: 23px;
+}
+.ota-proof-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 15px 22px;
+  padding: 23px 0;
+  border-top: 1px solid var(--ota-line);
+  border-bottom: 1px solid var(--ota-line);
+  margin-top: 45px;
+}
+.ota-proof-strip > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--ota-muted);
+}
+.ota-proof-strip svg {
+  color: var(--ota-faint);
+}
+.ota-home-path {
+  margin-top: 54px;
+}
+.ota-section-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 26px;
+}
+.ota-section-top h2 {
+  font-size: 25px;
+  line-height: 1.3;
+  margin-top: 9px;
+}
+.ota-section-top p {
+  font-size: 12px;
+  color: var(--ota-muted);
+  line-height: 1.85;
+  max-width: 580px;
+  margin-top: 10px;
+}
+.ota-section-top > a {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.ota-text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ota-accent);
+  font-size: 11px;
+  line-height: 1.7;
+  padding: 4px 0;
+}
+.ota-text-button:hover {
+  color: var(--ota-accent-hover);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.ota-chapter-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.ota-chapter-card {
+  border: 1px solid var(--ota-line);
+  padding: 21px 22px 17px;
+  border-radius: 9px;
+  display: flex;
+  flex-direction: column;
+  min-height: 188px;
+  transition:
+    background 0.15s,
+    transform 0.15s,
+    border-color 0.15s;
+}
+.ota-chapter-card:hover {
+  background: var(--ota-surface);
+  border-color: var(--ota-faint);
+  transform: translateY(-2px);
+}
+.ota-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  color: var(--ota-faint);
+}
+.ota-card-top .ota-mono {
+  color: var(--ota-accent);
+  font-size: 10px;
+}
+.ota-chapter-card h3 {
+  font-size: 15px;
+  letter-spacing: -0.3px;
+  line-height: 1.45;
+}
+.ota-chapter-card p {
+  font-size: 11px;
+  color: var(--ota-muted);
+  line-height: 1.8;
+  margin: 8px 0 18px;
+  flex: 1;
+}
+.ota-card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 9px;
+  color: var(--ota-faint);
+}
+.ota-card-bottom > span {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+.ota-card-bottom i {
+  width: 2px;
+  height: 2px;
+  border-radius: 100%;
+  background: var(--ota-faint);
+}
+.ota-home-labs {
+  padding: 45px 0;
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 70px;
+  align-items: center;
+}
+.ota-home-labs h2 {
+  font-size: 30px;
+  line-height: 1.25;
+  margin: 12px 0;
+}
+.ota-home-labs > div > p {
+  font-size: 12px;
+  line-height: 1.85;
+  color: var(--ota-muted);
+  max-width: 370px;
+  margin-bottom: 17px;
+}
+.ota-mini-labs {
+  display: grid;
+}
+.ota-mini-labs > button {
+  display: flex;
+  align-items: center;
+  text-align: left;
+  gap: 15px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--ota-line);
+}
+.ota-mini-labs > button:first-child {
+  border-top: 1px solid var(--ota-line);
+}
+.ota-mini-labs > button > svg {
+  margin-left: auto;
+  color: var(--ota-faint);
+}
+.ota-mini-labs > button:hover strong {
+  color: var(--ota-accent);
+}
+.ota-mini-lab-icon {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--ota-line);
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  color: var(--ota-accent);
+}
+.ota-mini-labs strong {
+  font-size: 13px;
+  display: block;
+  font-weight: 500;
+}
+.ota-mini-labs small {
+  font-size: 10px;
+  display: block;
+  color: var(--ota-muted);
+  margin-top: 6px;
+  line-height: 1.6;
+}
+.ota-prereq {
+  border: 1px solid var(--ota-line);
+  background: var(--ota-surface);
+  border-radius: 9px;
+  padding: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+}
+.ota-prereq > div {
+  display: flex;
+  gap: 17px;
+  align-items: flex-start;
+}
+.ota-prereq > div > svg {
+  color: var(--ota-accent);
+  margin-top: 3px;
+}
+.ota-prereq strong {
+  font-size: 12px;
+  font-weight: 500;
+}
+.ota-prereq p {
+  font-size: 11px;
+  color: var(--ota-muted);
+  max-width: 650px;
+  line-height: 1.85;
+  margin-top: 6px;
+}
+.ota-prereq > a {
+  font-size: 10px;
+  color: var(--ota-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.ota-page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 49px 54px 70px;
+}
+.ota-page-intro {
+  margin-bottom: 35px;
+  max-width: 750px;
+}
+.ota-page-intro h1 {
+  font-size: clamp(30px, 3.2vw, 45px);
+  line-height: 1.2;
+  margin: 16px 0;
+}
+.ota-page-intro > p {
+  color: var(--ota-muted);
+  font-size: 14px;
+  line-height: 1.9;
+}
+.ota-path-list {
+  display: grid;
+  gap: 34px;
+}
+.ota-path-chapter {
+  border: 1px solid var(--ota-line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.ota-path-chapter-title {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 24px;
+  background: var(--ota-surface);
+  border-bottom: 1px solid var(--ota-line);
+}
+.ota-path-chapter-title > span:first-child {
+  color: var(--ota-accent);
+  font: 14px var(--ota-mono);
+}
+.ota-path-chapter-title h2 {
+  font-size: 20px;
+}
+.ota-path-chapter-title p {
+  font-size: 11px;
+  color: var(--ota-muted);
+  line-height: 1.8;
+  margin-top: 7px;
+}
+.ota-path-count {
+  margin-left: auto;
+  align-self: flex-start;
+  color: var(--ota-faint);
+  font: 10px var(--ota-mono);
+  padding-top: 4px;
+}
+.ota-path-lesson {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--ota-line-soft);
+}
+.ota-path-lesson:last-child {
+  border-bottom: 0;
+}
+.ota-path-lesson:hover {
+  background: var(--ota-surface);
+}
+.ota-lesson-circle {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ota-line);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font: 9px var(--ota-mono);
+  color: var(--ota-faint);
+  flex-shrink: 0;
+}
+.ota-lesson-circle.is-complete {
+  background: var(--ota-green-bg);
+  border-color: transparent;
+  color: var(--ota-green);
+}
+.ota-path-lesson h3 {
+  font-size: 13px;
+  letter-spacing: -0.2px;
+  line-height: 1.55;
+}
+.ota-path-lesson p {
+  font-size: 11px;
+  line-height: 1.75;
+  color: var(--ota-muted);
+  margin-top: 4px;
+}
+.ota-path-minutes {
+  font-size: 10px;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  color: var(--ota-muted);
+}
+.ota-path-minutes > svg:first-child:not(:last-child) {
+  margin-right: 3px;
+}
+.ota-path-lesson > svg {
+  color: var(--ota-faint);
+}
+.ota-lesson-page {
+  max-width: 1030px;
+  margin: 0 auto;
+  padding: 35px 54px 60px;
+}
+.ota-lesson-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--ota-faint);
+  font-size: 10px;
+  line-height: 1.7;
+}
+.ota-lesson-breadcrumb a:hover {
+  color: var(--ota-accent);
+}
+.ota-lesson-header {
+  padding: 33px 0 28px;
+}
+.ota-lesson-meta {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  margin-bottom: 13px;
+}
+.ota-lesson-meta > span:not(.ota-kicker) {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--ota-muted);
+}
+.ota-lesson-meta .ota-kicker {
+  color: var(--ota-accent);
+}
+.ota-lesson-meta .ota-complete-label {
+  color: var(--ota-green) !important;
+}
+.ota-lesson-header h1 {
+  font-size: clamp(31px, 3.3vw, 46px);
+  line-height: 1.2;
+}
+.ota-lesson-header > p {
+  font-size: 15px;
+  line-height: 1.9;
+  color: var(--ota-muted);
+  margin-top: 13px;
+}
+.ota-lesson-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--ota-line);
+  margin-bottom: 33px;
+  gap: 10px;
+}
+.ota-lesson-tabs {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.ota-lesson-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 13px 0;
+  margin-bottom: -1px;
+  font-size: 11px;
+  color: var(--ota-muted);
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+.ota-lesson-tabs button.is-active {
+  color: var(--ota-accent);
+  border-bottom-color: var(--ota-accent);
+}
+.ota-lesson-content {
+  min-width: 0;
+}
+.ota-lesson-map {
+  padding: 21px 24px;
+  border: 1px solid var(--ota-line);
+  border-radius: 9px;
+  margin-bottom: 38px;
+  background: var(--ota-surface);
+}
+.ota-lesson-map > span {
+  margin-bottom: 10px;
+}
+.ota-lesson-map a {
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  color: var(--ota-muted);
+  padding: 6px 0;
+  font-size: 12px;
+}
+.ota-lesson-map a > span {
+  font: 9px var(--ota-mono);
+  color: var(--ota-faint);
+}
+.ota-lesson-map a > svg {
+  margin-left: auto;
+  opacity: 0;
+}
+.ota-lesson-map a:hover {
+  color: var(--ota-accent);
+}
+.ota-lesson-map a:hover > svg {
+  opacity: 1;
+}
+.ota-lesson-content > div[id] {
+  scroll-margin-top: 90px;
+}
+.ota-article-section {
+  margin: 0 0 38px;
+}
+.ota-article-section h2 {
+  font-size: 24px;
+  line-height: 1.4;
+  margin-bottom: 18px;
+}
+.ota-article-section p,
+.ota-article-section li {
+  font-size: 15px;
+  line-height: 1.95;
+  color: var(--ota-muted);
+  margin: 0 0 18px;
+}
+.ota-article-section p strong {
+  color: var(--ota-text);
+  font-weight: 550;
+}
+.ota-article-section p code {
+  background: var(--ota-raised);
+  border-radius: 4px;
+  padding: 2px 5px;
+  color: var(--ota-text);
+}
+.ota-code-block,
+.ota-code-editor,
+.ota-solution {
+  border: 1px solid var(--ota-line);
+  border-radius: 9px;
+  overflow: hidden;
+  margin: 23px 0;
+  background: var(--ota-code);
+}
+.ota-code-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #303034;
+  font: 9px/1.7 var(--ota-mono);
+  color: #9995a3;
+  background: #1a1a1f;
+}
+.ota-code-bar > button {
+  margin-left: auto;
+  color: #aaa6b5;
+  padding: 2px;
+}
+.ota-code-block pre,
+.ota-solution pre {
+  color: var(--ota-code-text);
+  padding: 20px;
+  overflow-x: auto;
+  font-size: 12px;
+  line-height: 1.9;
+  scrollbar-width: thin;
+}
+.ota-code-block pre code,
+.ota-solution pre code {
+  font-size: inherit;
+}
+.ota-callout {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 18px 20px;
+  background: var(--ota-accent-bg);
+  border-radius: 8px;
+  color: var(--ota-accent);
+  margin: 24px 0;
+}
+.ota-callout p,
+.ota-article-section .ota-callout p {
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--ota-text);
+  margin: 0;
+}
+.ota-callout > svg {
+  margin-top: 3px;
+}
+.ota-info-mark {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--ota-accent);
+  border-radius: 100%;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  flex-shrink: 0;
+  margin-top: 3px;
+  font-family: var(--ota-mono);
+}
+.ota-takeaway {
+  border-top: 1px solid var(--ota-line);
+  border-bottom: 1px solid var(--ota-line);
+  padding: 25px 0;
+  margin: 42px 0 30px;
+}
+.ota-takeaway > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ota-accent);
+  text-transform: uppercase;
+  font-size: 9px;
+  letter-spacing: 1.2px;
+}
+.ota-takeaway > p {
+  font-size: 18px;
+  line-height: 1.75;
+  margin-top: 12px;
+  letter-spacing: -0.3px;
+}
+.ota-lesson-sources {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 35px;
+}
+.ota-lesson-sources > span {
+  margin-bottom: 4px;
+}
+.ota-lesson-sources > a {
+  color: var(--ota-muted);
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+}
+.ota-lesson-sources > a:hover {
+  color: var(--ota-accent);
+}
+.ota-activity-intro {
+  margin-bottom: 25px;
+}
+.ota-activity-intro > span {
+  margin-bottom: 9px;
+}
+.ota-activity-intro h2 {
+  font-size: 25px;
+}
+.ota-activity-intro p {
+  color: var(--ota-muted);
+  font-size: 13px;
+  line-height: 1.9;
+  margin-top: 10px;
+}
+.ota-lesson-content > .ota-btn {
+  margin-top: 26px;
+}
+.ota-lesson-pagination {
+  border-top: 1px solid var(--ota-line);
+  margin-top: 48px;
+  padding-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+}
+.ota-lesson-pagination > a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ota-muted);
+  font-size: 11px;
+  max-width: 48%;
+  line-height: 1.8;
+}
+.ota-lesson-pagination > a:last-child {
+  text-align: right;
+}
+.ota-lesson-pagination > a:hover {
+  color: var(--ota-accent);
+}
+.ota-lesson-pagination small {
+  display: block;
+  font-size: 9px;
+  color: var(--ota-faint);
+  margin-bottom: 4px;
+}
+.ota-lesson-note {
+  padding: 20px;
+  border: 1px solid var(--ota-line);
+  border-radius: 9px;
+  margin: 0 0 30px;
+  background: var(--ota-surface);
+}
+.ota-lesson-note > label {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--ota-muted);
+  margin-bottom: 13px;
+}
+.ota-lesson-note textarea {
+  width: 100%;
+  min-height: 150px;
+  resize: vertical;
+  padding: 14px;
+  color: var(--ota-text);
+  background: var(--ota-bg);
+  border: 1px solid var(--ota-line);
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.ota-lesson-note > span {
+  display: block;
+  font-size: 9px;
+  color: var(--ota-faint);
+  margin-top: 10px;
+}
+.ota-lesson-note > span > a {
+  color: var(--ota-accent);
+}
+.ota-quiz {
+  padding: 26px;
+  margin: 24px 0;
+  border: 1px solid var(--ota-line);
+  border-radius: 10px;
+  background: var(--ota-surface);
+}
+.ota-quiz > h3 {
+  font-size: 17px;
+  line-height: 1.7;
+  margin: 10px 0 19px;
+  letter-spacing: -0.3px;
+}
+.ota-quiz > div[role='group'] {
+  display: grid;
+  gap: 8px;
+}
+.ota-quiz-option {
+  display: flex;
+  align-items: center;
+  text-align: left;
+  padding: 13px;
+  gap: 12px;
+  border: 1px solid var(--ota-line);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--ota-muted);
+}
+.ota-quiz-option > span:first-child {
+  font: 9px var(--ota-mono);
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--ota-line);
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.ota-quiz-option > span:nth-child(2) {
+  flex: 1;
+}
+.ota-quiz-option:hover {
+  background: var(--ota-hover);
+  color: var(--ota-text);
+}
+.ota-quiz-option.is-correct {
+  border-color: var(--ota-green);
+  background: var(--ota-green-bg);
+  color: var(--ota-green);
+}
+.ota-quiz-option.is-wrong {
+  border-color: var(--ota-red);
+  background: var(--ota-red-bg);
+  color: var(--ota-red);
+}
+.ota-quiz-feedback {
+  margin-top: 20px;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--ota-line);
+  font-size: 12px;
+}
+.ota-quiz-feedback > strong {
+  font-weight: 550;
+}
+.ota-quiz-feedback > p {
+  line-height: 1.9;
+  color: var(--ota-muted);
+  margin-top: 6px;
+}
+.is-correct {
+  color: var(--ota-green);
+}
+.is-wrong {
+  color: var(--ota-red);
+}
+.ota-completion {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  justify-content: space-between;
+  padding: 25px 0;
+  margin-top: 32px;
+  border-top: 1px solid var(--ota-line);
+}
+.ota-completion h3 {
+  font-size: 18px;
+  margin-bottom: 9px;
+}
+.ota-completion p {
+  color: var(--ota-muted);
+  font-size: 11px;
+  line-height: 1.8;
+}
+.ota-completion > button {
+  flex-shrink: 0;
+}
+.ota-lab-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 28px 0;
+}
+.ota-lab-tabs > button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  color: var(--ota-muted);
+  border: 1px solid var(--ota-line);
+  border-radius: 6px;
+  padding: 11px 12px;
+}
+.ota-lab-tabs > button:hover {
+  background: var(--ota-surface);
+  color: var(--ota-text);
+}
+.ota-lab-tabs > button.is-active {
+  color: var(--ota-accent);
+  background: var(--ota-accent-bg);
+  border-color: color-mix(in srgb, var(--ota-accent) 40%, var(--ota-line));
+}
+.ota-lab {
+  border: 1px solid var(--ota-line);
+  background: var(--ota-surface);
+  border-radius: 10px;
+  overflow: hidden;
+  min-width: 0;
+}
+.ota-lab-heading {
+  padding: 14px 23px;
+  border-bottom: 1px solid var(--ota-line);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--ota-muted);
+  font: 9px var(--ota-mono);
+}
+.ota-lab-local {
+  margin-left: auto;
+  color: var(--ota-faint);
+  font-size: 8px;
+}
+.ota-lab-body,
+.ota-workshop {
+  padding: 28px;
+}
+.ota-lab h3,
+.ota-workshop h3 {
+  font-size: 21px;
+  line-height: 1.35;
+}
+.ota-lab-body > p,
+.ota-workshop > p {
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--ota-muted);
+  margin: 10px 0 24px;
+}
+.ota-lab-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.ota-lab-title-row p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--ota-muted);
+  margin-top: 9px;
+}
+.ota-lab-title-row > .ota-mono {
+  color: var(--ota-faint);
+  font-size: 10px;
+  white-space: nowrap;
+  margin-top: 4px;
+}
+.ota-button-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ota-lab-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  border-top: 1px solid var(--ota-line);
+  padding-top: 18px;
+  margin-top: 21px;
+  color: var(--ota-muted);
+  font-size: 10px;
+}
+.ota-lab-caption,
+.ota-lab-body > .ota-lab-caption {
+  font-size: 10px;
+  line-height: 1.9;
+  color: var(--ota-faint);
+  margin: 21px 0 0;
+}
+.ota-footnote {
+  font-size: 10px;
+  line-height: 1.9;
+  color: var(--ota-faint);
+  margin: 20px 0;
+}
+.ota-boundary-stage {
+  display: grid;
+  grid-template-columns: 0.9fr 1.2fr;
+  gap: 28px;
+  align-items: center;
+  margin-top: 30px;
+}
+.ota-layer-stack {
+  display: grid;
+  gap: 9px;
+}
+.ota-layer-stack > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--ota-line);
+  border-radius: 8px;
+  padding: 18px 14px;
+  color: var(--ota-muted);
+  font-size: 12px;
+}
+.ota-layer-stack small {
+  display: block;
+  font-size: 9px;
+  color: var(--ota-faint);
+  margin-top: 6px;
+}
+.ota-layer-stack > div > span:last-child {
+  margin-left: auto;
+}
+.ota-layer-stack > .ota-layer-js {
+  color: var(--ota-accent);
+  border-color: color-mix(in srgb, var(--ota-accent) 35%, var(--ota-line));
+  background: var(--ota-accent-bg);
+}
+.ota-lock {
+  font: 8px var(--ota-mono);
+}
+.ota-boundary-question h4 {
+  font-size: 20px;
+  line-height: 1.5;
+  margin: 8px 0;
+}
+.ota-boundary-question p {
+  color: var(--ota-muted);
+  font-size: 12px;
+  line-height: 1.8;
+  margin-bottom: 17px;
+}
+.ota-boundary-question .ota-btn {
+  font-size: 10px;
+  padding: 10px;
+  gap: 6px;
+}
+.ota-btn.is-selected {
+  border-color: var(--ota-accent);
+  background: var(--ota-accent-bg);
+  color: var(--ota-accent);
+}
+.ota-boundary-feedback {
+  min-height: 95px;
+  display: flex;
+  align-items: center;
+  margin-top: 20px;
+}
+.ota-boundary-feedback > p {
+  color: var(--ota-faint);
+  font-size: 12px;
+}
+.ota-feedback {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 12px;
+  line-height: 1.9;
+}
+.ota-feedback > svg {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+.ota-feedback p {
+  color: var(--ota-muted);
+}
+.ota-lifecycle .ota-lab-title-row h3 {
+  margin-top: 7px;
+}
+.ota-lifecycle .ota-kicker {
+  font-size: 8px;
+  letter-spacing: 0.7px;
+}
+.ota-step-count {
+  color: var(--ota-accent);
+  font: 18px var(--ota-mono);
+  white-space: nowrap;
+  margin-top: 3px;
+}
+.ota-step-count > span {
+  color: var(--ota-faint);
+  font-size: 10px;
+}
+.ota-flow-scene {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 0;
+  background-image: radial-gradient(var(--ota-line) 0.7px, transparent 0.7px);
+  background-size: 16px 16px;
+  border-radius: 8px;
+  margin-top: 22px;
+}
+.ota-flow-system {
+  display: grid;
+  justify-items: center;
+  gap: 9px;
+}
+.ota-flow-system > svg {
+  color: var(--ota-faint);
+  opacity: 0.6;
+}
+.ota-system-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 164px;
+  padding: 15px;
+  background: var(--ota-surface);
+  border: 1px solid var(--ota-line);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--ota-muted);
+}
+.ota-system-box small {
+  display: block;
+  font: 8px var(--ota-mono);
+  color: var(--ota-faint);
+  margin-top: 6px;
+}
+.ota-system-box.is-active {
+  color: var(--ota-accent);
+  border-color: color-mix(in srgb, var(--ota-accent) 50%, var(--ota-line));
+  background: var(--ota-accent-bg);
+}
+.ota-flow-connector {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  color: var(--ota-accent);
+  opacity: 0.6;
+}
+.ota-flow-connector > span {
+  width: 18px;
+  border-top: 1px dashed var(--ota-faint);
+}
+.ota-flow-connector > svg {
+  margin: 0 5px;
+}
+.ota-phone {
+  width: 166px;
+  border: 2px solid var(--ota-line);
+  border-radius: 25px;
+  padding: 10px 9px 8px;
+  background: var(--ota-bg);
+  box-shadow: 0 7px 25px -15px #0008;
+}
+.ota-phone-speaker {
+  width: 40px;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--ota-line);
+  margin: 0 auto 13px;
+}
+.ota-phone-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 8px;
+  padding: 0 3px 10px;
+  border-bottom: 1px solid var(--ota-line-soft);
+}
+.ota-phone-header .ota-live-dot {
+  width: 4px;
+  height: 4px;
+  box-shadow: none;
+}
+.ota-phone-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px 4px 13px;
+  text-align: center;
+}
+.ota-phone-logo {
+  width: 45px;
+  height: 45px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--ota-accent-bg);
+  color: var(--ota-accent);
+  margin-bottom: 13px;
+}
+.ota-phone-screen .ota-kicker {
+  font-size: 6px;
+  letter-spacing: 0.6px;
+}
+.ota-phone-screen > strong {
+  font-size: 21px;
+  font-weight: 500;
+  letter-spacing: -0.8px;
+  margin-top: 7px;
+}
+.ota-phone-badge {
+  border: 1px solid var(--ota-line);
+  font-size: 7px;
+  color: var(--ota-faint);
+  padding: 4px 7px;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+.ota-phone-badge.is-new {
+  background: var(--ota-green-bg);
+  border-color: transparent;
+  color: var(--ota-green);
+}
+.ota-phone-divider {
+  width: 100%;
+  border-top: 1px solid var(--ota-line);
+  margin: 17px 0 12px;
+}
+.ota-phone-screen > p {
+  font: 7px/1.8 var(--ota-mono);
+  color: var(--ota-muted);
+  max-width: 110px;
+  min-height: 25px;
+  margin-top: 7px;
+}
+.ota-phone-home {
+  height: 3px;
+  width: 42px;
+  background: var(--ota-line);
+  border-radius: 5px;
+  margin: 0 auto;
+}
+.ota-flow-detail {
+  margin-top: 20px;
+}
+.ota-flow-detail-title {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.ota-flow-icon {
+  color: var(--ota-accent);
+  background: var(--ota-accent-bg);
+  width: 33px;
+  height: 33px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+}
+.ota-flow-detail-title h4 {
+  font-size: 14px;
+  letter-spacing: -0.2px;
+}
+.ota-flow-detail-title div > span {
+  display: block;
+  font-size: 9px;
+  color: var(--ota-faint);
+  margin-top: 5px;
+}
+.ota-status-pill {
+  margin-left: auto;
+  font: 8px var(--ota-mono);
+  padding: 6px 8px;
+  color: var(--ota-muted);
+  background: var(--ota-raised);
+  border-radius: 4px;
+  max-width: 150px;
+  text-align: center;
+}
+.ota-flow-detail > p {
+  color: var(--ota-muted);
+  font-size: 12px;
+  line-height: 1.9;
+  margin-top: 13px;
+  min-height: 46px;
+}
+.ota-flow-code {
+  display: block;
+  background: var(--ota-bg);
+  color: var(--ota-accent);
+  padding: 13px;
+  border: 1px solid var(--ota-line);
+  border-radius: 6px;
+  font-size: 10px;
+  overflow-x: auto;
+  margin-top: 15px;
+  line-height: 1.8;
+}
+.ota-step-dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.ota-step-dots button {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--ota-line);
+  position: relative;
+}
+.ota-step-dots button::before {
+  content: '';
+  position: absolute;
+  inset: -7px -3px;
+}
+.ota-step-dots button.is-active {
+  background: var(--ota-accent);
+  width: 17px;
+  border-radius: 4px;
+}
+.ota-step-dots button.is-done {
+  background: var(--ota-faint);
+}
+.is-compact .ota-flow-scene {
+  padding: 16px 0;
+  margin-top: 17px;
+}
+.is-compact .ota-system-box {
+  width: 135px;
+  padding: 12px;
+  font-size: 10px;
+  gap: 9px;
+}
+.is-compact .ota-system-box small {
+  font-size: 7px;
+}
+.is-compact .ota-system-box > svg {
+  width: 16px;
+}
+.is-compact .ota-flow-connector {
+  padding: 0 3px;
+}
+.is-compact .ota-flow-connector > span {
+  width: 7px;
+}
+.is-compact .ota-phone {
+  width: 142px;
+}
+.is-compact .ota-phone-screen {
+  padding: 13px 3px 7px;
+}
+.is-compact .ota-phone-screen > strong {
+  font-size: 20px;
+}
+.is-compact .ota-phone-logo {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 10px;
+}
+.is-compact .ota-phone-logo svg {
+  width: 22px;
+}
+.is-compact .ota-phone-divider {
+  margin: 13px 0 9px;
+}
+.is-compact .ota-flow-detail {
+  margin-top: 17px;
+}
+.is-compact .ota-status-pill {
+  display: none;
+}
+.is-compact .ota-flow-detail > p {
+  font-size: 10px;
+  min-height: 57px;
+  line-height: 1.85;
+}
+.is-compact .ota-flow-detail-title h4 {
+  font-size: 12px;
+}
+.is-compact .ota-flow-detail-title div > span {
+  font-size: 8px;
+}
+.is-compact .ota-lab-bottom {
+  padding-top: 14px;
+  margin-top: 14px;
+}
+.is-compact .ota-lab-title-row h3 {
+  font-size: 18px;
+}
+.is-compact .ota-step-count {
+  font-size: 14px;
+}
+.is-compact .ota-step-count > span {
+  font-size: 8px;
+}
+.is-compact .ota-lab-title-row > div > .ota-kicker {
+  font-size: 7px;
+}
+.ota-patch-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+.ota-patch-inputs > label > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  color: var(--ota-muted);
+  margin-bottom: 9px;
+}
+.ota-patch-inputs textarea {
+  width: 100%;
+  min-height: 133px;
+  resize: vertical;
+  font: 11px/1.9 var(--ota-mono);
+  color: var(--ota-code-text);
+  background: var(--ota-code);
+  border: 1px solid var(--ota-line);
+  border-radius: 6px;
+  padding: 14px;
+}
+.ota-patch-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  margin: 25px 0;
+  border-top: 1px solid var(--ota-line);
+  border-bottom: 1px solid var(--ota-line);
+  padding: 18px 0;
+  gap: 10px;
+}
+.ota-patch-metrics > div {
+  display: grid;
+  gap: 8px;
+}
+.ota-patch-metrics > div > span {
+  font-size: 9px;
+  color: var(--ota-muted);
+}
+.ota-patch-metrics strong {
+  font: 20px var(--ota-mono);
+  font-weight: 400;
+}
+.ota-patch-metrics small {
+  color: var(--ota-faint);
+  font: 9px var(--ota-font);
+}
+.ota-patch-recipe {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+.ota-patch-recipe > div {
+  min-width: 0;
+}
+.ota-patch-recipe .ota-kicker {
+  margin-bottom: 13px;
+}
+.ota-patch-op {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border: 1px solid var(--ota-line);
+  border-radius: 5px;
+  padding: 11px;
+  margin-top: 7px;
+  line-height: 1.7;
+  font-size: 10px;
+}
+.ota-patch-op > span {
+  color: var(--ota-faint);
+  font: 8px/2 var(--ota-mono);
+}
+.ota-patch-op strong {
+  font: 9px/1.8 var(--ota-mono);
+  color: var(--ota-accent);
+}
+.ota-patch-op.is-copy strong {
+  color: var(--ota-green);
+}
+.ota-patch-op code {
+  overflow-wrap: anywhere;
+  font-size: 10px;
+}
+.ota-patch-recipe pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 11px/1.9 var(--ota-mono);
+  background: var(--ota-bg);
+  border: 1px solid var(--ota-line);
+  padding: 14px;
+  border-radius: 6px;
+  min-height: 120px;
+}
+.ota-patch-recipe .ota-feedback {
+  margin-top: 11px;
+  font-size: 10px;
+}
+.ota-checkbox {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  color: var(--ota-muted);
+  font-size: 11px;
+  line-height: 1.8;
+  cursor: pointer;
+}
+.ota-checkbox input {
+  accent-color: var(--ota-accent);
+  margin: 0;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+.ota-patch-recipe + .ota-checkbox {
+  margin-top: 23px;
+}
+.ota-architecture-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 11px;
+}
+.ota-architecture-grid > button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: 16px;
+  border: 1px solid var(--ota-line);
+  border-radius: 8px;
+  position: relative;
+}
+.ota-architecture-grid > button > svg {
+  color: var(--ota-muted);
+  margin: 8px 0 14px;
+}
+.ota-architecture-grid strong {
+  font-size: 12px;
+  font-weight: 500;
+}
+.ota-architecture-grid > button > span:last-child {
+  font-size: 9px;
+  color: var(--ota-faint);
+  margin-top: 6px;
+}
+.ota-system-number {
+  position: absolute;
+  top: 13px;
+  right: 12px;
+  font: 8px var(--ota-mono);
+  color: var(--ota-faint);
+}
+.ota-architecture-grid > button:hover {
+  background: var(--ota-hover);
+}
+.ota-architecture-grid > button.is-active {
+  border-color: var(--ota-accent);
+  background: var(--ota-accent-bg);
+}
+.ota-architecture-grid > button.is-active > svg,
+.ota-architecture-grid > button.is-active strong {
+  color: var(--ota-accent);
+}
+.ota-architecture-route {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 22px 0;
+  color: var(--ota-faint);
+  font: 9px var(--ota-mono);
+}
+.ota-architecture-detail {
+  display: flex;
+  gap: 17px;
+  border: 1px solid var(--ota-line);
+  border-radius: 8px;
+  padding: 23px;
+  background: var(--ota-bg);
+}
+.ota-architecture-detail > svg {
+  color: var(--ota-accent);
+  margin-top: 5px;
+}
+.ota-architecture-detail h4 {
+  font-size: 19px;
+  margin: 6px 0 10px;
+}
+.ota-architecture-detail p {
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--ota-muted);
+}
+.ota-architecture-detail code {
+  display: block;
+  font-size: 10px;
+  color: var(--ota-accent);
+  margin-top: 16px;
+  line-height: 1.9;
+}
+.ota-file-ref {
+  display: block;
+  font: 9px/1.9 var(--ota-mono);
+  color: var(--ota-faint);
+  margin-top: 12px;
+  overflow-wrap: anywhere;
+}
+.ota-release-controls {
+  display: grid;
+  gap: 19px;
+}
+.ota-release-controls > label:not(.ota-checkbox),
+.ota-device-controls > label,
+.ota-failure-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  font-size: 10px;
+  color: var(--ota-muted);
+}
+.ota-release-controls label > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ota-release-controls label strong {
+  font: 11px var(--ota-mono);
+  color: var(--ota-accent);
+}
+select {
+  appearance: auto;
+  border: 1px solid var(--ota-line);
+  border-radius: 5px;
+  padding: 10px 9px;
+  background: var(--ota-bg);
+  width: 100%;
+  font-size: 11px;
+  cursor: pointer;
+  min-width: 0;
+}
+input[type='range'] {
+  accent-color: var(--ota-accent);
+  width: 100%;
+  cursor: pointer;
+  margin: 3px 0;
+}
+.ota-rollout-columns {
+  display: grid;
+  grid-template-columns: 1fr 1.05fr;
+  gap: 36px;
+  margin: 24px 0 28px;
+}
+.ota-device-controls {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 10px;
+}
+.ota-cohort-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.ota-cohort-header .ota-kicker {
+  font-size: 8px;
+  letter-spacing: 0.7px;
+}
+.ota-cohort-header > span:last-child {
+  font: 9px var(--ota-mono);
+  color: var(--ota-accent);
+  white-space: nowrap;
+}
+.ota-device-grid {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 6px;
+}
+.ota-device-grid > span {
+  background: var(--ota-raised);
+  aspect-ratio: 0.85;
+  border: 1px solid var(--ota-line);
+  border-radius: 4px;
+  position: relative;
+}
+.ota-device-grid > span::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  left: calc(50% - 2px);
+  width: 4px;
+  height: 1px;
+  border-radius: 2px;
+  background: var(--ota-faint);
+  opacity: 0.5;
+}
+.ota-device-grid > span.is-eligible {
+  background: var(--ota-accent-bg);
+  border-color: color-mix(in srgb, var(--ota-accent) 70%, var(--ota-line));
+}
+.ota-device-grid > span.is-eligible::after {
+  background: var(--ota-accent);
+}
+.ota-device-grid > span.is-bucket {
+  outline: 1px solid var(--ota-muted);
+  outline-offset: 1px;
+}
+.ota-cohort-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px 14px;
+  margin-top: 13px;
+  color: var(--ota-faint);
+  font-size: 8px;
+}
+.ota-cohort-legend > span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.ota-cohort-legend i {
+  background: var(--ota-raised);
+  border: 1px solid var(--ota-line);
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+}
+.ota-cohort-legend > span:nth-child(2) i {
+  background: var(--ota-accent-bg);
+  border-color: var(--ota-accent);
+}
+.ota-decision {
+  margin-top: 25px;
+  padding: 17px;
+  border: 1px solid var(--ota-line);
+  border-radius: 7px;
+  background: var(--ota-bg);
+}
+.ota-decision > strong {
+  display: block;
+  font-size: 17px;
+  font-weight: 550;
+  letter-spacing: -0.4px;
+  margin-top: 6px;
+}
+.ota-decision > p {
+  font-size: 11px;
+  line-height: 1.9;
+  color: var(--ota-muted);
+  margin-top: 8px;
+}
+.ota-decision.is-update > strong {
+  color: var(--ota-green);
+}
+.ota-decision.is-rollback > strong {
+  color: var(--ota-accent);
+}
+.ota-json {
+  border: 1px solid var(--ota-line);
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--ota-code);
+}
+.ota-json summary {
+  color: #c4c0ce;
+  padding: 14px 17px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.ota-json summary > span {
+  float: right;
+  font: 8px var(--ota-mono);
+  color: #8e8a9a;
+  margin-top: 3px;
+}
+.ota-request {
+  display: block;
+  color: #aaa5b7;
+  font: 9px/1.9 var(--ota-mono);
+  border-top: 1px solid #2b2b32;
+  padding: 13px 17px;
+  overflow-wrap: anywhere;
+}
+.ota-json pre {
+  padding: 15px 17px 20px;
+  font: 11px/1.9 var(--ota-mono);
+  color: #c9c4d3;
+  border-top: 1px solid #2b2b32;
+  overflow-x: auto;
+}
+.ota-transition-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: var(--ota-faint);
+  margin-top: 20px;
+}
+.ota-transition-note > svg {
+  margin-top: 3px;
+}
+.ota-transition-note p {
+  font-size: 10px;
+  line-height: 1.9;
+}
+.ota-transition-note strong {
+  color: var(--ota-muted);
+  font-weight: 500;
+}
+.ota-failure-picker {
+  max-width: 430px;
+  margin: 20px 0 30px;
+}
+.ota-failure-timeline {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 20px 0 30px;
+}
+.ota-failure-timeline > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  padding: 15px 10px;
+  position: relative;
+  font-size: 10px;
+  line-height: 1.8;
+  color: var(--ota-muted);
+}
+.ota-failure-timeline > div:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  height: 1px;
+  background: var(--ota-line);
+  width: calc(100% - 44px);
+  top: 34px;
+  left: calc(50% + 22px);
+}
+.ota-failure-timeline > div > span {
+  width: 39px;
+  height: 39px;
+  border: 1px solid var(--ota-line);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--ota-bg);
+}
+.ota-failure-timeline strong {
+  font-weight: 450;
+}
+.ota-failure-timeline > .is-failure > span {
+  border-color: var(--ota-red);
+  color: var(--ota-red);
+  background: var(--ota-red-bg);
+}
+.ota-failure-timeline > .is-recovery > span {
+  border-color: var(--ota-green);
+  color: var(--ota-green);
+  background: var(--ota-green-bg);
+}
+.ota-failure-outcome {
+  display: flex;
+  gap: 18px;
+  padding: 23px;
+  border: 1px solid var(--ota-line);
+  border-radius: 8px;
+  background: var(--ota-bg);
+}
+.ota-failure-outcome > svg {
+  color: var(--ota-green);
+  margin-top: 5px;
+}
+.ota-failure-outcome h4 {
+  font-size: 20px;
+  margin: 7px 0 12px;
+}
+.ota-failure-outcome p {
+  color: var(--ota-muted);
+  font-size: 12px;
+  line-height: 1.95;
+}
+.ota-workshop-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 23px;
+}
+.ota-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 55%;
+}
+.ota-select-wrap select {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 6px;
+  color: var(--ota-muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+}
+.ota-select-wrap > svg {
+  color: var(--ota-muted);
+}
+.ota-workshop {
+  border: 1px solid var(--ota-line);
+  border-radius: 10px;
+  background: var(--ota-surface);
+}
+.ota-lab .ota-workshop {
+  border: 0;
+  border-radius: 0;
+}
+.ota-editor-body {
+  display: flex;
+  background: var(--ota-code);
+  padding: 18px 0;
+}
+.ota-editor-body > pre {
+  color: #5f5c69;
+  font: 12px/1.9 var(--ota-mono);
+  user-select: none;
+  padding: 0 14px 0 17px;
+  text-align: right;
+  min-width: 44px;
+}
+.ota-editor-body textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 185px;
+  padding: 0 18px 0 0;
+  border: 0;
+  resize: vertical;
+  outline-offset: -1px;
+  font: 12px/1.9 var(--ota-mono);
+  color: var(--ota-code-text);
+  background: transparent;
+  tab-size: 2;
+  white-space: pre;
+  overflow-x: auto;
+}
+.ota-editor-footer {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  justify-content: space-between;
+  border-top: 1px solid #303034;
+  padding: 12px 15px;
+  color: #8e8a99;
+  font-size: 9px;
+}
+.ota-test-summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  margin-bottom: 15px;
+}
+.ota-test-output {
+  margin-bottom: 17px;
+}
+.ota-test-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  border-bottom: 1px solid var(--ota-line-soft);
+  padding: 9px 0;
+  color: var(--ota-muted);
+  font-size: 10px;
+  line-height: 1.8;
+}
+.ota-test-row svg {
+  margin-top: 2px;
+}
+.ota-test-row > code {
+  margin-left: auto;
+  font-size: 9px;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.ota-solution > .ota-text-button {
+  margin: 0 20px 16px;
+}
+.ota-notebook-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 25px 0;
+  flex-wrap: wrap;
+}
+.ota-notebook-actions > span {
+  font-size: 11px;
+  color: var(--ota-faint);
+  margin-right: auto;
+}
+.ota-notebook-grid {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  border: 1px solid var(--ota-line);
+  border-radius: 10px;
+  overflow: hidden;
+  min-height: 570px;
+  background: var(--ota-surface);
+}
+.ota-notebook-lessons {
+  padding: 22px 15px;
+  border-right: 1px solid var(--ota-line);
+  max-height: 690px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.ota-notebook-lessons > div {
+  margin-bottom: 20px;
+}
+.ota-notebook-lessons .ota-kicker {
+  font-size: 8px;
+  letter-spacing: 0.6px;
+  padding: 0 8px;
+  margin-bottom: 9px;
+}
+.ota-notebook-lessons button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  text-align: left;
+  width: 100%;
+  font-size: 10px;
+  line-height: 1.8;
+  color: var(--ota-muted);
+  padding: 9px;
+  border-radius: 5px;
+}
+.ota-notebook-lessons button:hover {
+  background: var(--ota-hover);
+}
+.ota-notebook-lessons button.is-active {
+  background: var(--ota-accent-bg);
+  color: var(--ota-accent);
+}
+.ota-note-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ota-accent);
+  flex-shrink: 0;
+}
+.ota-notebook-editor {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 28px;
+}
+.ota-notebook-editor > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--ota-faint);
+}
+.ota-notebook-editor h2 {
+  font-size: 24px;
+  line-height: 1.5;
+  margin: 13px 0 25px;
+}
+.ota-notebook-editor textarea {
+  width: 100%;
+  flex: 1;
+  min-height: 320px;
+  resize: vertical;
+  font-size: 14px;
+  line-height: 1.9;
+  background: transparent;
+  border: 0;
+  color: var(--ota-text);
+  padding: 0;
+}
+.ota-notebook-editor textarea::placeholder {
+  color: var(--ota-faint);
+}
+.ota-notebook-editor-bottom {
+  border-top: 1px solid var(--ota-line);
+  padding-top: 16px;
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: var(--ota-faint);
+}
+.ota-resource-banner {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  justify-content: space-between;
+  padding: 25px;
+  border: 1px solid var(--ota-line);
+  border-radius: 10px;
+  background: var(--ota-surface);
+  margin-bottom: 40px;
+}
+.ota-resource-banner > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 17px;
+}
+.ota-resource-banner > div > svg {
+  color: var(--ota-accent);
+  margin-top: 2px;
+}
+.ota-resource-banner h2 {
+  font-size: 18px;
+  line-height: 1.5;
+}
+.ota-resource-banner p {
+  font-size: 11px;
+  line-height: 1.9;
+  color: var(--ota-muted);
+  margin-top: 7px;
+}
+.ota-resource-banner > button {
+  flex-shrink: 0;
+}
+.ota-source-intro h2,
+.ota-source-heading,
+.ota-attribution h2 {
+  font-size: 24px;
+  margin-bottom: 17px;
+}
+.ota-source-intro p,
+.ota-attribution p {
+  font-size: 13px;
+  line-height: 1.95;
+  color: var(--ota-muted);
+  margin-bottom: 16px;
+}
+.ota-source-intro p a {
+  color: var(--ota-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.ota-snapshot-list {
+  display: grid;
+  gap: 9px;
+  margin: 28px 0 40px;
+}
+.ota-snapshot-list > a {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 14px 17px;
+  border: 1px solid var(--ota-line);
+  border-radius: 7px;
+}
+.ota-snapshot-list strong {
+  font-size: 11px;
+  font-weight: 500;
+}
+.ota-snapshot-list code {
+  color: var(--ota-faint);
+  font-size: 10px;
+  margin-left: auto;
+}
+.ota-snapshot-list > a:hover {
+  border-color: var(--ota-faint);
+  background: var(--ota-surface);
+}
+.ota-source-list {
+  border-top: 1px solid var(--ota-line);
+}
+.ota-source-list > a {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 23px 0;
+  border-bottom: 1px solid var(--ota-line);
+}
+.ota-source-number {
+  font: 10px var(--ota-mono);
+  color: var(--ota-faint);
+  padding-top: 5px;
+}
+.ota-source-list h3 {
+  font-size: 16px;
+  letter-spacing: -0.3px;
+  margin-top: 5px;
+}
+.ota-source-list p {
+  color: var(--ota-muted);
+  font-size: 11px;
+  line-height: 1.9;
+  margin-top: 8px;
+}
+.ota-source-list > a > svg {
+  margin-left: auto;
+  color: var(--ota-faint);
+  margin-top: 4px;
+}
+.ota-source-list a:hover h3 {
+  color: var(--ota-accent);
+}
+.ota-attribution {
+  margin: 38px 0;
+}
+.ota-storage-error {
+  padding: 13px 30px;
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--ota-red);
+  background: var(--ota-red-bg);
+}
+.ota-search-overlay {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  background: #0008;
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: min(14vh, 120px) 20px 40px;
+  overflow-y: auto;
+}
+.ota-search-dialog {
+  width: 660px;
+  max-width: 100%;
+  background: var(--ota-surface);
+  border: 1px solid var(--ota-line);
+  border-radius: 13px;
+  box-shadow: 0 30px 110px #0007;
+  overflow: hidden;
+}
+.ota-search-input {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 21px;
+  border-bottom: 1px solid var(--ota-line);
+  color: var(--ota-muted);
+}
+.ota-search-input > input {
+  color: var(--ota-text);
+  border: 0;
+  outline: 0;
+  background: transparent;
+  width: 100%;
+  min-width: 0;
+  font-size: 15px;
+}
+.ota-search-input > input::placeholder {
+  color: var(--ota-faint);
+}
+.ota-search-results {
+  padding: 15px;
+  max-height: 520px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.ota-search-results > .ota-kicker {
+  padding: 5px 10px 12px;
+  font-size: 8px;
+}
+.ota-search-results > a {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 13px 10px;
+  border-radius: 7px;
+}
+.ota-search-results > a:hover {
+  background: var(--ota-raised);
+}
+.ota-search-result-icon {
+  width: 35px;
+  height: 35px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--ota-line);
+  border-radius: 7px;
+  color: var(--ota-muted);
+}
+.ota-search-results > a > span:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+}
+.ota-search-results small {
+  font-size: 8px;
+  color: var(--ota-faint);
+}
+.ota-search-results strong {
+  font-size: 12px;
+  font-weight: 500;
+}
+.ota-search-results > a > span > span {
+  color: var(--ota-muted);
+  font-size: 10px;
+  line-height: 1.7;
+}
+.ota-search-results > a > svg {
+  color: var(--ota-faint);
+}
+.ota-search-results > p {
+  color: var(--ota-muted);
+  padding: 24px 10px;
+  font-size: 13px;
+  line-height: 1.9;
+}
+.ota-search-footer {
+  display: flex;
+  gap: 20px;
+  border-top: 1px solid var(--ota-line);
+  padding: 13px 22px;
+  color: var(--ota-faint);
+  font-size: 9px;
+}
+.ota-search-footer kbd {
+  border: 1px solid var(--ota-line);
+  border-radius: 3px;
+  padding: 2px 4px;
+  font-size: 8px;
+  margin-right: 5px;
+}
+@media (min-width: 1700px) {
+  .ota-hero-break {
+    display: block;
+  }
+  .ota-hero h1 {
+    font-size: 72px;
+  }
+  .ota-overview {
+    padding-top: 75px;
+  }
+}
+@media (max-width: 1280px) {
+  .ota-overview,
+  .ota-page {
+    padding-left: 36px;
+    padding-right: 36px;
+  }
+  .ota-hero {
+    gap: 28px;
+  }
+  .ota-hero h1 {
+    font-size: 48px;
+  }
+  .ota-hero-visual .ota-lab-body {
+    padding: 20px;
+  }
+  .ota-hero-copy > .ota-kicker {
+    font-size: 8px;
+    letter-spacing: 0.9px;
+  }
+  .is-compact .ota-system-box {
+    width: 112px;
+    padding: 11px;
+    font-size: 9px;
+  }
+  .is-compact .ota-phone {
+    width: 130px;
+  }
+  .is-compact .ota-flow-connector > span {
+    width: 5px;
+  }
+  .is-compact .ota-flow-connector > svg {
+    width: 15px;
+    margin: 0 3px;
+  }
+  .ota-hero-stats {
+    gap: 27px;
+  }
+  .ota-chapter-card {
+    padding: 19px 18px 16px;
+  }
+  .ota-home-labs {
+    gap: 40px;
+  }
+  .ota-lesson-page {
+    padding-left: 42px;
+    padding-right: 42px;
+  }
+  .ota-boundary-stage {
+    grid-template-columns: 1fr;
+  }
+  .ota-layer-stack {
+    grid-template-columns: 1fr 1fr;
+  }
+  .ota-rollout-columns {
+    gap: 24px;
+  }
+}
+@media (max-width: 1100px) {
+  .ota-hero {
+    grid-template-columns: 1fr;
+    gap: 35px;
+  }
+  .ota-overview {
+    padding-top: 35px;
+  }
+  .ota-hero-copy {
+    padding-bottom: 0;
+  }
+  .ota-hero h1 {
+    font-size: 55px;
+  }
+  .ota-hero-secondary {
+    max-width: 590px !important;
+  }
+  .ota-hero-stats {
+    gap: 45px;
+  }
+  .ota-hero-visual {
+    max-width: 620px;
+  }
+  .ota-hero-visual .ota-lab-body {
+    padding: 24px;
+  }
+  .is-compact .ota-flow-scene {
+    padding: 20px 0;
+  }
+  .is-compact .ota-system-box {
+    width: 165px;
+    padding: 14px;
+    font-size: 12px;
+  }
+  .is-compact .ota-system-box small {
+    font-size: 8px;
+  }
+  .is-compact .ota-flow-connector > span {
+    width: 20px;
+  }
+  .is-compact .ota-phone {
+    width: 155px;
+  }
+  .is-compact .ota-flow-detail > p {
+    min-height: 0;
+    font-size: 12px;
+  }
+  .is-compact .ota-status-pill {
+    display: inline;
+  }
+  .ota-chapter-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ota-home-labs {
+    grid-template-columns: 1fr;
+    gap: 23px;
+  }
+  .ota-home-labs > div > p {
+    max-width: 550px;
+  }
+  .ota-prereq {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 15px;
+  }
+  .ota-prereq > a {
+    margin-left: 37px;
+  }
+  .ota-topbar {
+    padding: 0 22px;
+  }
+  .ota-topbar-page {
+    display: none;
+  }
+  .ota-architecture-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ota-architecture-grid > button {
+    padding: 15px;
+  }
+  .ota-rollout-columns {
+    grid-template-columns: 1fr;
+  }
+  .ota-cohort-panel {
+    max-width: 470px;
+    width: 100%;
+    margin: 10px auto 0;
+  }
+  .ota-device-grid > span {
+    aspect-ratio: 1;
+  }
+  .ota-notebook-grid {
+    grid-template-columns: 190px 1fr;
+  }
+  .ota-notebook-editor {
+    padding: 22px;
+  }
+  .ota-resource-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .ota-resource-banner > button {
+    margin-left: 42px;
+  }
+  .ota-footer {
+    padding: 22px 36px;
+  }
+}
+@media (max-width: 820px) {
+  .ota-sidebar {
+    transform: translateX(-100%);
+    width: 280px;
+    visibility: hidden;
+  }
+  .ota-workspace,
+  .ota-sidebar-collapsed .ota-workspace {
+    margin-left: 0;
+  }
+  .ota-mobile-open .ota-sidebar {
+    transform: translateX(0);
+    visibility: visible;
+  }
+  .ota-mobile-close {
+    display: inline-flex;
+    margin-left: auto;
+  }
+  .ota-sidebar-brand {
+    padding-right: 15px;
+  }
+  .ota-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: #0009;
+    backdrop-filter: blur(3px);
+    z-index: 35;
+  }
+  .ota-overview {
+    padding: 38px 30px;
+  }
+  .ota-hero {
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .ota-hero h1 {
+    font-size: 41px;
+  }
+  .ota-hero-copy > p {
+    font-size: 13px;
+  }
+  .ota-hero-copy > .ota-hero-secondary {
+    font-size: 11px;
+  }
+  .ota-wide-break {
+    display: none;
+  }
+  .ota-hero-copy > .ota-kicker {
+    font-size: 7px;
+    letter-spacing: 0.7px;
+  }
+  .ota-hero-visual .ota-lab-body {
+    padding: 17px;
+  }
+  .is-compact .ota-system-box {
+    width: 108px;
+    padding: 10px;
+    font-size: 9px;
+    gap: 7px;
+  }
+  .is-compact .ota-system-box small {
+    font-size: 7px;
+  }
+  .is-compact .ota-flow-connector > span {
+    width: 5px;
+  }
+  .is-compact .ota-flow-connector > svg {
+    width: 13px;
+  }
+  .is-compact .ota-phone {
+    width: 119px;
+  }
+  .is-compact .ota-flow-detail > p {
+    font-size: 10px;
+  }
+  .is-compact .ota-status-pill {
+    display: none;
+  }
+  .is-compact .ota-lab-title-row h3 {
+    font-size: 15px;
+  }
+  .is-compact .ota-step-count {
+    font-size: 12px;
+  }
+  .is-compact .ota-lab-title-row > div > .ota-kicker {
+    font-size: 6px;
+  }
+  .ota-hero-stats {
+    gap: 23px;
+  }
+  .ota-hero-stats strong {
+    font-size: 23px;
+  }
+  .ota-hero-stats span {
+    font-size: 8px;
+  }
+  .ota-section-top {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .ota-page,
+  .ota-lesson-page {
+    padding: 35px 30px 50px;
+  }
+  .ota-page-intro h1 {
+    font-size: 38px;
+  }
+  .ota-lesson-header h1 {
+    font-size: 37px;
+  }
+}
+@media (max-width: 640px) {
+  .ota-topbar {
+    height: 57px;
+    padding: 0 16px;
+  }
+  .ota-topbar > div {
+    gap: 7px;
+  }
+  .ota-topbar-crumb {
+    font-size: 10px;
+    gap: 7px;
+  }
+  .ota-topbar-crumb > strong {
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ota-topbar > div:last-child > a {
+    display: none;
+  }
+  .ota-overview,
+  .ota-page,
+  .ota-lesson-page {
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+  .ota-overview {
+    padding-top: 30px;
+  }
+  .ota-hero {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .ota-hero-copy > .ota-kicker {
+    font-size: 8px;
+    letter-spacing: 0.8px;
+    margin-bottom: 21px;
+  }
+  .ota-hero h1 {
+    font-size: clamp(39px, 10vw, 59px);
+    line-height: 1.1;
+  }
+  .ota-hero-copy > p {
+    font-size: 14px;
+    margin-top: 21px;
+  }
+  .ota-hero-copy > .ota-hero-secondary {
+    font-size: 12px;
+  }
+  .ota-hero-stats {
+    justify-content: flex-start;
+    gap: 45px;
+    margin-top: 30px;
+  }
+  .ota-hero-stats strong {
+    font-size: 27px;
+  }
+  .ota-hero-stats span {
+    font-size: 9px;
+  }
+  .ota-hero-visual .ota-lab-body {
+    padding: 22px;
+  }
+  .is-compact .ota-system-box {
+    width: 127px;
+    padding: 12px;
+    font-size: 10px;
+  }
+  .is-compact .ota-phone {
+    width: 137px;
+  }
+  .is-compact .ota-flow-connector > span {
+    width: 7px;
+  }
+  .is-compact .ota-lab-title-row h3 {
+    font-size: 17px;
+  }
+  .is-compact .ota-lab-title-row > div > .ota-kicker {
+    font-size: 6px;
+  }
+  .is-compact .ota-flow-detail > p {
+    font-size: 11px;
+  }
+  .ota-proof-strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 17px 12px;
+    margin-top: 32px;
+  }
+  .ota-proof-strip > span {
+    font-size: 9px;
+    line-height: 1.7;
+    gap: 7px;
+  }
+  .ota-proof-strip > span > svg {
+    width: 13px;
+  }
+  .ota-home-path {
+    margin-top: 35px;
+  }
+  .ota-section-top h2 {
+    font-size: 25px;
+  }
+  .ota-section-top p {
+    font-size: 12px;
+  }
+  .ota-chapter-cards {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .ota-chapter-card {
+    min-height: 0;
+    padding: 20px;
+  }
+  .ota-card-top {
+    margin-bottom: 13px;
+  }
+  .ota-chapter-card h3 {
+    font-size: 16px;
+  }
+  .ota-chapter-card p {
+    font-size: 12px;
+    margin-bottom: 18px;
+  }
+  .ota-home-labs {
+    padding: 31px 0;
+  }
+  .ota-home-labs h2 {
+    font-size: 29px;
+  }
+  .ota-prereq {
+    padding: 20px;
+  }
+  .ota-prereq > div {
+    gap: 12px;
+  }
+  .ota-prereq > a {
+    margin-left: 32px;
+  }
+  .ota-prereq p {
+    font-size: 11px;
+  }
+  .ota-footer {
+    padding: 22px;
+    gap: 9px;
+    font-size: 9px;
+  }
+  .ota-page-intro {
+    margin-bottom: 28px;
+  }
+  .ota-page-intro h1 {
+    font-size: 34px;
+  }
+  .ota-page-intro > p {
+    font-size: 13px;
+  }
+  .ota-path-chapter-title {
+    padding: 21px 17px;
+    gap: 12px;
+  }
+  .ota-path-chapter-title h2 {
+    font-size: 18px;
+    line-height: 1.45;
+  }
+  .ota-path-lesson {
+    padding: 17px;
+    gap: 11px;
+    flex-wrap: wrap;
+    position: relative;
+  }
+  .ota-path-lesson > div {
+    flex: 1;
+    min-width: 180px;
+  }
+  .ota-path-lesson h3 {
+    font-size: 13px;
+  }
+  .ota-path-lesson > svg {
+    display: none;
+  }
+  .ota-path-minutes {
+    width: 100%;
+    padding-left: 43px;
+    margin-top: -3px;
+  }
+  .ota-lesson-breadcrumb {
+    font-size: 9px;
+    gap: 6px;
+  }
+  .ota-lesson-header {
+    padding-top: 27px;
+  }
+  .ota-lesson-header h1 {
+    font-size: 32px;
+  }
+  .ota-lesson-header > p {
+    font-size: 14px;
+  }
+  .ota-lesson-meta {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .ota-lesson-tabs {
+    gap: 16px;
+  }
+  .ota-lesson-tabs button {
+    font-size: 10px;
+    gap: 5px;
+  }
+  .ota-lesson-tabs button > svg {
+    width: 13px;
+  }
+  .ota-lesson-toolbar > .ota-icon-button {
+    flex-shrink: 0;
+  }
+  .ota-article-section h2 {
+    font-size: 23px;
+  }
+  .ota-article-section p,
+  .ota-article-section li {
+    font-size: 15px;
+    line-height: 1.95;
+  }
+  .ota-lesson-map {
+    padding: 18px;
+  }
+  .ota-lesson-map a {
+    font-size: 11px;
+    line-height: 1.8;
+    align-items: flex-start;
+  }
+  .ota-lesson-map a > span {
+    padding-top: 2px;
+  }
+  .ota-code-bar {
+    font-size: 8px;
+    padding: 11px 13px;
+  }
+  .ota-code-block pre,
+  .ota-solution pre {
+    font-size: 11px;
+    padding: 16px;
+  }
+  .ota-callout {
+    padding: 17px;
+  }
+  .ota-callout p,
+  .ota-article-section .ota-callout p {
+    font-size: 12px;
+  }
+  .ota-takeaway > p {
+    font-size: 17px;
+  }
+  .ota-quiz {
+    padding: 20px 17px;
+  }
+  .ota-quiz h3 {
+    font-size: 16px;
+  }
+  .ota-quiz-option {
+    font-size: 12px;
+    padding: 12px;
+    gap: 10px;
+  }
+  .ota-quiz-option > span:first-child {
+    width: 20px;
+    height: 20px;
+  }
+  .ota-completion {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .ota-lesson-pagination {
+    gap: 18px;
+  }
+  .ota-lesson-pagination > a {
+    gap: 8px;
+    font-size: 10px;
+  }
+  .ota-lab-body,
+  .ota-workshop {
+    padding: 20px;
+  }
+  .ota-lab-heading {
+    padding: 14px 20px;
+  }
+  .ota-lab h3,
+  .ota-workshop h3 {
+    font-size: 20px;
+  }
+  .ota-lab-tabs > button {
+    font-size: 9px;
+    padding: 9px;
+    gap: 6px;
+  }
+  .ota-lab-tabs > button > svg {
+    width: 14px;
+  }
+  .ota-layer-stack {
+    grid-template-columns: 1fr;
+  }
+  .ota-layer-stack > div {
+    padding: 16px;
+  }
+  .ota-boundary-stage {
+    gap: 24px;
+  }
+  .ota-boundary-feedback {
+    min-height: 100px;
+  }
+  .ota-lab-bottom {
+    gap: 10px;
+  }
+  .ota-flow-system {
+    gap: 7px;
+  }
+  .ota-system-box {
+    width: 128px;
+    font-size: 10px;
+    padding: 12px;
+    gap: 9px;
+  }
+  .ota-system-box > svg {
+    width: 17px;
+  }
+  .ota-system-box small {
+    font-size: 7px;
+  }
+  .ota-flow-connector {
+    padding: 0 2px;
+  }
+  .ota-flow-connector > span {
+    width: 5px;
+  }
+  .ota-flow-connector > svg {
+    width: 14px;
+    margin: 0 4px;
+  }
+  .ota-phone {
+    width: 134px;
+  }
+  .ota-phone-screen > strong {
+    font-size: 19px;
+  }
+  .ota-phone-screen .ota-kicker {
+    font-size: 5px;
+  }
+  .ota-phone-logo {
+    width: 38px;
+    height: 38px;
+  }
+  .ota-status-pill {
+    display: none;
+  }
+  .ota-lifecycle .ota-lab-title-row > div > .ota-kicker {
+    font-size: 7px;
+  }
+  .ota-patch-inputs,
+  .ota-patch-recipe {
+    grid-template-columns: 1fr;
+  }
+  .ota-patch-metrics {
+    gap: 14px;
+  }
+  .ota-patch-metrics strong {
+    font-size: 18px;
+  }
+  .ota-patch-metrics small {
+    display: block;
+    margin-top: 5px;
+  }
+  .ota-architecture-grid {
+    gap: 9px;
+  }
+  .ota-architecture-grid > button {
+    padding: 14px;
+  }
+  .ota-architecture-grid strong {
+    font-size: 11px;
+  }
+  .ota-architecture-detail {
+    gap: 12px;
+    padding: 17px;
+  }
+  .ota-architecture-detail h4 {
+    font-size: 18px;
+  }
+  .ota-architecture-detail p {
+    font-size: 12px;
+  }
+  .ota-architecture-route {
+    font-size: 8px;
+    gap: 7px;
+    line-height: 1.8;
+  }
+  .ota-device-grid {
+    gap: 5px;
+  }
+  .ota-device-grid > span {
+    aspect-ratio: 0.85;
+  }
+  .ota-json summary {
+    font-size: 10px;
+  }
+  .ota-json summary > span {
+    font-size: 7px;
+  }
+  .ota-json pre {
+    font-size: 10px;
+  }
+  .ota-release-controls {
+    gap: 20px;
+  }
+  .ota-failure-timeline {
+    grid-template-columns: 1fr 1fr;
+    row-gap: 15px;
+  }
+  .ota-failure-timeline > div:nth-child(2)::after {
+    display: none;
+  }
+  .ota-failure-outcome {
+    gap: 12px;
+    padding: 18px;
+  }
+  .ota-failure-outcome h4 {
+    font-size: 18px;
+  }
+  .ota-workshop-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .ota-select-wrap {
+    max-width: 100%;
+    width: 100%;
+    border-bottom: 1px solid var(--ota-line);
+    padding-bottom: 6px;
+  }
+  .ota-select-wrap select {
+    font-size: 11px;
+    padding-left: 0;
+  }
+  .ota-editor-body > pre,
+  .ota-editor-body textarea {
+    font-size: 11px;
+  }
+  .ota-editor-body > pre {
+    padding-left: 12px;
+    padding-right: 9px;
+    min-width: 33px;
+  }
+  .ota-test-row {
+    flex-wrap: wrap;
+  }
+  .ota-test-row > code {
+    width: 100%;
+    padding-left: 23px;
+    text-align: left;
+  }
+  .ota-notebook-grid {
+    grid-template-columns: 1fr;
+  }
+  .ota-notebook-lessons {
+    max-height: 240px;
+    border-right: 0;
+    border-bottom: 1px solid var(--ota-line);
+  }
+  .ota-notebook-editor {
+    padding: 22px;
+  }
+  .ota-notebook-editor h2 {
+    font-size: 22px;
+  }
+  .ota-notebook-actions > span {
+    width: 100%;
+    margin-bottom: 5px;
+  }
+  .ota-resource-banner {
+    padding: 20px;
+  }
+  .ota-resource-banner > div {
+    gap: 13px;
+  }
+  .ota-resource-banner h2 {
+    font-size: 17px;
+  }
+  .ota-resource-banner > button {
+    margin-left: 0;
+  }
+  .ota-snapshot-list > a {
+    flex-wrap: wrap;
+    gap: 9px;
+    padding: 14px;
+  }
+  .ota-snapshot-list strong {
+    font-size: 10px;
+  }
+  .ota-snapshot-list code {
+    font-size: 8px;
+  }
+  .ota-source-list > a {
+    gap: 13px;
+  }
+  .ota-source-list h3 {
+    font-size: 15px;
+  }
+  .ota-search-overlay {
+    padding: 20px 12px;
+  }
+  .ota-search-input {
+    gap: 10px;
+    padding: 17px;
+  }
+  .ota-search-input > input {
+    font-size: 13px;
+  }
+  .ota-search-results {
+    max-height: 65vh;
+    padding: 11px;
+  }
+  .ota-search-results > a > span > span {
+    display: none;
+  }
+  .ota-search-results > a {
+    padding: 13px 7px;
+    gap: 10px;
+  }
+  .ota-storage-error {
+    padding: 12px 22px;
+  }
+}
+@media (max-width: 370px) {
+  .ota-overview,
+  .ota-page,
+  .ota-lesson-page {
+    padding-left: 17px;
+    padding-right: 17px;
+  }
+  .ota-hero-stats {
+    gap: 34px;
+  }
+  .ota-hero-visual .ota-lab-body {
+    padding: 17px;
+  }
+  .is-compact .ota-system-box {
+    width: 113px;
+    padding: 10px;
+    font-size: 9px;
+  }
+  .is-compact .ota-phone {
+    width: 121px;
+  }
+  .is-compact .ota-flow-connector > span {
+    width: 4px;
+  }
+  .ota-system-box {
+    width: 113px;
+    font-size: 9px;
+    padding: 10px;
+  }
+  .ota-phone {
+    width: 121px;
+  }
+  .ota-lab-body {
+    padding: 17px;
+  }
+  .ota-step-dots {
+    gap: 5px;
+  }
+  .ota-lesson-tabs {
+    gap: 11px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}

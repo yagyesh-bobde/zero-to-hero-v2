@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en" data-ota-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#141416" />
+    <meta
+      name="description"
+      content="Understand React Native over-the-air updates from first principles. Explore Zepto Delta, binary patches, native bundle loading, staged rollouts, and recovery through 24 lessons and interactive labs."
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>React Native OTA — Zero to Hero</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;650;700;750&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      try {
+        document.documentElement.dataset.otaTheme =
+          localStorage.getItem('rn-ota-theme-v1') === 'light' ? 'light' : 'dark';
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/ota/main.tsx"></script>
+  </body>
+</html>

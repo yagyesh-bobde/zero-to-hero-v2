@@ -12,6 +12,14 @@ Andrej Karpathy created the original course and deserves the credit for its teac
 
 ## Run
 
+### React Native OTA course
+
+The independent [React Native OTA module](https://zero-to-hero-v2.vercel.app/react-native-ota) lives at `/react-native-ota`. It contains 24 lessons in six chapters, seven interactive labs, 48 knowledge checks, six JavaScript exercises executed in disposable workers, a notebook, and a downloadable Markdown field guide. It studies Zepto's public Delta SDK, CLI, and server at pinned commits, distinguishing source-backed behavior from teaching models and engineering recommendations.
+
+This is a separate Vite HTML entry (`react-native-ota/index.html`, `src/ota/`) with independent CSS, a theme key, and the `rn-ota-learning-v1` progress key. The original course, hash routes, and stored work are unchanged. `vercel.json` maps the exact `/react-native-ota` URL to its HTML entry. The Vite middleware provides the same URL in development. Use `#/lesson/two-parts` after the OTA path to link directly to a lesson.
+
+### Local development
+
 ```sh
 npm install
 npm run dev

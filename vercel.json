@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/react-native-ota", "destination": "/react-native-ota/index.html" },
+    { "source": "/react-native-ota/", "destination": "/react-native-ota/index.html" }
+  ]
+}

@@ -1,0 +1,86 @@
+JavaScript | OpenTelemetry
+For AI agents: the site's llms.txt is at /llms.txt. This page has a Markdown version at /docs/languages/js/index.md.
+
+ View Markdown
+ View page source
+ Edit this page
+ Create child page
+ Create documentation issue
+
+On this page
+
+JavaScript
+ A language-specific implementation of OpenTelemetry in JavaScript (for Node.js & the browser).
+Welcome to the OpenTelemetry JavaScript documentation. This section introduces
+how to use OpenTelemetry with JavaScript to generate and collect telemetry data
+such as metrics, logs, and traces using the OpenTelemetry API and SDKs.
+These pages are intended to help you get started and understand the current
+capabilities and status of OpenTelemetry JavaScript.
+Status and Releases
+The current status of the major functional components for OpenTelemetry
+JavaScript is as follows:TracesMetricsLogsStableStableDevelopment
+For releases, including the latest release, see Releases.
+
+Warning
+
+Client instrumentation for the browser is experimental and mostly
+unspecified. If you are interested in helping out, get in touch with the
+Browser SIG.
+Version Support
+OpenTelemetry JavaScript supports all active or maintenance LTS versions of
+Node.js. Previous versions of Node.js may work, but are not tested by
+OpenTelemetry.
+OpenTelemetry JavaScript has no official supported list of browsers. It is aimed
+to work on currently supported versions of major browsers.
+OpenTelemetry JavaScript follows DefinitelyTyped’s support policy for TypeScript
+which sets a support window of 2 years. Support for TypeScript versions older
+than 2 years will be dropped in minor releases of OpenTelemetry JavaScript.
+For more details on runtime support see
+this overview.
+Repositories
+OpenTelemetry JavaScript consists of the following repositories:
+opentelemetry-js, core
+repository containing the core distribution API and SDK.
+opentelemetry-js-contrib,
+contributions that are not part of the core distribution of the API and SDK.
+Help or Feedback
+If you have questions about OpenTelemetry JavaScript, please reach out via
+GitHub Discussions
+or the #otel-js channel on CNCF Slack.
+If you want to contribute to OpenTelemetry JavaScript, see the
+contributing instructions
+
+Getting Started by Example
+Get started with OpenTelemetry in Node.js and in the browser.
+Instrumentation
+Instrumentation for OpenTelemetry JavaScript
+Using instrumentation libraries
+How to instrument libraries an app depends on
+Exporters
+Process and export your telemetry data
+Context
+OpenTelemetry JavaScript Context API Documentation
+Propagation
+Context propagation for the JS SDK
+Resources
+Add details about your applications’ environment to your telemetry
+Sampling
+Reduce the amount of telemetry created
+Serverless
+Instrument your serverless functions with OpenTelemetry JavaScript
+Benchmarks
+Throughput of span, metric, log and baggage operations in the JavaScript SDK
+API reference
+Read the OpenTelemetry JavaScript API reference (external page)
+Examples
+Explore more examples for OpenTelemetry JavaScript (external page)
+Registry
+Instrumentation libraries, exporters and other useful components for OpenTelemetry JavaScript
+
+Feedback
+Was this page helpful?Yes
+No
+Thank you. Your feedback is appreciated!
+Please let us know how we can improve this page. Your feedback is appreciated!
+
+Last modified February 21, 2026: chore(style-guide): mention no-shortcut ref links, add rule to enforce, fix non-links (#9245) (368f811f)

@@ -1,6 +1,8 @@
 {
   "rewrites": [
     { "source": "/react-native-ota", "destination": "/react-native-ota/index.html" },
-    { "source": "/react-native-ota/", "destination": "/react-native-ota/index.html" }
+    { "source": "/react-native-ota/", "destination": "/react-native-ota/index.html" },
+    { "source": "/react-native-networking", "destination": "/react-native-networking/index.html" },
+    { "source": "/react-native-networking/", "destination": "/react-native-networking/index.html" }
   ]
 }

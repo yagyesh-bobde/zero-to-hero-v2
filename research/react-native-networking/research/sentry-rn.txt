@@ -1,0 +1,152 @@
+Set Up Tracing | Sentry for React Native
+
+Skip to content
+
+Go to Sentry
+
+Open Main Menu
+
+Sentry for React Native
+
+Quick Start
+
+Manual Setup
+Features
+
+Overview
+
+Capturing Errors
+
+Tracing
+
+Instrumentation
+
+Trace Propagation
+
+Troubleshooting
+
+Profiling
+
+Logs
+
+Session Replay
+
+Application MetricsNEW
+
+User Feedback
+
+Feature Flags
+
+Size AnalysisNEW
+Configuration
+
+Enriching Events
+
+Extended Configuration
+
+Integrations
+
+Data Management
+
+Source Maps
+
+Debug Symbols
+
+Mobile SDK Releases
+
+SDK Overhead
+
+Build DistributionBETA
+
+Migration Guide
+
+Troubleshooting
+
+Product Changelog
+Sandbox
+More
+
+Home
+Platforms
+React Native
+Tracing 
+
+Copy page
+
+Set Up Tracing for React Native
+Learn how to enable tracing in your app using the Sentry React Native SDK and discover valuable performance insights of your application.
+
+With tracing, Sentry tracks your software performance, measuring metrics like throughput and latency, and displaying the impact of errors across multiple systems. Sentry captures distributed traces consisting of transactions and spans, which measure individual services and individual operations within those services. Learn more about our model in Distributed Tracing.
+Configure
+First, enable tracing and configure the sample rate for transactions. Set the sample rate for your transactions by either:
+Setting a uniform sample rate for all transactions using the tracesSampleRate option in your SDK config to a number between 0 and 1. (For example, to send 20% of transactions, set tracesSampleRate to 0.2.)
+Controlling the sample rate based on the transaction itself and the context in which it's captured, by providing a function to the tracesSampler config option.
+The two options are meant to be mutually exclusive. If you set both, tracesSampler will take precedence.
+
+JavaScript
+
+Copied
+
+import * as Sentry from "@sentry/react-native";
+
+// Unlike Sentry on other platforms, you do not need to import anything to use tracing on React Native
+
+Sentry.init({
+ dsn: "___PUBLIC_DSN___",
+
+ // We recommend adjusting this value in production, or using tracesSampler
+ // for finer control
+ tracesSampleRate: 1.0,
+});
+
+import * as Sentry from "@sentry/react-native";
+
+// Unlike Sentry on other platforms, you do not need to import anything to use tracing on React Native
+
+Sentry.init({
+ dsn: "___PUBLIC_DSN___",
+
+ // We recommend adjusting this value in production, or using tracesSampler
+ // for finer control
+ tracesSampleRate: 1.0,
+});
+
+Learn more about tracing options, how to use the tracesSampler function, or how to sample transactions.
+Wrap Your Root Component
+To get the most out of tracing, including accurate App Start measurements and automatic instrumentation, wrap your root component with Sentry.wrap:
+
+JavaScript
+
+App.js
+Copied
+
+export default Sentry.wrap(App);
+
+export default Sentry.wrap(App);
+
+Without wrapping the root component, the App Start measurement will finish when the JavaScript code is initialized instead of when the first component mounts, and some performance features won't be available.
+Verify
+Verify that tracing is working correctly by using our automatic instrumentation or by starting and finishing a transaction using custom instrumentation.
+While you're testing, set tracesSampleRate to 1.0, as that ensures that every transaction will be sent to Sentry. Once testing is complete, you may want to set a lower tracesSampleRate value, or switch to using tracesSampler to selectively sample and filter your transactions, based on contextual data.
+Next Steps
+
+Previous
+Manual Setup
+
+Next
+Instrumentation
+
+Was this helpful?
+Yes 👍No 👎
+
+How can we improve this page?
+Email (optional)
+Submit feedback
+Help improve this content
+Our documentation is open source and available on GitHub. Your contributions are welcome, whether fixing a typo (drat!) or suggesting an update ("yeah, this would be better").
+How to contribute   |  Edit this page   |  Create a docs issue   |  Get support 
+
+Package Details
+Latest version: 8.32.0
+npm:@sentry/react-native
+Repository on GitHub

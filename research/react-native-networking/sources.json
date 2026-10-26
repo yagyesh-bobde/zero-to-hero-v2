@@ -1,0 +1,358 @@
+[
+  {
+    "id": "rn-networking",
+    "title": "React Native: Networking",
+    "url": "https://reactnative.dev/docs/network",
+    "resolvedUrl": "https://reactnative.dev/docs/network",
+    "retrieved": "2026-10-26",
+    "characters": 6469,
+    "ok": true
+  },
+  {
+    "id": "rn-security",
+    "title": "React Native: Security",
+    "url": "https://reactnative.dev/docs/security",
+    "resolvedUrl": "https://reactnative.dev/docs/security",
+    "retrieved": "2026-10-26",
+    "characters": 11201,
+    "ok": true
+  },
+  {
+    "id": "rn-devtools",
+    "title": "React Native DevTools",
+    "url": "https://reactnative.dev/docs/react-native-devtools",
+    "resolvedUrl": "https://reactnative.dev/docs/react-native-devtools",
+    "retrieved": "2026-10-26",
+    "characters": 7434,
+    "ok": true
+  },
+  {
+    "id": "rn-appstate",
+    "title": "React Native: AppState",
+    "url": "https://reactnative.dev/docs/appstate",
+    "resolvedUrl": "https://reactnative.dev/docs/appstate",
+    "retrieved": "2026-10-26",
+    "characters": 2479,
+    "ok": true
+  },
+  {
+    "id": "fetch",
+    "title": "MDN: Using Fetch",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch",
+    "resolvedUrl": "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch",
+    "retrieved": "2026-10-26",
+    "characters": 22819,
+    "ok": true
+  },
+  {
+    "id": "http",
+    "title": "RFC 9110: HTTP Semantics",
+    "url": "https://www.rfc-editor.org/rfc/rfc9110.txt",
+    "resolvedUrl": "https://www.rfc-editor.org/rfc/rfc9110.txt",
+    "retrieved": "2026-10-26",
+    "characters": 468136,
+    "ok": true
+  },
+  {
+    "id": "cache",
+    "title": "MDN: HTTP caching",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Caching",
+    "resolvedUrl": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Caching",
+    "retrieved": "2026-10-26",
+    "characters": 33228,
+    "ok": true
+  },
+  {
+    "id": "android-security",
+    "title": "Android: Network security configuration",
+    "url": "https://developer.android.com/privacy-and-security/security-config",
+    "resolvedUrl": "https://developer.android.com/privacy-and-security/security-config",
+    "retrieved": "2026-10-26",
+    "characters": 23792,
+    "ok": true
+  },
+  {
+    "id": "apple-ats",
+    "title": "Apple: App Transport Security",
+    "url": "https://developer.apple.com/documentation/security/preventing-insecure-network-connections",
+    "resolvedUrl": "https://developer.apple.com/documentation/security/preventing-insecure-network-connections",
+    "retrieved": "2026-10-26",
+    "characters": 294,
+    "ok": true
+  },
+  {
+    "id": "android-emulator",
+    "title": "Android: Emulator networking",
+    "url": "https://developer.android.com/studio/run/emulator-networking",
+    "resolvedUrl": "https://developer.android.com/studio/run/emulator-networking",
+    "retrieved": "2026-10-26",
+    "characters": 1560,
+    "ok": true
+  },
+  {
+    "id": "tanstack-rn",
+    "title": "TanStack Query v5: React Native",
+    "url": "https://tanstack.com/query/latest/docs/framework/react/react-native",
+    "resolvedUrl": "https://tanstack.com/query/latest/docs/framework/react/react-native",
+    "retrieved": "2026-10-26",
+    "characters": 4805,
+    "ok": true
+  },
+  {
+    "id": "tanstack-defaults",
+    "title": "TanStack Query v5: Important defaults",
+    "url": "https://tanstack.com/query/latest/docs/framework/react/guides/important-defaults",
+    "resolvedUrl": "https://tanstack.com/query/latest/docs/framework/react/guides/important-defaults",
+    "retrieved": "2026-10-26",
+    "characters": 5460,
+    "ok": true
+  },
+  {
+    "id": "tanstack-offline",
+    "title": "TanStack Query v5: Network mode",
+    "url": "https://tanstack.com/query/latest/docs/framework/react/guides/network-mode",
+    "resolvedUrl": "https://tanstack.com/query/latest/docs/framework/react/guides/network-mode",
+    "retrieved": "2026-10-26",
+    "characters": 5090,
+    "ok": true
+  },
+  {
+    "id": "tanstack-persist",
+    "title": "TanStack Query v5: Persist query client",
+    "url": "https://tanstack.com/query/latest/docs/framework/react/plugins/persistQueryClient",
+    "resolvedUrl": "https://tanstack.com/query/latest/docs/framework/react/plugins/persistQueryClient",
+    "retrieved": "2026-10-26",
+    "characters": 11297,
+    "ok": true
+  },
+  {
+    "id": "netinfo",
+    "title": "React Native NetInfo",
+    "url": "https://raw.githubusercontent.com/react-native-netinfo/react-native-netinfo/master/README.md",
+    "resolvedUrl": "https://raw.githubusercontent.com/react-native-netinfo/react-native-netinfo/master/README.md",
+    "retrieved": "2026-10-26",
+    "characters": 24241,
+    "ok": true
+  },
+  {
+    "id": "securestore",
+    "title": "Expo SecureStore",
+    "url": "https://docs.expo.dev/versions/latest/sdk/securestore/",
+    "resolvedUrl": "https://docs.expo.dev/versions/latest/sdk/securestore/",
+    "retrieved": "2026-10-26",
+    "characters": 18293,
+    "ok": true
+  },
+  {
+    "id": "auth-native",
+    "title": "RFC 8252: OAuth for Native Apps",
+    "url": "https://www.rfc-editor.org/rfc/rfc8252.txt",
+    "resolvedUrl": "https://www.rfc-editor.org/rfc/rfc8252.txt",
+    "retrieved": "2026-10-26",
+    "characters": 45552,
+    "ok": true
+  },
+  {
+    "id": "auth-bcp",
+    "title": "RFC 9700: OAuth 2.0 Security Best Current Practice",
+    "url": "https://www.rfc-editor.org/rfc/rfc9700.txt",
+    "resolvedUrl": "https://www.rfc-editor.org/rfc/rfc9700.txt",
+    "retrieved": "2026-10-26",
+    "characters": 115852,
+    "ok": true
+  },
+  {
+    "id": "aws-retry",
+    "title": "AWS Builders Library: Timeouts, retries, backoff and jitter",
+    "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/",
+    "resolvedUrl": "https://builder.aws.com/content/3EumjoZascWd1oZiEgL8ORlv3qE/timeouts-retries-and-backoff-with-jitter",
+    "retrieved": "2026-10-26",
+    "characters": 14553,
+    "ok": true
+  },
+  {
+    "id": "otel",
+    "title": "OpenTelemetry: Observability primer",
+    "url": "https://opentelemetry.io/docs/concepts/observability-primer/",
+    "resolvedUrl": "https://opentelemetry.io/docs/concepts/observability-primer/",
+    "retrieved": "2026-10-26",
+    "characters": 6273,
+    "ok": true
+  },
+  {
+    "id": "otel-context",
+    "title": "OpenTelemetry: Context propagation",
+    "url": "https://opentelemetry.io/docs/concepts/context-propagation/",
+    "resolvedUrl": "https://opentelemetry.io/docs/concepts/context-propagation/",
+    "retrieved": "2026-10-26",
+    "characters": 6955,
+    "ok": true
+  },
+  {
+    "id": "tracecontext",
+    "title": "W3C: Trace Context",
+    "url": "https://www.w3.org/TR/trace-context/",
+    "resolvedUrl": "https://www.w3.org/TR/trace-context/",
+    "retrieved": "2026-10-26",
+    "characters": 44880,
+    "ok": true
+  },
+  {
+    "id": "sentry-rn",
+    "title": "Sentry: React Native tracing",
+    "url": "https://docs.sentry.io/platforms/react-native/tracing/",
+    "resolvedUrl": "https://docs.sentry.io/platforms/react-native/tracing/",
+    "retrieved": "2026-10-26",
+    "characters": 4004,
+    "ok": true
+  },
+  {
+    "id": "sentry-data",
+    "title": "Sentry: React Native data management",
+    "url": "https://docs.sentry.io/platforms/react-native/data-management/sensitive-data/",
+    "resolvedUrl": "https://docs.sentry.io/platforms/react-native/data-management/sensitive-data/",
+    "retrieved": "2026-10-26",
+    "characters": 6961,
+    "ok": true
+  },
+  {
+    "id": "expo-background",
+    "title": "Expo BackgroundTask",
+    "url": "https://docs.expo.dev/versions/latest/sdk/background-task/",
+    "resolvedUrl": "https://docs.expo.dev/versions/latest/sdk/background-task/",
+    "retrieved": "2026-10-26",
+    "characters": 15656,
+    "ok": true
+  },
+  {
+    "id": "apple-background",
+    "title": "Apple: Background URLSession transfers",
+    "url": "https://developer.apple.com/documentation/foundation/downloading-files-in-the-background",
+    "resolvedUrl": "https://developer.apple.com/documentation/foundation/downloading-files-in-the-background",
+    "retrieved": "2026-10-26",
+    "characters": 290,
+    "ok": true
+  },
+  {
+    "id": "android-work",
+    "title": "Android: WorkManager",
+    "url": "https://developer.android.com/topic/libraries/architecture/workmanager",
+    "resolvedUrl": "https://developer.android.com/develop/background-work/background-tasks/persistent",
+    "retrieved": "2026-10-26",
+    "characters": 7351,
+    "ok": true
+  },
+  {
+    "id": "msw-native",
+    "title": "MSW: React Native integration",
+    "url": "https://mswjs.io/docs/integrations/react-native/",
+    "resolvedUrl": "https://mswjs.io/guides/integrations/react-native",
+    "retrieved": "2026-10-26",
+    "characters": 4257,
+    "ok": true
+  },
+  {
+    "id": "graphql",
+    "title": "GraphQL: Serving over HTTP",
+    "url": "https://graphql.org/learn/serving-over-http/",
+    "resolvedUrl": "https://graphql.org/learn/serving-over-http/",
+    "retrieved": "2026-10-26",
+    "characters": 10193,
+    "ok": true
+  },
+  {
+    "id": "owasp",
+    "title": "OWASP MASVS: Network communication",
+    "url": "https://mas.owasp.org/MASVS/05-MASVS-NETWORK/",
+    "ok": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "id": "expo-file",
+    "title": "Expo FileSystem",
+    "url": "https://docs.expo.dev/versions/latest/sdk/filesystem/",
+    "resolvedUrl": "https://docs.expo.dev/versions/latest/sdk/filesystem/",
+    "retrieved": "2026-10-26",
+    "characters": 61302,
+    "ok": true
+  },
+  {
+    "id": "react-effects",
+    "title": "React: Synchronizing with Effects",
+    "url": "https://react.dev/learn/synchronizing-with-effects",
+    "resolvedUrl": "https://react.dev/learn/synchronizing-with-effects",
+    "retrieved": "2026-10-26",
+    "characters": 40068,
+    "ok": true
+  },
+  {
+    "id": "problem",
+    "title": "RFC 9457: Problem Details for HTTP APIs",
+    "url": "https://www.rfc-editor.org/rfc/rfc9457.txt",
+    "resolvedUrl": "https://www.rfc-editor.org/rfc/rfc9457.txt",
+    "retrieved": "2026-10-26",
+    "characters": 31291,
+    "ok": true
+  },
+  {
+    "id": "websocket",
+    "title": "MDN: WebSocket",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/WebSocket",
+    "resolvedUrl": "https://developer.mozilla.org/en-US/docs/Web/API/WebSocket",
+    "retrieved": "2026-10-26",
+    "characters": 3200,
+    "ok": true
+  },
+  {
+    "id": "apple-ats-text",
+    "title": "Apple: App Transport Security (Markdown)",
+    "url": "https://developer.apple.com/documentation/security/preventing-insecure-network-connections.md",
+    "resolvedUrl": "https://developer.apple.com/documentation/security/preventing-insecure-network-connections.md",
+    "retrieved": "2026-10-26",
+    "characters": 12526,
+    "ok": true
+  },
+  {
+    "id": "apple-background-text",
+    "title": "Apple: Background URLSession (Markdown)",
+    "url": "https://developer.apple.com/documentation/foundation/downloading-files-in-the-background.md",
+    "resolvedUrl": "https://developer.apple.com/documentation/foundation/downloading-files-in-the-background.md",
+    "retrieved": "2026-10-26",
+    "characters": 11752,
+    "ok": true
+  },
+  {
+    "id": "android-address",
+    "title": "Android: Emulator network addresses",
+    "url": "https://developer.android.com/studio/run/emulator-networking-address",
+    "resolvedUrl": "https://developer.android.com/studio/run/emulator-networking-address",
+    "retrieved": "2026-10-26",
+    "characters": 4841,
+    "ok": true
+  },
+  {
+    "id": "owasp-network",
+    "title": "OWASP MASVS: Network controls (source)",
+    "url": "https://raw.githubusercontent.com/OWASP/masvs/master/Document/0x10-V5-Network_communication_requirements.md",
+    "ok": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "id": "sentry-distributed",
+    "title": "Sentry: React Native distributed tracing",
+    "url": "https://docs.sentry.io/platforms/react-native/tracing/trace-propagation/",
+    "resolvedUrl": "https://docs.sentry.io/platforms/react-native/tracing/trace-propagation/",
+    "retrieved": "2026-10-26",
+    "characters": 5618,
+    "ok": true
+  },
+  {
+    "id": "otel-js",
+    "title": "OpenTelemetry: JavaScript supported runtimes",
+    "url": "https://opentelemetry.io/docs/languages/js/",
+    "resolvedUrl": "https://opentelemetry.io/docs/languages/js/",
+    "retrieved": "2026-10-26",
+    "characters": 3437,
+    "ok": true
+  }
+]

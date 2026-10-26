@@ -1,0 +1,2166 @@
+{
+  "version": 1,
+  "updated": "26 October 2026",
+  "stages": [
+    {
+      "name": "Understand the journey",
+      "short": "Foundations",
+      "color": "#d6a05b",
+      "description": "Build a mental model before adding libraries."
+    },
+    {
+      "name": "Build the request layer",
+      "short": "Implementation",
+      "color": "#7cb69b",
+      "description": "Turn HTTP into predictable application behavior."
+    },
+    {
+      "name": "Protect and recover",
+      "short": "Trust & resilience",
+      "color": "#a69bd5",
+      "description": "Keep identities, writes, and retries safe."
+    },
+    {
+      "name": "Survive mobile reality",
+      "short": "Mobile systems",
+      "color": "#77acc8",
+      "description": "Design for lost connections and suspended processes."
+    },
+    {
+      "name": "See the whole system",
+      "short": "Observability",
+      "color": "#d18d87",
+      "description": "Connect user symptoms to useful evidence."
+    },
+    {
+      "name": "Ship with evidence",
+      "short": "Production",
+      "color": "#a2b776",
+      "description": "Test failures, control rollouts, and operate the app."
+    }
+  ],
+  "lessons": [
+    {
+      "id": "mental-model",
+      "stage": 0,
+      "title": "A request is a journey",
+      "subtitle": "Follow one tap through the entire system.",
+      "minutes": 25,
+      "objectives": [
+        "Separate a user action from a network attempt.",
+        "Name the layers that can fail.",
+        "Describe the sample app you will build."
+      ],
+      "body": "## Start with a real app\nImagine **Fieldcart**, a small shop app. A customer browses products, searches, signs in, saves a cart, places an order, uploads a photo, and watches delivery updates. They use an old Android phone on a train. The phone loses signal immediately after the customer taps “Place order.” This course follows that app from its first request to its first production incident.\n\nA **client** asks for something; a **server** processes the request. An **API** is the agreed interface between them: which requests exist, which data they accept, what they return, and what errors mean. Your React Native app is a client. It is never a trusted authority for prices, permissions, payment confirmation, or inventory.\n\n## Trace the happy path\n1. A tap starts a user operation, such as “load catalog.”\n2. Your app may already have useful cached data. Otherwise, it schedules a request.\n3. A native networking stack resolves a hostname, opens or reuses a connection, and uses TLS for HTTPS.\n4. An edge proxy or gateway forwards the request. The API authenticates it, checks authorization, and may call other services or a database.\n5. Response bytes arrive. The app checks status, decodes and validates data, updates its cache, and renders a meaningful screen.\n6. Privacy-safe telemetry records enough evidence to diagnose slow or failed operations.\n\n**Latency** means elapsed time. **Throughput** means work completed per unit of time. **Reliability** means the operation does what the user expects under its stated conditions. A fast HTTP 200 containing the wrong cart is unreliable.\n\n## One operation, several attempts\nAn operation is the user's intent. An attempt is one actual network call. A retry creates another attempt. Cache hits can complete an operation without an attempt. One checkout may also involve several different requests. Keep these distinctions: they determine retry safety, UI state, and honest metrics.\n\nDistributed systems introduce an uncomfortable fact: **you can lose knowledge of the outcome**. If a server committed an order but its reply disappeared, the phone cannot infer failure from silence. You need an operation identity and a way to reconcile with the server. We will build that reasoning step by step.\n\n## Your responsibilities\nClient work includes clear loading and error states, request deadlines, safe credential handling, cache isolation, offline recovery, and useful diagnostics. Server work includes authorization, durable writes, deduplication, validation, rate limits, and trace propagation. Production quality depends on their contract; a client library cannot provide all of it.\n\n**Course map:** learn the wire → build a request layer → protect identity → survive offline → observe the full journey → test and ship. You can open any lesson. For a beginner, follow the order and keep a small notebook of predictions before running each lab.\n\nThis is a comprehensive practical foundation, not a promise that one course covers every protocol or regulatory environment. The core path uses TypeScript, React Native, HTTPS JSON APIs, and TanStack Query v5. Platform and vendor features are explicitly dated in the source library.",
+      "questions": [
+        {
+          "id": "q001",
+          "prompt": "The phone times out after placing an order. What do you know?",
+          "options": [
+            "The outcome is unknown; reconcile using the same operation identity.",
+            "The server definitely rejected the order.",
+            "A second tap should create a fresh order identity."
+          ],
+          "answer": 0,
+          "why": "The server may have committed before the response was lost. A timeout describes the client’s wait, not the server’s transaction outcome."
+        },
+        {
+          "id": "q002",
+          "prompt": "A cached catalog appears with no HTTP call. What completed?",
+          "options": [
+            "One successful HTTP attempt.",
+            "Nothing, because every screen needs a request.",
+            "A user operation, with zero network attempts."
+          ],
+          "answer": 2,
+          "why": "Measure user-visible operations separately from transport attempts. A useful cache hit is a successful experience."
+        },
+        {
+          "id": "q003",
+          "prompt": "Who must decide whether a user can access an order?",
+          "options": [
+            "The analytics service.",
+            "The server, on every relevant request.",
+            "The app, by hiding the order button."
+          ],
+          "answer": 1,
+          "why": "UI restrictions help users navigate but do not enforce security. A modified client can call an endpoint directly."
+        }
+      ],
+      "sources": ["rn-networking", "otel"],
+      "exercise": "Draw “tap → cache → native network → edge → API → database → response → screen.” Mark where each layer could fail, and where an order could have committed without the phone knowing.",
+      "lab": null
+    },
+    {
+      "id": "async",
+      "stage": 0,
+      "title": "Just enough JavaScript for networking",
+      "subtitle": "Promises, await, concurrency, and cleanup without the mystery.",
+      "minutes": 30,
+      "objectives": [
+        "Read async code without confusing waiting and blocking.",
+        "Choose sequential versus concurrent work.",
+        "Avoid stale responses and unhandled rejections."
+      ],
+      "body": "## A promise is a future result\nA **Promise** represents work that may succeed or fail later. `fetch()` returns a Promise for a response. `await` pauses that async function until the Promise settles; it does not freeze the whole JavaScript runtime. Other callbacks and rendering can continue. Large synchronous JSON processing can still occupy the JavaScript thread.\n\n```ts\nasync function loadCatalog() {\n  try {\n    const response = await fetch('https://api.example.com/products');\n    if (!response.ok) throw new Error(`HTTP ${response.status}`);\n    const data: unknown = await response.json();\n    return data; // validate this unknown value before using it\n  } catch (error) {\n    throw error; // let the caller decide the UI behavior\n  }\n}\n```\n\nThe `catch` above is deliberately redundant: remove it unless you actually classify, recover, or attach safe context. Catching an error and returning `[]` turns a broken API into a misleading empty shop. `finally` is useful for cleanup, such as clearing a deadline timer.\n\n## Dependencies determine concurrency\nIf request B needs an ID from request A, await A first. If two reads are independent, start them together with `Promise.all`. It rejects when one rejects but does **not** automatically cancel the other work. Use `Promise.allSettled` when partial results are useful, then inspect each result. Starting 500 requests at once can overwhelm a radio, a server, and memory: bound concurrency for bulk work.\n\n```ts\nconst [catalog, profile] = await Promise.all([\n  loadCatalog(), loadProfile(),\n]); // these operations are independent\n```\n\n## A late response can lie to the screen\nA user types `ca`, then `cart`. If the `ca` response arrives last, naive code replaces the newer results with old ones. Cancel obsolete work when possible and ensure results are associated with the input that created them. A query key containing the search term helps a query library separate those results. Cancellation saves resources; identity checks protect correctness even when cancellation arrives too late.\n\nReact Effects synchronize with external systems. Dependencies must include the values used. Cleanup runs before a new effect setup and on unmount. React development Strict Mode may run an extra setup/cleanup cycle to find bugs. Production duplicates can also come from repeated taps or multiple mounted consumers, so do not dismiss every duplicate as Strict Mode.\n\n```tsx\nuseEffect(() => {\n  let current = true;\n  const controller = new AbortController();\n  loadSearch(term, controller.signal).then(\n    data => { if (current) setResults(data); },\n    error => { if (current) setError(error); },\n  );\n  return () => { current = false; controller.abort(); };\n}, [term]);\n```\n\nThis illustrates the race guard, not a full data layer. A production screen should distinguish cancellation, errors, and stale useful data; later lessons use a query library for shared lifecycle behavior. Avoid making the Effect callback itself `async`, because React expects a cleanup function rather than a Promise.\n\n**Debouncing** waits for a quiet interval before starting work. **Throttling** limits how often work starts. Neither provides server deduplication. Avoid `.forEach(async ...)` when you need to await completion; use an explicit loop or a bounded worker pool.",
+      "questions": [
+        {
+          "id": "q004",
+          "prompt": "Does await fetch(...) block all JavaScript until the response arrives?",
+          "options": [
+            "No; it pauses that async function while other work can run.",
+            "Yes; no UI work can run.",
+            "Only on iOS."
+          ],
+          "answer": 0,
+          "why": "The network wait is asynchronous. CPU-heavy parsing or computation on the JS thread is a separate source of UI stalls."
+        },
+        {
+          "id": "q005",
+          "prompt": "Promise.all rejects. Did it cancel all other requests?",
+          "options": [
+            "Yes, automatically.",
+            "Yes, but only for POST.",
+            "No; cancellation needs explicit support and signals."
+          ],
+          "answer": 2,
+          "why": "Promise aggregation does not own transport cancellation. Requests already started can continue and perform side effects."
+        },
+        {
+          "id": "q006",
+          "prompt": "An old search response arrives after a newer one. What protects the UI?",
+          "options": [
+            "Increase the timeout.",
+            "Associate results with their query identity and discard obsolete results.",
+            "Render the last response received regardless of input."
+          ],
+          "answer": 1,
+          "why": "Arrival order is not intent order. Cancellation plus identity or query keys prevents stale data replacing current results."
+        }
+      ],
+      "sources": ["fetch", "react-effects"],
+      "exercise": "Write down the arrival order for searches “c”, “ca”, and “cat” with latencies 900, 600, and 100 ms. Explain why the oldest result may arrive last, then add cleanup or a query key.",
+      "lab": null
+    },
+    {
+      "id": "wire",
+      "stage": 0,
+      "title": "What happens on the wire",
+      "subtitle": "DNS, connections, TLS, HTTP versions, and the mobile radio.",
+      "minutes": 30,
+      "objectives": [
+        "Explain DNS, TLS, and connection reuse.",
+        "Separate server time from end-to-end latency.",
+        "Recognize what a JavaScript timer can and cannot measure."
+      ],
+      "body": "## Turn a URL into a connection\nIn `https://api.example.com:443/products?limit=20`, `https` is the scheme, `api.example.com` the hostname, `443` the port, `/products` the path, and `limit=20` a query parameter. A fragment such as `#details` is not sent as part of the HTTP request target. Encode query values with a URL builder; string concatenation breaks on spaces, `&`, and non-English text.\n\n**DNS** maps a hostname to connection information such as IP addresses. A device may use cached records, IPv4, IPv6, a VPN, or a carrier DNS resolver. A DNS failure happens before an HTTP response exists. An IP allowlist or hardcoded address can break CDNs, failover, IPv6-only networks, and certificate validation. Keep hostnames and test realistic networks.\n\nFor HTTP/1.1 and HTTP/2, the client commonly establishes TCP, an ordered reliable byte stream. **TLS** then authenticates the server through certificate and hostname validation and protects data in transit. HTTP/3 uses QUIC over UDP with TLS integrated. You usually let the native stack and server negotiate; setting an imaginary JavaScript “HTTP/3” switch does not upgrade a deployed system.\n\n## Reuse changes the timing\nA cold request may pay for DNS, connection setup, and TLS. A warm request may reuse an existing connection. HTTP/2 multiplexes streams on a connection, reducing some connection overhead; it does not remove packet loss or all contention. HTTP/3 changes transport behavior but still depends on network and server support. Native stacks manage connection pools and negotiated protocol details.\n\n**TTFB**, time to first byte, includes more than backend execution: depending on the tool, it can include connection setup, queueing, transit, and waiting. Download time depends on payload size, bandwidth, and contention. **Bandwidth** is transfer capacity; **round-trip time** is the delay for a there-and-back exchange. Sending fewer bytes helps bandwidth; removing serial request waterfalls helps high round-trip latency.\n\n## Mobile adds transitions\nA phone can move between Wi-Fi and cellular, pass through dead zones, or connect to a captive portal that requires a browser login. The OS may suspend the app. Radio activation and repeated small polling requests cost battery. An emulator on fast office Wi-Fi hides many of these effects.\n\n## Measure the experience honestly\nA timer around `fetch` plus body reading gives an application-level duration. A timer around only `await fetch` commonly stops once headers are available, before the body has been consumed. Neither automatically exposes precise DNS, TCP, or TLS timings. Use native instrumentation or a compatible SDK when you need those details, and label unavailable phases as unknown rather than inventing them.\n\nThe user's wait can continue after the response: JSON decoding, runtime validation, cache updates, image decoding, and rendering take time. Later, you will instrument `catalog.load` from user intent to useful content, with a child HTTP span. Do not subtract unsynchronized client and server wall-clock timestamps to estimate one-way network delay. Use monotonic clocks for local durations and explicit server timing for server phases.\n\n**Useful observation:** if server logs say 80 ms but the app took 2 seconds, inspect everything around the server: queueing, connection setup, retries, transfer, parsing, and rendering. Both measurements may be correct.",
+      "questions": [
+        {
+          "id": "q007",
+          "prompt": "The app has a DNS error. Which HTTP status should it have?",
+          "options": [
+            "None; it failed before an HTTP response.",
+            "500, because every failure is HTTP.",
+            "404, because the hostname was missing."
+          ],
+          "answer": 0,
+          "why": "A transport failure has no HTTP response status. Preserve that distinction in error types and metrics."
+        },
+        {
+          "id": "q008",
+          "prompt": "A timer ends as soon as fetch resolves. What might still be pending?",
+          "options": [
+            "Nothing; the screen must already be rendered.",
+            "Only server authorization.",
+            "Reading and processing the response body."
+          ],
+          "answer": 2,
+          "why": "Fetch resolves with the response when headers are available; body consumption and rendering can take additional time."
+        },
+        {
+          "id": "q009",
+          "prompt": "How should you obtain DNS/TLS timings in React Native?",
+          "options": [
+            "Read the response status.",
+            "Use supported native or SDK instrumentation and state coverage limits.",
+            "Divide fetch duration into three equal phases."
+          ],
+          "answer": 1,
+          "why": "A JS duration does not reveal native phase breakdowns. Reused connections also change which setup phases occur."
+        }
+      ],
+      "sources": ["http", "fetch", "rn-networking"],
+      "exercise": "Compare a cold and warm catalog load on a real device. Record total app duration, payload size, and backend duration separately. List which phases your tool cannot observe.",
+      "lab": null
+    },
+    {
+      "id": "http",
+      "stage": 0,
+      "title": "HTTP is your contract",
+      "subtitle": "Methods, status codes, headers, schemas, and conditional requests.",
+      "minutes": 35,
+      "objectives": [
+        "Read a request and response.",
+        "Distinguish safe, idempotent, and retryable.",
+        "Handle empty bodies and schema mismatches."
+      ],
+      "body": "## Read the envelope\nAn HTTP request has a method, URL, headers, and sometimes a body. A response has a status, headers, and sometimes a body. JSON is one body format, not the transport protocol. Set `Content-Type: application/json` when sending JSON and `Accept: application/json` when that is what you expect. A content-type header does not prove a body actually follows your schema.\n\n```http\nPOST /orders HTTP/1.1\nAuthorization: Bearer <access-token>\nContent-Type: application/json\nIdempotency-Key: <stable-order-operation-id>\n\n{\"cartId\":\"cart_42\",\"expectedVersion\":7}\n```\n\n## Methods describe semantics\n**GET** reads a representation and should not cause a requested state change. It is safe and idempotent by HTTP semantics. **PUT** replaces the target representation and is idempotent; **DELETE** is also idempotent in intended effect, although repeated calls can return different statuses. **POST** usually creates or executes an operation and is not inherently idempotent. **PATCH** partially modifies a resource and is not inherently idempotent. “Increment quantity” behaves differently from “set quantity to 2.”\n\nSafe means the client does not request a state-changing effect. Idempotent means repeating the same request has the same intended effect as one request. Retryable is a policy decision involving semantics, failure type, body replayability, time budget, and server contract. These are related concepts, not interchangeable labels.\n\n## Status is only the first decision\n- `200` usually carries a result; `201` commonly signals creation.\n- `202` means accepted for processing, not completed. Follow an operation-status contract.\n- `204` has no response content. Do not blindly call `.json()`.\n- `304` is a conditional read result used with an existing cached representation. A minimal `response.ok` wrapper alone cannot implement this cache protocol.\n- `400` is a request problem; `401` means valid authentication is needed; `403` means access is refused. Do not refresh credentials for every `403`.\n- `404` may mean missing or intentionally concealed; `409` signals a conflict; `412` can mean an `If-Match` precondition failed; `422` often represents semantic validation.\n- `429` signals rate limiting. `Retry-After` can be seconds or an HTTP date.\n- `500`, `502`, `503`, and `504` are server/gateway failures, but none alone proves a write was not committed.\n\n## Types are not runtime validation\nTypeScript types disappear at runtime. `await response.json() as Product[]` does not verify a response. Parse from `unknown` with a schema library or explicit guards. Decide how to handle unknown fields, missing required fields, nullable values, enum additions, and dates. A malformed proxy HTML page can arrive where JSON was expected.\n\nDefine response and error schemas in a shared API specification when possible. RFC 9457 provides a standard Problem Details format; only show user-safe fields, and never treat its `detail` text as a stable machine error code. Error messages can change; stable typed codes drive behavior.\n\n## Concurrency has a contract too\nAn **ETag** identifies a representation version. `If-None-Match` supports revalidation; `If-Match` can protect an update from overwriting a version you never read. These need server implementation. APIs should also define pagination, rate limits, supported app versions, deduplication scope and retention, and authorization for every resource.",
+      "questions": [
+        {
+          "id": "q010",
+          "prompt": "Which statement is true about HTTP 202?",
+          "options": [
+            "The work was accepted; completion needs a separate contract.",
+            "The order is definitely fulfilled.",
+            "The client should parse it as a 204."
+          ],
+          "answer": 0,
+          "why": "Accepted work can later succeed or fail. Poll or subscribe to a stable operation-status endpoint as documented."
+        },
+        {
+          "id": "q011",
+          "prompt": "Does casting response JSON to Product[] validate it?",
+          "options": [
+            "Yes, TypeScript checks server data on the phone.",
+            "Only when HTTPS is enabled.",
+            "No; runtime validation must check the unknown data."
+          ],
+          "answer": 2,
+          "why": "TLS protects transport, not application schema correctness. Type assertions do not execute runtime checks."
+        },
+        {
+          "id": "q012",
+          "prompt": "An If-Match update gets 412. What should happen?",
+          "options": [
+            "Refresh the access token.",
+            "Fetch the current version and resolve the conflict.",
+            "Retry the exact stale update forever."
+          ],
+          "answer": 1,
+          "why": "A failed precondition indicates your representation version is no longer suitable for that conditional write."
+        }
+      ],
+      "sources": ["http", "problem", "cache"],
+      "exercise": "Write a contract for POST /orders: success, accepted-but-pending, validation failure, authentication failure, version conflict, rate limit, and unknown outcome. Include example safe error codes.",
+      "lab": "http"
+    },
+    {
+      "id": "native",
+      "stage": 0,
+      "title": "React Native is a native network client",
+      "subtitle": "Devices, localhost, ATS, Android configuration, and web differences.",
+      "minutes": 30,
+      "objectives": [
+        "Reach a development API from each device type.",
+        "Separate browser security from native security.",
+        "Keep debug trust changes out of release builds."
+      ],
+      "body": "## Your JavaScript uses native plumbing\nReact Native provides Fetch, XMLHttpRequest, and WebSocket APIs. Axios can use the available transport and offers interceptors and request configuration; it does not magically solve offline durability, server idempotency, or every native TLS problem. Choose one transport boundary so authentication, deadlines, and telemetry are consistent.\n\nA native iOS or Android app does not enforce browser CORS in the same way a webpage does. **CORS** is a browser rule about which origins may read responses. React Native Web and a WebView do run in browser contexts with their own rules. Adding `Access-Control-Allow-Origin: *` to an API will not fix a native certificate error or incorrect hostname. CORS also never replaces API authentication or authorization.\n\n## Localhost depends on where code runs\n`localhost` refers to the machine or device making the connection. On a physical phone it points to that phone. A standard Android Studio emulator commonly reaches its host's loopback through `10.0.2.2`; other emulator products differ. The iOS Simulator can commonly reach services on its Mac through loopback, but a physical iPhone needs a reachable LAN address or secure development tunnel.\n\nFor a phone on your LAN, bind the development API to an appropriate interface, check the host firewall, use the correct port, and keep both devices on a reachable network. On Android, `adb reverse tcp:3000 tcp:3000` can forward a connected device's port to the host during development. These are development arrangements, not production URLs.\n\n## HTTPS is the release baseline\niOS App Transport Security restricts insecure connections. Android apps targeting API 28+ generally disallow cleartext by default. Exact behavior depends on target level, network configuration, and which native stack is used. Use HTTPS with a valid hostname and trusted certificate. A self-signed development certificate is not automatically trusted because its URL begins with `https`.\n\nIf local development needs an exception, scope it to the development build and required domain. Android Network Security Configuration supports debug-only trust anchors. Never ship a global “trust all certificates” callback or broadly disable ATS to fix one endpoint. Test the release artifact: debug certificates and different environment values can hide release failures.\n\n## Feature parity is not guaranteed\nThe React Native networking documentation lists platform-specific cookie and redirect limitations, including unstable cookie flows and unsupported Fetch options. Test your exact React Native version, OS, library adapter, and auth redirect flow. A browser tutorial using `credentials` or `redirect: 'manual'` cannot establish native behavior. If you choose cookies, use an appropriate maintained cookie integration and verify login, expiry, logout, redirects, and account switching on both platforms.\n\nBuild-time “environment variables” included in the app bundle are readable by someone inspecting the binary. Use them for public API base URLs and public client IDs, not backend API secrets. Expo Go can also differ from your own development build when native modules or custom configuration are required. Always validate the actual native integration and a release-mode build.",
+      "questions": [
+        {
+          "id": "q013",
+          "prompt": "A physical iPhone requests http://localhost:3000. Where does localhost point?",
+          "options": ["The iPhone itself.", "Always the developer’s Mac.", "The production API."],
+          "answer": 0,
+          "why": "Loopback is local to the process’s device. Use a reachable host address or development tunnel for a physical phone."
+        },
+        {
+          "id": "q014",
+          "prompt": "Will adding CORS headers fix native TLS certificate validation?",
+          "options": [
+            "Yes; CORS controls certificate trust.",
+            "Only on cellular.",
+            "No; diagnose the native trust or hostname problem."
+          ],
+          "answer": 2,
+          "why": "CORS is a browser response-sharing policy. Native TLS trust is a different layer."
+        },
+        {
+          "id": "q015",
+          "prompt": "Where can you safely put a backend secret?",
+          "options": [
+            "In a minified JavaScript constant.",
+            "On a trusted backend, not inside the mobile bundle.",
+            "In a bundled .env file."
+          ],
+          "answer": 1,
+          "why": "Bundling or obfuscation does not make a mobile client capable of keeping a shared backend secret."
+        }
+      ],
+      "sources": ["rn-networking", "android-security", "apple-ats-text", "android-address"],
+      "exercise": "Create a device/URL matrix for Android emulator, Android phone, iOS Simulator, iPhone, and React Native Web. Verify one HTTPS read in a release-mode build on each target you support.",
+      "lab": null
+    },
+    {
+      "id": "client",
+      "stage": 1,
+      "title": "Build a small, explicit API client",
+      "subtitle": "One boundary for deadlines, HTTP errors, and validated data.",
+      "minutes": 45,
+      "objectives": [
+        "Keep transport concerns separate from screens.",
+        "Keep the deadline active through body reading.",
+        "Validate responses without leaking credentials."
+      ],
+      "body": "## Start smaller than a framework\nScreens should ask for a product, not rebuild headers, timeouts, and JSON handling. Put a small transport helper behind domain functions such as `getProducts` and `placeOrder`. Then put cache and UI behavior above those functions. Keep retry policy in one intentional layer; this helper does **one attempt**.\n\nThe following TypeScript is a teaching reference for bounded JSON endpoints. It includes HTTP errors, cancellation, a total asynchronous attempt deadline, an empty response, and runtime parsing. It is not a complete authentication, streaming, persistence, or tracing SDK. Set deadlines from measured endpoint behavior and user needs; 10 seconds below is an example.\n\n```ts\nconst API_ORIGIN = 'https://api.example.com';\ntype Kind = 'http' | 'network' | 'timeout' | 'cancelled' | 'decode';\nclass ApiError extends Error {\n  constructor(\n    public kind: Kind,\n    public status?: number,\n    public requestId?: string | null,\n    public retryAfter?: string | null,\n  ) { super(kind); }\n}\n\nasync function requestJson<T>(\n  path: string,\n  parse: (value: unknown) => T,\n  options: {\n    signal?: AbortSignal;\n    deadlineMs?: number;\n    method?: string;\n    json?: unknown;\n    accessToken?: string;\n    idempotencyKey?: string;\n  } = {},\n): Promise<T | undefined> {\n  const url = new URL(path, API_ORIGIN);\n  if (url.origin !== API_ORIGIN) throw new Error('Untrusted API origin');\n  const body = options.json === undefined ? undefined : JSON.stringify(options.json);\n  const controller = new AbortController();\n  let timedOut = false;\n  const onAbort = () => controller.abort();\n  options.signal?.addEventListener('abort', onAbort);\n  if (options.signal?.aborted) controller.abort();\n  const timer = setTimeout(() => {\n    timedOut = true;\n    controller.abort();\n  }, options.deadlineMs ?? 10_000);\n  try {\n    const headers: Record<string, string> = { Accept: 'application/json' };\n    if (options.json !== undefined) headers['Content-Type'] = 'application/json';\n    if (options.accessToken) headers.Authorization = `Bearer ${options.accessToken}`;\n    if (options.idempotencyKey) headers['Idempotency-Key'] = options.idempotencyKey;\n    const response = await fetch(url.toString(), {\n      method: options.method ?? 'GET',\n      headers,\n      body,\n      signal: controller.signal,\n    });\n    if (!response.ok) {\n      throw new ApiError('http', response.status,\n        response.headers.get('x-request-id'),\n        response.headers.get('retry-after'));\n    }\n    if (response.status === 204) return undefined;\n    let value: unknown;\n    try { value = await response.json(); }\n    catch (error) {\n      if (controller.signal.aborted) throw error;\n      throw new ApiError('decode');\n    }\n    try { return parse(value); }\n    catch { throw new ApiError('decode'); }\n  } catch (error) {\n    if (options.signal?.aborted) throw new ApiError('cancelled');\n    if (timedOut) throw new ApiError('timeout');\n    if (error instanceof ApiError) throw error;\n    throw new ApiError('network');\n  } finally {\n    clearTimeout(timer);\n    options.signal?.removeEventListener('abort', onAbort);\n  }\n}\n```\n\n## Understand the choices before copying\nA Fetch Promise normally resolves for `404` and `500`, so check the response status yourself. Its body is consumed separately. The `finally` belongs after body consumption so a slow body is still covered. An abort cannot interrupt synchronous JSON parsing or validation while it owns the JS thread, and a suspended app cannot rely on JS timers running on schedule. If you need precise native connection/read deadlines or background transfers, use a supported native transport.\n\nA `204` returns `undefined`; a domain wrapper expecting data must reject a missing result rather than asserting it exists. Conditional `304` handling belongs in a cache-aware adapter. This sample also assumes bounded bodies and a server contract that authenticated API routes do not redirect to arbitrary origins. Runtime URL checks alone do not validate an automatically followed redirect chain; verify your native stack's redirect behavior. Never attach an API token to arbitrary upload/CDN URLs.\n\n## Add domain meaning\nA product parser checks object shape, required fields, allowed values, and finite numbers. Use a schema library if it improves clarity. Map validated Problem Details into typed domain errors where available. Return a safe request ID for support, not a raw response body. Never log the `Authorization` header.\n\nConfigure JSON size limits at the API and test big responses. Buffering JSON is unsuitable for huge downloads. Keep staging and production base URLs explicit; do not silently fall back to a different environment when one fails. The query library and the observability SDK will wrap this boundary later.",
+      "questions": [
+        {
+          "id": "q016",
+          "prompt": "Fetch receives HTTP 500. Will it normally reject for that status?",
+          "options": [
+            "No; inspect response.ok or status and throw a typed error.",
+            "Yes; catch always receives all non-200 statuses.",
+            "Only if the response contains JSON."
+          ],
+          "answer": 0,
+          "why": "Fetch distinguishes transport failure from an HTTP response. Your client must interpret HTTP status."
+        },
+        {
+          "id": "q017",
+          "prompt": "Why keep the deadline timer until the body is read?",
+          "options": [
+            "The server needs the timer value.",
+            "It makes JSON type assertions safe.",
+            "Headers can arrive while the body still stalls."
+          ],
+          "answer": 2,
+          "why": "Clearing the timer immediately after fetch resolves can leave a body read waiting without the intended deadline."
+        },
+        {
+          "id": "q018",
+          "prompt": "Can this helper’s abort stop synchronous JSON validation immediately?",
+          "options": [
+            "Only with an access token.",
+            "No; synchronous JS must yield before a timer callback runs.",
+            "Yes; AbortController interrupts any CPU work."
+          ],
+          "answer": 1,
+          "why": "Abort signals coordinate cancellable asynchronous work. They do not preempt a busy JS thread."
+        }
+      ],
+      "sources": ["fetch", "rn-networking", "http"],
+      "exercise": "Implement this boundary in a scratch app. Exercise 200 JSON, 204, 500, malformed JSON, a slow body, and parent cancellation. For each, predict the error kind before testing.",
+      "lab": null
+    },
+    {
+      "id": "errors",
+      "stage": 1,
+      "title": "Errors, deadlines, and UI state",
+      "subtitle": "Make failure understandable without lying about the outcome.",
+      "minutes": 35,
+      "objectives": [
+        "Classify failures by layer.",
+        "Preserve useful data while refetching.",
+        "Make cancellation and ambiguous writes distinct."
+      ],
+      "body": "## A spinner is not a state model\nA useful read screen distinguishes first load, success with data, success with no results, refresh while showing old data, refresh failure with old data, first-load failure, and offline with or without a usable snapshot. These states produce different actions. “No orders yet” is not the same as “We could not load your orders.”\n\nA write adds more states: editing, submitting, queued locally, acknowledged by the server, rejected, and outcome unknown. “Saved on this device” and “Synced to server” must have different labels. A `202` might add a processing state. If an order times out, show a reconciliation state rather than confidently saying “Order failed.”\n\n## Classify before recovering\n- **Configuration:** wrong base URL, missing build setting, unsupported native feature. Fix configuration; retries rarely help.\n- **Transport:** DNS failure, TLS failure, disconnected socket, no usable route. There is no HTTP status. A generic Fetch error may hide the exact native reason; inspect native diagnostics.\n- **HTTP:** authentication, authorization, validation, conflict, throttling, or server failure. Interpret the documented contract.\n- **Decode/schema:** bytes arrived but did not match your contract. Record safe shape/version context and treat this as a compatibility issue.\n- **Cancellation:** the user navigated away or the request became obsolete. Usually do not show a scary error toast.\n- **Deadline exceeded:** the client stopped waiting. A write may still have happened.\n\nPreserve these categories in code and telemetry. Do not label every exception “offline,” or every `401` “wrong password.” A request ID helps support connect a client report to server evidence, if the server received the call.\n\n## Deadlines are budgets\nA timeout for a single attempt is not the same as an overall operation deadline. Three 10-second attempts plus backoff can make a “10-second” action take much longer. Define a user-visible operation budget, then allocate remaining time to attempts and waits. Skip an attempt if it cannot fit. A read may be cancelled on navigation; a committed order needs reconciliation even if the initiating screen disappears.\n\nCancellation is cooperative. Abort the transport where supported, remove listeners, and guard against obsolete results. Do not infer server rollback from an abort. For shared cached reads, one component unmounting must not incorrectly cancel work still needed by another observer; let a query library own that lifecycle.\n\n## Error messages should guide action\nPrefer “Couldn't refresh. Showing products from 10:42. Try again.” over “Network Error.” For validation, preserve the user's input and associate errors with fields. For an expired session, keep a safe route back after sign-in. For rate limits, communicate an appropriate wait rather than encouraging repeated tapping. For unknown order outcomes, offer “Check order status.”\n\nAnnounce meaningful state changes to assistive technology, support retry buttons with accessible names, and avoid repeated global toasts for every background refetch. A low-priority analytics upload should not block checkout. Separate critical and optional dependencies so partial failure can still produce a useful screen.\n\n## A diagnostic observation\nIf users report “empty cart” while status codes look healthy, inspect your catch paths and cache transitions. An error swallowed into an empty array, an account switch, or a mismatched query key can mimic a perfectly successful empty response. Reliability begins with honest state, not just green HTTP dashboards.",
+      "questions": [
+        {
+          "id": "q019",
+          "prompt": "A background refresh fails but cached data is available. What is usually best?",
+          "options": [
+            "Keep the data, label freshness, and offer an appropriate retry.",
+            "Erase the data and show an empty state.",
+            "Log the access token for diagnosis."
+          ],
+          "answer": 0,
+          "why": "Preserving useful data avoids a worse experience. Make staleness visible when it matters to the product."
+        },
+        {
+          "id": "q020",
+          "prompt": "Three attempts each have a 10-second timeout. Is the operation guaranteed under 10 seconds?",
+          "options": [
+            "Yes; each uses the same timeout.",
+            "Yes, if they are GETs.",
+            "No; attempts and waits must share an overall budget."
+          ],
+          "answer": 2,
+          "why": "An operation budget must include all attempt durations and backoff, plus any relevant processing time."
+        },
+        {
+          "id": "q021",
+          "prompt": "The user leaves a screen and the read is cancelled. Should that count as an API outage?",
+          "options": [
+            "Only if it used HTTPS.",
+            "Usually no; track intentional cancellation separately.",
+            "Always yes."
+          ],
+          "answer": 1,
+          "why": "Cancellation describes lifecycle or intent. Mixing it with unintentional failures makes operational metrics misleading."
+        }
+      ],
+      "sources": ["fetch", "aws-retry", "react-effects"],
+      "exercise": "Sketch the catalog and checkout UI for: initial failure, stale-data refresh failure, offline queued write, 401, 422, and an order whose reply was lost.",
+      "lab": null
+    },
+    {
+      "id": "query",
+      "stage": 1,
+      "title": "Server state, query keys, and caching",
+      "subtitle": "Learn what a cache promises—and what it does not.",
+      "minutes": 40,
+      "objectives": [
+        "Distinguish server state from local UI state.",
+        "Use identity-safe query keys.",
+        "Separate staleTime, gcTime, persistence, and HTTP caching."
+      ],
+      "body": "## Two kinds of state\n**UI state** includes the selected tab or an unfinished form. **Server state** is a local view of data owned elsewhere: product stock, your profile, or order status. It can become outdated without a local action. A query library helps deduplicate reads, track loading, cache results, and coordinate refetching; it does not make the server stop changing.\n\nA sensible starting stack is Fetch or Axios for transport, a runtime schema validator for data, and TanStack Query v5 for server-state lifecycle. Avoid maintaining the same server list independently in a global store, a component, and a query cache unless you have a specific consistency design.\n\n## The key is the identity\n```tsx\nconst products = useQuery({\n  queryKey: ['products', accountId, { category, search, sort }],\n  enabled: Boolean(accountId),\n  queryFn: ({ signal }) => getProducts({ category, search, sort, signal }),\n  staleTime: 30_000,\n  gcTime: 10 * 60_000,\n  retry: false, // add one deliberate retry policy later\n});\n```\n\nInclude every input that changes the result: account or tenant, filters, locale when it affects content, and other relevant scope. Do not include raw access tokens. Two users sharing `['profile']` in a long-lived client can accidentally see each other's cached data. On logout/account switch, cancel old work and clear the relevant memory and persisted cache. An identity key complements cleanup; it does not replace it.\n\nThe query function above is an application adapter returning validated data and throwing typed failures. It receives the library's cancellation signal. Do not return `undefined` from a query function expecting data: handle endpoint emptiness explicitly. The numeric timings are illustrative, not universal defaults.\n\n## Four different clocks\n**staleTime** controls how long query data is considered fresh. Becoming stale does not itself mean a timer must fire a request at that exact instant. Events such as mounting, focus, reconnect, invalidation, or configured polling decide when work starts.\n\n**gcTime** controls when an unobserved query becomes eligible for garbage collection. It does not describe how fresh the data is. Query data can be stale and still useful, or fresh but later discarded after inactivity.\n\n**Persistence maxAge** is a policy for restoring an on-disk snapshot after restart. Match it with the documented garbage-collection/hydration settings, use a schema buster, and exclude sensitive data as appropriate. Persistence is opt-in; an in-memory query cache is not durable storage.\n\n**HTTP caching** is a separate native/proxy/CDN layer. `Cache-Control: no-cache` generally permits storage but requires validation before reuse; `no-store` instructs compliant HTTP caches not to store. Those directives do not automatically delete a manually persisted query cache. `private` restricts shared caching but does not encrypt data.\n\n## React Native needs lifecycle wiring\nTanStack's browser focus and online behavior need React Native integration through AppState and a connectivity source such as NetInfo. Install once, clean up subscriptions, and verify current library guidance. A screen gaining navigation focus is also distinct from the app returning to the foreground.\n\nCache policy is a product decision. A public product description can tolerate different staleness from a bank balance or final checkout price. The server must revalidate price and availability for a critical write. A cache can improve experience while still requiring a clear “last updated” label.",
+      "questions": [
+        {
+          "id": "q022",
+          "prompt": "What does staleTime = 30 seconds mean?",
+          "options": [
+            "Data is considered fresh for that interval; becoming stale alone need not trigger a request.",
+            "Delete the data at 30 seconds.",
+            "Persist the data for 30 seconds."
+          ],
+          "answer": 0,
+          "why": "Freshness, garbage collection, persistence, and refetch triggers are separate controls."
+        },
+        {
+          "id": "q023",
+          "prompt": "Which query key best separates customer profiles?",
+          "options": [
+            "A shared string profile for every user.",
+            "A key containing the raw bearer token.",
+            "A key including a stable account/tenant identity."
+          ],
+          "answer": 2,
+          "why": "Use non-secret identity scopes and cancel/clear old account data. Tokens should not become cache keys or diagnostic labels."
+        },
+        {
+          "id": "q024",
+          "prompt": "Does Cache-Control: no-store automatically clear an app-managed persisted cache?",
+          "options": [
+            "Only on iOS.",
+            "No; app persistence needs its own policy and cleanup.",
+            "Yes, including all SQLite rows."
+          ],
+          "answer": 1,
+          "why": "HTTP cache directives govern HTTP caching. Application-managed copies require deliberate handling."
+        }
+      ],
+      "sources": ["tanstack-defaults", "tanstack-rn", "tanstack-persist", "cache"],
+      "exercise": "Define query keys and freshness policies for catalog, profile, cart, and order status. Switch between two test accounts and confirm no prior-account result flashes on screen.",
+      "lab": "cache"
+    },
+    {
+      "id": "mutations",
+      "stage": 1,
+      "title": "Writes and optimistic interfaces",
+      "subtitle": "Make “saved” mean something precise.",
+      "minutes": 35,
+      "objectives": [
+        "Distinguish pending local changes from server confirmation.",
+        "Handle optimistic updates and concurrent mutations.",
+        "Avoid duplicate writes without relying on a disabled button."
+      ],
+      "body": "## Reads and writes have different risks\nA **mutation** changes server state: adding to a cart, creating an order, or uploading metadata. Disabling a submit button reduces accidental duplicate taps. It does not protect against network retries, app restarts, two devices, or a delayed duplicate request. Critical duplicate prevention belongs in the server contract.\n\nChoose UI feedback based on reversibility and risk. Toggling a favorite can feel instant. A payment or final order should not appear completed until the server's authoritative workflow confirms the required state. A locally queued draft can appear immediately with an explicit pending marker.\n\n## Optimistic means provisional\nAn optimistic update predicts what the server will accept. A basic flow is: cancel conflicting reads, snapshot current data, apply the prediction, send the mutation, reconcile with the authoritative result, and invalidate/refetch relevant views. On a definite rejection, roll back or show a conflict resolution action.\n\n```ts\n// Conceptual lifecycle; adapt to your query library's current API.\n// 1. Cancel relevant reads so old data cannot overwrite the prediction.\n// 2. Record prior state or an operation-specific inverse.\n// 3. Show the optimistic change with a pending operation ID.\n// 4. Send the mutation once through your chosen policy layer.\n// 5. On success, replace predicted fields with the server representation.\n// 6. On definite rejection, undo this operation and preserve newer edits.\n// 7. On unknown outcome, reconcile by operation ID before declaring failure.\n```\n\n## The concurrency trap\nSuppose the cart starts at quantity 1. Change A optimistically sets 2. Change B sets 3. A fails later. A naive rollback to the original snapshot sets the cart to 1, erasing B. A naive success response from A can likewise overwrite a newer value. Serialize writes per resource, use versioned server responses, or track operations and recompute the optimistic projection. “Just restore the snapshot” is safe only under assumptions you have checked.\n\nPrefer operations with clear semantics. `setQuantity(3, expectedVersion)` is easier to reconcile than blind increments, but still needs conflict handling. If the server applies business rules, its returned representation wins. Never trust optimistic totals for charging or inventory reservations.\n\n## Invalidation is a consistency strategy\nAfter an order succeeds, the order list, cart, inventory, and badge count may be affected. You can update known cache entries from the returned resource, invalidate related keys, or use a normalized cache. Document what must be immediately consistent and what may refresh later. Invalidating every query after every tap wastes bandwidth and can cause distracting refreshes.\n\nKeep a mutation's server error separate from a later refresh error. “Order created, but list refresh failed” should not invite the user to place the order again. If a write result is uncertain, show that uncertainty and reconcile. If a user is offline and your product does not support offline orders, preserve their form and explain when submission is possible.\n\n## Accessibility and user control\nAnnounce pending and completed states appropriately. Provide undo only when its semantics are real; a cosmetic undo after an irreversible commit is misleading. Keep the button tied to the operation state, and use an operation identity stable across safe retries. The offline lesson extends this model across process death.",
+      "questions": [
+        {
+          "id": "q025",
+          "prompt": "Is disabling the submit button sufficient to prevent duplicate orders?",
+          "options": [
+            "No; the server needs a deduplication/idempotency contract.",
+            "Yes; a second request becomes impossible.",
+            "Yes, when using React Query."
+          ],
+          "answer": 0,
+          "why": "UI guards cannot cover retries, restarts, multiple devices, or duplicate transport delivery."
+        },
+        {
+          "id": "q026",
+          "prompt": "An old optimistic change fails after a newer change succeeds. What is risky?",
+          "options": [
+            "Showing any pending indicator.",
+            "Using an operation ID.",
+            "Restoring the old whole-object snapshot and erasing the newer change."
+          ],
+          "answer": 2,
+          "why": "Concurrent optimistic updates require serialization or operation-aware reconciliation rather than blind snapshot rollback."
+        },
+        {
+          "id": "q027",
+          "prompt": "Order creation succeeds but refreshing the list fails. What should the app say?",
+          "options": [
+            "Nothing happened.",
+            "The order was created; the list could not refresh.",
+            "The order failed, so submit again."
+          ],
+          "answer": 1,
+          "why": "Treat the authoritative write outcome separately from the read used to refresh the UI."
+        }
+      ],
+      "sources": ["http", "tanstack-defaults", "aws-retry"],
+      "exercise": "Describe two simultaneous cart edits and draw their response order. Choose serialization, version checks, or an operation ledger, then explain how your UI avoids rolling back the newer edit.",
+      "lab": null
+    },
+    {
+      "id": "lists",
+      "stage": 1,
+      "title": "Lists, search, pagination, and waterfalls",
+      "subtitle": "Keep data loading correct as the dataset grows.",
+      "minutes": 30,
+      "objectives": [
+        "Design stable pagination and reset rules.",
+        "Prevent search races and request storms.",
+        "Avoid unnecessary dependent request chains."
+      ],
+      "body": "## A production list has a lifecycle\nA product list needs an initial page, a loading-more state, an end condition, refresh behavior, and a way to handle filters changing mid-request. Search adds rapid input changes and race conditions. A small demo that downloads all rows hides memory, latency, and correctness problems.\n\n**Offset pagination** uses an offset/page number and size. It is easy to understand but inserts and deletes can shift boundaries, causing duplicates or skipped items. **Cursor pagination** uses an opaque marker supplied by the server. It can be more stable, but only if the server defines ordering, tie-breakers, and cursor semantics. Never invent or decode opaque cursors in the app.\n\n## Identity spans the whole list\nKeep the filter, sort order, account scope, and search term in the list's query key. A cursor identifies a page within that list, not a universal location. On filter change, start the new query identity and reset pagination. Do not append results from the old filter into the new list. Use stable item IDs for rendering and defensive duplicate handling; client deduplication cannot recover rows the server skipped.\n\n```ts\n// Illustrative infinite-query contract\ntype Page<T> = { items: T[]; nextCursor: string | null };\n// Start with an explicit first-page parameter.\n// getNextPageParam: page => page.nextCursor ?? undefined\n// query key: ['products', accountId, { search, sort, category }]\n// queryFn receives both pageParam and the cancellation signal.\n```\n\nA missing next cursor means stop. Guard a load-more trigger while a page fetch is already in progress. Decide whether refresh replaces the whole page sequence or revalidates loaded pages. A high-churn feed may require a snapshot token or a server-defined consistency window to avoid page boundaries moving beneath the user.\n\n## Search deliberately\nDebounce typing when it makes the interface clearer and reduces waste; keep local input responsive. Enforce minimum useful query lengths where appropriate. Associate results with the exact term, cancel obsolete work, and encode query values with a URL builder. Do not use raw search text as an analytics or metric label: it may contain names, addresses, or other sensitive data.\n\n## Remove waterfalls before adding caches\nIf a screen first fetches a user, then fetches a store, then fetches a catalog only because the code was arranged that way, inspect whether those dependencies are necessary. Start independent reads in parallel or design a screen-oriented endpoint with the backend team. Avoid N+1 loading where every list item triggers another request. Batching can help but should be bounded and measured; one gigantic response is not automatically better.\n\nPrefetch only likely next content and respect metered connections and resource budgets. Images should use appropriate sizes and caching rather than embedding full-resolution files into JSON. Limit retained pages when long sessions could grow memory without bound. Test pull-to-refresh, rapid scroll, filter changes, navigation away, and account switching while responses arrive out of order.\n\n**Observation:** repeated first pages often indicate an unstable key, recreated query client, wrong next-cursor handling, or a load trigger firing while already fetching. Compare query identity and cursors before blaming the server.",
+      "questions": [
+        {
+          "id": "q028",
+          "prompt": "A filter changes while a page is loading. What should happen?",
+          "options": [
+            "Use a new list identity and prevent old results being appended.",
+            "Append every arriving page to the visible list.",
+            "Keep the old cursor for all filters."
+          ],
+          "answer": 0,
+          "why": "The cursor belongs to the old query scope. Filter identity and cancellation prevent mixed datasets."
+        },
+        {
+          "id": "q029",
+          "prompt": "What does cursor pagination guarantee by itself?",
+          "options": [
+            "A perfectly consistent snapshot under every concurrent write.",
+            "That item IDs are unnecessary.",
+            "Only what the server’s ordering and cursor contract explicitly guarantee."
+          ],
+          "answer": 2,
+          "why": "A cursor is not automatically a snapshot. Stable ordering, tie-breakers, and churn semantics must be defined."
+        },
+        {
+          "id": "q030",
+          "prompt": "Every product card fetches its own price. What issue might this create?",
+          "options": [
+            "Guaranteed better caching.",
+            "An N+1 request pattern with avoidable latency and load.",
+            "Automatic end-to-end tracing."
+          ],
+          "answer": 1,
+          "why": "A list request plus one request per item can multiply calls. Prefer suitable representations or bounded batching when the contract allows."
+        }
+      ],
+      "sources": ["http", "tanstack-defaults", "react-effects"],
+      "exercise": "Design a product-page response with items and nextCursor. Specify ordering, tie-breakers, refresh semantics, and how account/filter changes reset the list. Try fast typing under reversed response order.",
+      "lab": null
+    },
+    {
+      "id": "oauth",
+      "stage": 2,
+      "title": "Authentication without a hidden secret",
+      "subtitle": "OAuth, OIDC, PKCE, and native redirects explained plainly.",
+      "minutes": 40,
+      "objectives": [
+        "Separate authentication from authorization.",
+        "Explain Authorization Code with PKCE.",
+        "Choose system browser flows and validate redirects."
+      ],
+      "body": "## Identity and permission are different\n**Authentication** establishes who is signing in. **Authorization** decides what that identity may do. OAuth 2.0 is a delegated authorization framework. OpenID Connect, or **OIDC**, adds an identity layer on top. A JWT is one token format; it is not an authentication flow, and its encoded payload is not encrypted merely because it looks unreadable.\n\nA native app is a **public client**: anyone with the binary can inspect embedded values. A client ID can be public. A shared client secret in an app cannot provide the security of a confidential backend. Use the identity provider's supported native flow and a maintained library rather than inventing a login protocol.\n\n## Authorization Code with PKCE\n1. The app creates a high-entropy one-time `code_verifier` and derives the S256 `code_challenge`.\n2. It opens the authorization request in the platform's external user-agent, such as a system browser authentication session. The provider authenticates the user.\n3. The provider redirects to a registered callback with a short-lived authorization code.\n4. The app validates the callback and transaction binding, then exchanges the code plus its verifier at the token endpoint.\n5. The provider checks the verifier against the challenge and issues tokens according to policy.\n\n**PKCE**, pronounced “pixy,” makes an intercepted authorization code insufficient without the verifier. It does not make every redirect secure or replace validation of the issuer and transaction. Follow the library/provider's documented handling of `state`, OIDC `nonce`, redirect URI, issuer, and ID token validation. Exact requirements depend on the protocol flow; do not hand-roll these checks from a diagram.\n\n## Why use the system browser?\nRFC 8252 recommends external user-agents for native OAuth. They keep the app from directly handling the provider's password and can reuse an existing browser sign-in session. Avoid collecting an identity provider's credentials inside an arbitrary embedded WebView. PKCE does not make credential-phishing UI acceptable.\n\nPrefer claimed HTTPS redirects via Universal Links/App Links when supported and correctly configured. Custom schemes can be claimed by another app; PKCE mitigates code interception, while exact redirect registration and transaction checks remain necessary. Never place access or refresh tokens in ordinary deep-link query strings. Validate deep-link input just as you validate any external input.\n\n## Use the right token\nAn **access token** is presented to the resource API for a limited scope and audience. An **ID token** tells the client about the authentication event; do not substitute it for an API access token unless your provider explicitly defines that contract. A **refresh token** obtains new tokens and is especially sensitive. Token lifetimes, scopes, and rotation are server/provider policy.\n\nThe API validates signature or introspection as applicable, issuer, audience, expiry, and permissions. The client decoding a JWT to display an expiry time does not prove it is valid. Device time can also be wrong. Minimize scopes, keep tokens out of URLs and logs, and use HTTPS. Revocation and session invalidation belong in the system design.\n\n## Practice with realistic failure\nTest cancelled login, a malicious or unrelated callback, duplicate callbacks, a stale login transaction, provider unavailability, and returning to a killed app. Decide what the user sees if login succeeds but loading the profile fails. Do not label that whole sequence “wrong password.”",
+      "questions": [
+        {
+          "id": "q031",
+          "prompt": "Can a bundled OAuth client secret be treated as confidential?",
+          "options": [
+            "No; native apps are public clients.",
+            "Yes, if it is in an environment file.",
+            "Yes, if the JavaScript is minified."
+          ],
+          "answer": 0,
+          "why": "An installed app cannot keep a shared secret from someone who can inspect it. Use public-client native OAuth flows."
+        },
+        {
+          "id": "q032",
+          "prompt": "What does PKCE primarily protect?",
+          "options": [
+            "All data stored on the phone.",
+            "The API from every unauthorized request.",
+            "The code exchange when an authorization code is intercepted."
+          ],
+          "answer": 2,
+          "why": "The verifier binds the token exchange to the initiating client transaction. It complements redirect and identity validation."
+        },
+        {
+          "id": "q033",
+          "prompt": "Which token normally belongs on a protected resource API request?",
+          "options": [
+            "The PKCE verifier.",
+            "An access token with the correct audience and scope.",
+            "Any ID token because both may be JWTs."
+          ],
+          "answer": 1,
+          "why": "Access tokens and ID tokens serve different roles. Token shape alone does not make them interchangeable."
+        }
+      ],
+      "sources": ["auth-native", "auth-bcp", "rn-security"],
+      "exercise": "Draw the browser, app, authorization server, and API as four actors. Label the authorization code, verifier, access token, ID token, and refresh token, including which actor should receive each.",
+      "lab": null
+    },
+    {
+      "id": "sessions",
+      "stage": 2,
+      "title": "Sessions, secure storage, and one refresh",
+      "subtitle": "Survive expiry, rotation, logout, and account changes.",
+      "minutes": 40,
+      "objectives": [
+        "Store credentials using platform-backed facilities.",
+        "Coordinate concurrent 401 responses.",
+        "Prevent late responses from resurrecting a logged-out session."
+      ],
+      "body": "## Persistence is a security decision\nReact Native's security guide describes AsyncStorage as unencrypted key-value storage. It is suitable for many non-sensitive preferences, not bearer credentials. Use an appropriate platform-backed facility such as Keychain/Keystore through a maintained library, for example Expo SecureStore when compatible with your project.\n\nKeep access tokens in memory when the flow allows, and protect refresh tokens in secure storage. The exact design depends on your provider and threat model. Secure storage does not make a rooted or actively compromised device harmless, and it does not replace server expiry and revocation. Biometric-gated storage can become unavailable when enrollment changes; provide reauthentication recovery.\n\nUninstall behavior differs: Android SecureStore data is not retained after uninstall; iOS Keychain values may survive reinstall with the same bundle ID, but do not rely on that behavior as a guarantee. Backups and restore need correct platform exclusions. “Uninstall means logout” is not a reliable cross-platform contract.\n\n## The refresh storm\nFive API calls return `401` simultaneously. If each independently uses the same rotating refresh token, one may succeed while another triggers token reuse detection or invalidates the session. Use **single-flight refresh**: one refresh Promise per active session, shared by all waiting calls.\n\n```ts\n// Pseudocode: illustrates ownership, not a complete auth implementation.\n// session = { accountId, epoch, accessToken, refreshToken }\n// refreshPromise is scoped to this session, never global across users.\n// On eligible 401:\n//   1. If this request used an older token than current, retry with current.\n//   2. Otherwise join/start the session's single refresh operation.\n//   3. Store rotated credentials safely before releasing waiting requests.\n//   4. Confirm the account and epoch still match.\n//   5. Replay at most once, only when operation/body semantics permit.\n// Never route the refresh endpoint through its own 401-refresh interceptor.\n```\n\nDistinguish an expired/invalid token response from other authorization failures according to your API. Do not refresh for every `403` or enter an infinite refresh loop. If refresh gets a transient network failure, your user may still have a valid recoverable session; do not indiscriminately delete it. A definitive invalid/revoked refresh token usually requires signing in again.\n\n## Rotation has a crash window\nRotated refresh credentials must replace the old ones coherently. Separate access-token and refresh-token writes can leave mismatched state if the app dies between them. Prefer a securely stored credential envelope and a provider/library with documented recovery semantics. A crash after server rotation but before local persistence may require reauthentication; do not invent unsafe reuse behavior to hide it. RFC 9700 requires public-client refresh tokens to be sender-constrained or use rotation.\n\n## Logout must win\nGive each session an **epoch** or generation. Increase it on logout/account change. Cancel old requests, reject queued replays from the old generation, clear credentials and account caches, and prevent late refresh responses from saving tokens into a new session. Where available, revoke the server session/refresh token, and understand how device logout differs from signing out of the provider's browser session.\n\nReplaying a body is another constraint: a consumed stream or upload may not be replayable. Even with a new access token, an ambiguous write needs its original idempotency identity. A server should reject unauthorized writes before effects, but do not assume an undocumented middleware ordering is a deduplication protocol.",
+      "questions": [
+        {
+          "id": "q034",
+          "prompt": "Six requests hit token expiry at once. What is the preferred coordination?",
+          "options": [
+            "One refresh operation shared within that session.",
+            "Six independent refreshes with the same rotating token.",
+            "Refresh once for each screen component."
+          ],
+          "answer": 0,
+          "why": "Single-flight coordination avoids refresh storms and rotation races. It must still be scoped to the active identity."
+        },
+        {
+          "id": "q035",
+          "prompt": "A refresh response arrives after logout. What should happen?",
+          "options": [
+            "Save the tokens and silently log the user back in.",
+            "Store them in the next account’s cache.",
+            "Reject it using the session generation and avoid saving its tokens."
+          ],
+          "answer": 2,
+          "why": "Logout/account change invalidates work owned by the old session. Late results must not resurrect that identity."
+        },
+        {
+          "id": "q036",
+          "prompt": "Where should an ordinary bearer refresh token be persisted?",
+          "options": [
+            "In the analytics user properties.",
+            "In suitable platform-backed secure storage.",
+            "In plain AsyncStorage with a different key name."
+          ],
+          "answer": 1,
+          "why": "A refresh token is a credential. Use maintained secure storage and understand backup, biometric, and reinstall behavior."
+        }
+      ],
+      "sources": ["rn-security", "securestore", "auth-bcp"],
+      "exercise": "Write a session state machine: signed out, restoring, active, refreshing, temporarily offline, and reauthentication required. Include logout during refresh and account switching.",
+      "lab": "auth"
+    },
+    {
+      "id": "retry",
+      "stage": 2,
+      "title": "Retries, backoff, and idempotency",
+      "subtitle": "Retry the right work, once in the right layer.",
+      "minutes": 40,
+      "objectives": [
+        "Choose retries by semantics and failure.",
+        "Use bounded backoff with jitter and Retry-After.",
+        "Explain why deduplication requires durable server behavior."
+      ],
+      "body": "## A retry adds load and uncertainty\nA retry is a second attempt at the same logical operation. It can recover a transient connection failure, but it also adds traffic to an overloaded service. If the first attempt changed state, retrying can duplicate the effect. Never retry every error simply because an interceptor makes it easy.\n\nA typical read policy may retry a few transport failures or selected transient statuses, within an overall deadline. Validation errors and forbidden access do not improve by immediate repetition. A `401` may use a separate bounded refresh flow. Cancellation should stop retrying. Exact status handling is an API contract: even `500` does not universally mean “safe to repeat a write.”\n\n## Exponential backoff with full jitter\n```ts\n// Example wait before retry n, with n starting at 0.\nconst ceilingMs = Math.min(capMs, baseMs * 2 ** n);\nconst waitMs = Math.random() * ceilingMs;\n```\n\nBackoff spreads repeated attempts over time; jitter spreads different clients across that window. Choose caps, retry counts, and operation deadlines from the product and service behavior. Stop on cancellation. If a valid `Retry-After` specifies a minimum wait, respect it without retrying earlier; if it exceeds the user's remaining budget, defer or fail clearly instead of sleeping forever. Parse both delta-seconds and HTTP-date forms, accounting for clock uncertainty.\n\nRetry in one intentional layer. Three retries in the transport plus three retries in a query library can multiply into 16 attempts because each includes its initial attempt. Upstream/downstream retries can amplify further. Add a retry budget or server-directed load shedding and observe attempts per operation, not just final success.\n\n## A stable key is only half a protocol\nFor a critical POST, create a high-entropy idempotency key once per logical operation and persist it before the first attempt when recovery must survive process death. Reuse it for the **same** operation and payload. A genuinely new operation gets a new key.\n\nThe server must scope keys to the appropriate identity/endpoint, compare payload fingerprints, atomically claim the key with the business effect, handle concurrent duplicates, store an outcome or operation reference, and retain it for a documented recovery window. The key is not a password or authorization substitute. If retention expires, blindly replaying an old write may duplicate it; reconcile or ask for a new explicit action according to the contract.\n\nThe result is safe repetition under stated assumptions, not a magical universal “exactly once” network. A server that checks a key in memory and then writes the order in an unrelated transaction still has a crash race. A client generating a new key on every retry defeats deduplication.\n\n## Reconcile ambiguity\nIf the reply disappears, query status by the stable operation/order identity or resend the same idempotent operation according to the API. Surface “checking result” until you know. The server may still be processing; respect its documented pending response. If dependencies are unhealthy, circuit breaking or a degraded read-only path can help, but coordinate limits across clients and servers rather than letting millions of apps probe in lockstep.",
+      "questions": [
+        {
+          "id": "q037",
+          "prompt": "When do you generate a fresh idempotency key?",
+          "options": [
+            "For a new logical operation, not for each retry of the same one.",
+            "Before every attempt, including retries.",
+            "Whenever a timeout happens."
+          ],
+          "answer": 0,
+          "why": "Stable identity allows the server to recognize a duplicate attempt. A changed payload must follow the server’s conflict contract."
+        },
+        {
+          "id": "q038",
+          "prompt": "What does jitter accomplish?",
+          "options": [
+            "It validates the response schema.",
+            "It proves a POST was never committed.",
+            "It spreads clients’ retry times to reduce synchronized bursts."
+          ],
+          "answer": 2,
+          "why": "Randomized waits reduce the herd effect. Backoff and retry budgets still need bounds and server coordination."
+        },
+        {
+          "id": "q039",
+          "prompt": "Transport and query layers each make 4 total attempts. How many calls could occur?",
+          "options": [
+            "8 in every case.",
+            "16, if the outer layer repeats the entire inner operation.",
+            "4, because retries deduplicate automatically."
+          ],
+          "answer": 1,
+          "why": "Layered retries multiply. Configure a single owner for retries and measure attempt counts."
+        }
+      ],
+      "sources": ["aws-retry", "http"],
+      "exercise": "Define retry decisions for a catalog GET and order POST across timeout, TLS failure, 401, 403, 422, 429, 503, and cancellation. Add an overall deadline and a documented key-retention window.",
+      "lab": "retry"
+    },
+    {
+      "id": "security",
+      "stage": 2,
+      "title": "Transport security and data privacy",
+      "subtitle": "Protect the wire, the device, and the diagnostic trail.",
+      "minutes": 35,
+      "objectives": [
+        "Understand what HTTPS protects.",
+        "Make pinning an operational decision.",
+        "Minimize secrets and personal data throughout networking."
+      ],
+      "body": "## HTTPS is necessary and specific\nTLS with correct certificate and hostname validation protects confidentiality and integrity in transit and authenticates the server under the chosen trust model. It does not establish that an authorized user may read any order, prevent a compromised server, or encrypt your application's local database. Security boundaries need separate controls.\n\nUse supported platform defaults and modern TLS configurations. Never “fix” certificate failures by accepting every certificate or disabling hostname validation. Check device time, certificate chain completeness, hostname, expiry, network interception, and release/debug differences. Test your actual supported OS versions rather than just the newest simulator.\n\n## Pinning has a lifecycle\nCertificate/public-key pinning narrows which otherwise trusted server credentials a client accepts. It may be appropriate for a threat model or requirement, but it creates a deployment dependency between long-lived installed apps and certificate infrastructure. A rotation mistake can disconnect every old app version.\n\nIf you choose pinning, use a maintained native implementation, document coverage for every transport and domain, include an appropriate backup/rotation strategy, and rehearse expiry and emergency recovery. Do not silently bypass pins on failure. Certificate pinning does not prevent a fully controlled client from being modified; authorization and server-side abuse controls still matter. Some platform guidance cautions against pinning because recovery is difficult: make the choice with your security and operations owners.\n\n## Reduce what you send and store\nDo not put credentials in query strings. URLs are copied into logs, analytics, proxies, screenshots, and support reports. Avoid sending personal fields that an endpoint does not need. Never include a backend secret in a mobile bundle. Treat signed upload URLs as temporary capabilities: do not log them and restrict their scope and lifetime.\n\nSeparate public cacheable content from private data. Namespace persisted state by account/tenant, expire it appropriately, and clear it on logout or account deletion according to your product obligations. Encrypt sensitive local records with an appropriate key-management design; renaming the file or encoding data as Base64 is not encryption. Secure deletion and backup behavior depend on the platform; promise only what you can verify.\n\n## Diagnostics are another data pipeline\nBefore enabling request bodies, header capture, analytics, crash attachments, or session replay, inspect their actual payloads. Use an allowlist of safe fields, sanitize URLs to route templates, and remove Authorization, Cookie, Set-Cookie, tokens, passwords, and signed parameters. Redaction should happen before data leaves the device where feasible, with server-side filtering as another layer.\n\nDo not put emails or access tokens in trace baggage or metric labels. Consider consent, retention, deletion, data residency, and access control according to your product and jurisdiction. This course teaches engineering mechanisms; specific legal requirements need the relevant owner and current policy.\n\n## Check all destinations\nOnly send auth credentials and trace context to an explicit set of trusted hosts. Keep API, image/CDN, identity provider, telemetry, and upload destinations distinct. If remote configuration can change endpoints, validate an allowlist and authenticate configuration delivery; an untrusted URL override can become a credential exfiltration path. Treat third-party SDK networking as part of your data inventory.",
+      "questions": [
+        {
+          "id": "q040",
+          "prompt": "What does valid HTTPS fail to guarantee by itself?",
+          "options": [
+            "That the requester is authorized to read a particular order.",
+            "Confidentiality in transit under its trust model.",
+            "Server hostname validation when correctly implemented."
+          ],
+          "answer": 0,
+          "why": "Object-level authorization remains a server responsibility. TLS secures a transport channel, not your business permissions."
+        },
+        {
+          "id": "q041",
+          "prompt": "What is a major pinning operational risk?",
+          "options": [
+            "It makes tokens public automatically.",
+            "It makes HTTPS unnecessary.",
+            "Certificate/key rotation can break older installed app versions."
+          ],
+          "answer": 2,
+          "why": "Pins couple clients to server credentials. Coverage, backup pins, rotation, and emergency recovery require real operational planning."
+        },
+        {
+          "id": "q042",
+          "prompt": "Which telemetry policy is safest by default?",
+          "options": [
+            "Replace passwords with Base64.",
+            "Allowlist safe fields and redact credentials before transmission.",
+            "Upload every header and body for convenience."
+          ],
+          "answer": 1,
+          "why": "Diagnostic systems are data recipients. Minimize collection and verify the actual emitted payload, including URL parameters."
+        }
+      ],
+      "sources": ["rn-security", "android-security", "apple-ats-text", "sentry-data"],
+      "exercise": "Create a data inventory for API, auth, uploads, analytics, and crash reporting. For each destination, name allowed fields, credential handling, retention, and a deletion/account-switch test.",
+      "lab": null
+    },
+    {
+      "id": "connectivity",
+      "stage": 3,
+      "title": "Connectivity and app lifecycle",
+      "subtitle": "Online is a hint. Foreground is a different signal.",
+      "minutes": 30,
+      "objectives": [
+        "Interpret unknown network state correctly.",
+        "Wire AppState and online status once.",
+        "Choose a reconnection and freshness strategy."
+      ],
+      "body": "## Connected to what?\nA phone may be connected to Wi-Fi without reaching the internet. The internet may work while your API is down. A reachability probe may succeed through one host while another is blocked. Treat connectivity as a useful scheduling hint, not proof that the next request will succeed or fail.\n\nNetInfo exposes `isConnected` and `isInternetReachable`, which can be `null` when unknown. Converting unknown to false can lock a user out unnecessarily. Keep unknown explicit or choose a documented optimistic policy that allows an attempt. Configure probes carefully: they consume resources, may need privacy consideration, and do not test every backend dependency.\n\n## App focus and screen focus differ\nReact Native AppState distinguishes foreground and background states, with platform-specific nuances. Returning to the app can justify checking stale data. Switching tabs inside the app is navigation focus, a separate event. Do not install a new global network listener in every screen.\n\n```ts\n// Illustration: install once in the application lifecycle.\nimport NetInfo from '@react-native-community/netinfo';\nimport { AppState } from 'react-native';\nimport { onlineManager, focusManager } from '@tanstack/react-query';\n\nonlineManager.setEventListener(setOnline =>\n  NetInfo.addEventListener(state => {\n    // Unknown remains eligible for a real request under this policy.\n    const knownOffline = state.isConnected === false ||\n      state.isInternetReachable === false;\n    setOnline(!knownOffline);\n  })\n);\nconst subscription = AppState.addEventListener('change', state => {\n  focusManager.setFocused(state === 'active');\n});\n// Initialize focus from AppState.currentState when it is known.\n// Remove subscription during app-level cleanup/hot-reload teardown.\n```\n\nA reachability signal can be stale or wrong. Always handle request failures. Recheck current library/platform integration guidance and avoid a focus manager path intended only for web.\n\n## Reconnect is a scheduling event\nWhen connection returns, many reads, uploads, and queued writes may become eligible together. Resume with bounded concurrency, prioritize user-critical operations, refresh stale auth if needed, and add jitter where appropriate. Avoid refetching every cached query and draining a huge outbox at once.\n\nShow whether displayed data is cached and how old it is when freshness matters. A connectivity banner should be useful, stable, and accessible; do not flash it for every transient probe or cover the whole UI when local browsing still works. An API outage deserves a different message from a known disconnected device.\n\n## Background changes the rules\nJavaScript timers and sockets may pause when the OS suspends the app. A foreground timeout is not a reliable background scheduling mechanism. On resume, inspect persisted operation state, refresh stale views according to policy, reconnect real-time sessions, and reconcile writes whose outcomes were unknown. Repeated foreground events should be safe and idempotent from the app's perspective.\n\nTest Wi-Fi with no internet, captive portals, VPNs, airplane mode, Wi-Fi-to-cellular transitions, and rapidly backgrounding during a request. Include real devices; simulator connectivity can differ from physical-device behavior.",
+      "questions": [
+        {
+          "id": "q043",
+          "prompt": "NetInfo reports isInternetReachable = null. What does that mean?",
+          "options": [
+            "Reachability is unknown, not definitely offline.",
+            "The API returned 500.",
+            "The user is definitely signed out."
+          ],
+          "answer": 0,
+          "why": "Unknown is a distinct state. Choose a documented scheduling policy while still handling real request outcomes."
+        },
+        {
+          "id": "q044",
+          "prompt": "The phone is on Wi-Fi. Is your API necessarily reachable?",
+          "options": [
+            "Yes, Wi-Fi guarantees HTTP success.",
+            "Yes, unless the token is a JWT.",
+            "No; the route, DNS, service, or captive portal may still fail."
+          ],
+          "answer": 2,
+          "why": "Connectivity is not endpoint health or authorization. A real attempt can fail at several later layers."
+        },
+        {
+          "id": "q045",
+          "prompt": "What should happen when a large offline outbox reconnects?",
+          "options": [
+            "Delete all queued work without explanation.",
+            "Resume with bounded concurrency and prioritization.",
+            "Start every queued request simultaneously."
+          ],
+          "answer": 1,
+          "why": "A reconnect burst can overload both app and server. Use a deliberate scheduler and preserve operation identity."
+        }
+      ],
+      "sources": ["netinfo", "tanstack-rn", "rn-appstate"],
+      "exercise": "Specify behavior for online, known offline, unknown, API unavailable, and foreground resume. Test each while a cached catalog and one pending cart write exist.",
+      "lab": null
+    },
+    {
+      "id": "offline",
+      "stage": 3,
+      "title": "Offline writes and durable outboxes",
+      "subtitle": "Make local promises survive process death.",
+      "minutes": 45,
+      "objectives": [
+        "Design a persisted operation state machine.",
+        "Reconcile a lost acknowledgement.",
+        "Resolve ordering, conflicts, and account boundaries."
+      ],
+      "body": "## Offline support is a product promise\nChoose which operations are available offline. Reading a downloaded catalog, drafting a cart, reserving inventory, and confirming payment are different promises. A local draft does not reserve server stock. Never label a queued write “confirmed” because it appears in your local database.\n\nA **durable outbox** is a persisted record of operations the app intends to send. For recoverable local work, commit the local change and outbox row together in a database transaction when your storage supports it. Otherwise, a crash can save the visible change without saving the work needed to synchronize it.\n\n## Record enough to recover\nA row can include operation ID, account/tenant scope, operation type, schema version, payload, resource ID, dependency/version information, state, attempts, next eligible time, creation time, and last safe error. Do not embed a long-lived bearer token in each row. Obtain credentials for the correct current identity at send time.\n\n```text\nqueued → sending → acknowledged → reconciled\n             ↘ outcome-unknown → status check / same-key replay\n             ↘ retry-wait → queued\n             ↘ rejected / conflict → user or domain resolution\n```\n\n“Sending” left on disk after process death is not proof of success or failure. Recover it into an uncertain state and reconcile. Delete/archive only when the durable outcome has been handled. Keep a visible pending indicator and a safe way to explain stalled work.\n\n## At least once, with safe effects\nA client may resend after losing an acknowledgement. Server idempotency provides safe duplicate handling under its documented scope and retention. Without it, an outbox alone can duplicate orders. Persist the same logical identity across restarts. A response lost after server commit is the core recovery case, not an edge case to ignore.\n\nSend dependent writes in order: an attachment may depend on a created record. Different independent resources can use bounded parallelism. A poison operation that always fails validation should not block every other resource forever. Classify permanent failure, retryable failure, and conflict; cap or park retries and surface a repair path.\n\n## Conflict resolution is domain-specific\nIf two devices edit one cart, use explicit versions, conditional writes, merging rules, or user resolution. Last-write-wins is only appropriate when losing an intermediate edit is acceptable, and device wall clocks are not a reliable global ordering mechanism. CRDTs are specialized merge-friendly data structures; they do not automatically encode inventory, payment, or permission rules.\n\nA queued operation can become invalid when prices change, a resource is deleted, permissions are revoked, or idempotency retention expires. Revalidate business rules server-side. Decide how long old work remains eligible. Don't replay last month's order simply because a connection finally returned.\n\n## Identity and migrations\nOn logout, do not send user A's outbox with user B's credentials. Define whether to delete, retain securely but pause, or require explicit resolution for unsynced data. Migrate outbox schemas across app updates and test interrupted migrations. A persisted TanStack mutation cache may help a specific workflow but is not automatically a complete transactional domain outbox, conflict engine, or long-term credential policy.",
+      "questions": [
+        {
+          "id": "q046",
+          "prompt": "The app dies with an outbox row marked sending. What is safe on restart?",
+          "options": [
+            "Treat the outcome as uncertain and reconcile with the stable operation identity.",
+            "Assume the server committed.",
+            "Assume the server rejected and create a new identity."
+          ],
+          "answer": 0,
+          "why": "Process death can happen before or after the server commit. Durable recovery must handle both without duplicating effects."
+        },
+        {
+          "id": "q047",
+          "prompt": "Why commit the local update and outbox row together?",
+          "options": [
+            "To encrypt all network traffic.",
+            "To make authorization unnecessary.",
+            "To avoid a crash saving one without the other."
+          ],
+          "answer": 2,
+          "why": "Atomic local persistence prevents a visible change from losing its synchronization intent, or the reverse."
+        },
+        {
+          "id": "q048",
+          "prompt": "Can an old account’s outbox be sent with a new account’s token?",
+          "options": [
+            "Yes, after an app restart.",
+            "No; operations must remain bound to their owning identity.",
+            "Yes, if the endpoint path is unchanged."
+          ],
+          "answer": 1,
+          "why": "Identity isolation applies to durable writes as well as caches. Choose an explicit logout/unsynced-data policy."
+        }
+      ],
+      "sources": ["aws-retry", "tanstack-persist", "http"],
+      "exercise": "Design an outbox schema and recovery table. Walk through crashes before send, after server commit, after response receipt, and before local acknowledgement. Explain each recovery action.",
+      "lab": "outbox"
+    },
+    {
+      "id": "background",
+      "stage": 3,
+      "title": "Background work without impossible promises",
+      "subtitle": "Understand OS scheduling, native transfers, and push.",
+      "minutes": 30,
+      "objectives": [
+        "Separate foreground JS from OS-managed work.",
+        "Choose the right scheduling mechanism.",
+        "Communicate background limitations honestly."
+      ],
+      "body": "## The OS owns execution time\nA foreground JavaScript timer is not a service that can run forever. iOS and Android restrict background execution to protect battery, memory, privacy, and user control. The app can be suspended, terminated, or force-stopped. A permanently open WebSocket or `setInterval` loop does not override these rules.\n\nUse background work for a product need with a supported platform mechanism. There are several different categories: short completion time after a state transition, deferred synchronization, user-visible long-running transfers, and push-triggered opportunities. Each has different permissions, limits, and lifecycle rules.\n\n## Deferred scheduling\nExpo BackgroundTask uses native schedulers: WorkManager on Android and BGTaskScheduler on iOS. Android periodic work has a minimum interval of 15 minutes in the documented integration, and the OS may run it later. iOS chooses suitable execution opportunities. A requested interval is not a precise alarm or guaranteed execution time. Availability and testing support vary; current Expo docs state iOS background tasks require a physical device.\n\nWorkManager is designed for persistent work subject to constraints and OS rules, not arbitrary exact second-by-second updates. Force-stop/user termination behavior differs by platform and mechanism. Persist enough state to safely resume later, and always reconcile on foreground launch rather than relying exclusively on a background callback.\n\n## Transfers are a separate mechanism\nNative background URLSession on iOS can transfer files while the app is suspended, with session identifiers and delegate/lifecycle integration. An ordinary JS Fetch Promise is not equivalent. Android offers several transfer/work mechanisms whose suitability depends on duration, user initiation, target SDK, and current restrictions. Pick a maintained React Native integration and verify that it uses the right native mechanism.\n\nPersist transfer identifiers and metadata, handle completion when the JS process is recreated, move temporary files correctly, and reconcile server state. OS-managed transfer does not itself guarantee the business operation is valid, deduplicated, or authorized forever.\n\n## Push is a hint, not the database\nA push can inform the user or suggest fetching new data. Delivery can be delayed, coalesced, denied, or unavailable. A silent push does not guarantee a background wake, and a notification's contents are not an authoritative order state. Fetch or reconcile through your API, and avoid putting secrets or unnecessary personal details into push payloads.\n\n## Product language should match reality\nPrefer “Will sync when the app can connect” over “Guaranteed every five minutes” unless your actual mechanism and contract support that guarantee. Show queued/synced state and last successful sync. Let users manually retry in the foreground.\n\nTest charging and unplugged states, battery saver, network constraints, locked device, process termination, reboot, permission changes, and a release build. A debug “run task now” hook proves your handler works when invoked; it does not prove the OS will invoke it on your desired schedule.",
+      "questions": [
+        {
+          "id": "q049",
+          "prompt": "Does setInterval keep a React Native app syncing after OS suspension?",
+          "options": [
+            "No; use supported native scheduling and recover on resume.",
+            "Yes, if the interval is short.",
+            "Yes, with a global variable."
+          ],
+          "answer": 0,
+          "why": "Background execution is governed by the operating system. JS timers are not an execution entitlement."
+        },
+        {
+          "id": "q050",
+          "prompt": "A background task requests a 15-minute interval. What should the UI promise?",
+          "options": [
+            "Exactly one sync every 15 minutes.",
+            "Guaranteed execution after force-stop.",
+            "A best-effort sync opportunity subject to OS rules."
+          ],
+          "answer": 2,
+          "why": "Minimum intervals and scheduling requests are not precise execution guarantees."
+        },
+        {
+          "id": "q051",
+          "prompt": "Should an order status notification be the only source of truth?",
+          "options": [
+            "Yes; notifications never become stale.",
+            "No; reconcile through the authoritative API.",
+            "Yes; push delivery is guaranteed and ordered."
+          ],
+          "answer": 1,
+          "why": "Push is a delivery channel with delays and omissions. Treat it as a hint or user message, not a durable state ledger."
+        }
+      ],
+      "sources": ["expo-background", "android-work", "apple-background-text"],
+      "exercise": "Write a sync promise your product can honestly make. Choose foreground refresh, deferred work, native transfer, or push for each of catalog refresh, photo upload, and delivery notification.",
+      "lab": null
+    },
+    {
+      "id": "files",
+      "stage": 3,
+      "title": "Uploads, downloads, and large payloads",
+      "subtitle": "Treat bytes as a resource, not just another JSON field.",
+      "minutes": 35,
+      "objectives": [
+        "Use multipart and signed uploads safely.",
+        "Design resumable/background transfers.",
+        "Bound memory, concurrency, and retry costs."
+      ],
+      "body": "## Choose the transfer shape\nSmall JSON endpoints are convenient; large binary files need another path. Base64 inflates size by roughly one third before other overhead and can cause multiple in-memory copies. Prefer file-backed native transfer APIs where supported. File URIs, content URIs, Blob/FormData implementations, and streaming features differ by library/platform version: verify your exact runtime.\n\nFor multipart FormData, let the chosen transport generate the multipart boundary rather than manually setting a bare `Content-Type: multipart/form-data`. Include file name, media type, and supported file reference correctly. The server must verify authorization, size, actual file type, and other safety rules; client checks improve UX but are bypassable.\n\n## Signed direct uploads\nA common flow is: ask your API for an authorized upload session; receive a short-lived, tightly scoped signed destination; transfer the file to storage; tell the API to finalize; have the server validate and attach the object to the resource. Do not send your normal API bearer token to a third-party signed URL unless that endpoint explicitly requires it. Treat the URL itself as a sensitive capability.\n\nA successful byte upload is not the same as the business record being finalized. You can have an orphaned object or a completed upload whose finalization reply was lost. Use stable transfer/operation IDs and idempotent finalization. Clean up incomplete or expired uploads according to a server-side policy.\n\n## Resume requires a protocol\nRetrying a 500 MB upload from byte zero is expensive. Resumable transfer uses a server-defined session, offsets or parts, checksums, and final assembly rules. Persist the session and local file reference; handle URL/session expiration and verify the source file has not changed. A generic Fetch retry cannot create a resumable protocol by itself.\n\nDownloads may use range requests only if the server and representation support them. Combine ranges with an appropriate validator so you do not append bytes from a changed version. Verify integrity using a trusted digest when required. Move temporary files into durable storage correctly, enforce storage quotas, and handle low-disk conditions.\n\n## Progress must mean what it says\nUpload progress indicates bytes handed to a transport or sent, depending on the API. It does not prove server-side validation, persistence, or attachment succeeded. Show “uploading,” “processing,” and “complete” distinctly. Native progress may require XMLHttpRequest or a library/OS transfer mechanism; do not assume ordinary Fetch exposes all upload progress callbacks.\n\nBound concurrent uploads, compress/resize images appropriately, respect metered connections and user settings, and support cancellation. For long work that must continue while suspended, use a genuine native background transfer integration. Expo FileSystem APIs and legacy APIs vary by SDK, so check the installed version rather than copying old snippets.\n\n**Failure drill:** upload succeeds, then the app dies before finalization. On restart, recover the transfer record, query status, and safely finalize or clean up. Never infer that the photo is attached just because every byte left the phone.",
+      "questions": [
+        {
+          "id": "q052",
+          "prompt": "Why avoid Base64 for a large image when a file-backed transfer is available?",
+          "options": [
+            "It increases size and can cause expensive memory copies.",
+            "It automatically leaks the access token.",
+            "It makes TLS impossible."
+          ],
+          "answer": 0,
+          "why": "Base64 adds about 33% size overhead and often additional buffering, which matters on mobile devices."
+        },
+        {
+          "id": "q053",
+          "prompt": "The upload is at 100%. Is the business workflow necessarily complete?",
+          "options": [
+            "Yes; the record must be attached.",
+            "Yes; checksums are no longer needed.",
+            "No; server validation/finalization may still be pending."
+          ],
+          "answer": 2,
+          "why": "Byte transfer progress and authoritative workflow completion are different stages."
+        },
+        {
+          "id": "q054",
+          "prompt": "Should your API bearer token be sent to every signed storage URL?",
+          "options": [
+            "Yes; it improves tracing.",
+            "No; send only credentials explicitly required by that destination.",
+            "Yes; all upload URLs need the API token."
+          ],
+          "answer": 1,
+          "why": "Signed URLs are scoped capabilities. Avoid leaking unrelated API credentials to storage/CDN or third-party hosts."
+        }
+      ],
+      "sources": ["expo-file", "apple-background-text", "http"],
+      "exercise": "Design create-session → transfer → finalize → reconcile for a photo. Include expiry, app death, cancellation, checksum validation, low disk, and cleanup of orphaned uploads.",
+      "lab": null
+    },
+    {
+      "id": "realtime",
+      "stage": 3,
+      "title": "Real-time data and reconnecting streams",
+      "subtitle": "WebSockets, SSE, polling, and missed events.",
+      "minutes": 35,
+      "objectives": [
+        "Choose a real-time mechanism by product needs.",
+        "Reconnect without losing state or creating storms.",
+        "Bound message buffering and handle session changes."
+      ],
+      "body": "## Pick the simplest adequate channel\n**Polling** makes periodic reads. It is simple but adds traffic and battery cost; slow it down or stop it when the screen is inactive, and use conditional reads when appropriate. **Server-Sent Events (SSE)** provide a server-to-client event stream over HTTP. **WebSocket** supports bidirectional messages on a long-lived connection. A chat app and an order-status screen may need different choices.\n\nReact Native exposes WebSocket. Browser EventSource and streaming Fetch behavior should not be assumed across every native runtime: choose and test an appropriate maintained implementation. Socket.IO is its own higher-level protocol; a raw WebSocket server is not automatically compatible with a Socket.IO client.\n\n## A socket is not durable state\nConnections break during network switches and suspension. Reconnect with bounded exponential backoff and jitter, authenticate correctly, resubscribe, and reconcile missed data. Refresh expired credentials without creating multiple simultaneous sockets or using a token from an old account. Remove listeners and close obsolete connections.\n\nA robust event contract defines event IDs or sequence numbers, resource identity and version, ordering scope, duplicates, retention, and replay/resume behavior. On reconnect, use a resume cursor if the server supports it. If the cursor is too old or a gap is detected, fetch a fresh snapshot. Deduplicate events; do not count duplicate delivery as a second business action.\n\n## Ordering has a scope\nTCP gives ordered bytes within one connection. It does not make events across reconnections or different channels globally ordered. A REST refresh can race with socket events. Apply resource versions or a well-defined merge strategy so an old snapshot does not overwrite a newer event. If a stream only says “something changed,” invalidate a relevant query rather than pretending the message is a complete authoritative object.\n\n## Heartbeats and backpressure\nApplication heartbeats help detect a half-open connection, but frequent pings cost radio time and battery. Respect infrastructure idle timeouts and native background rules. The standard WebSocket API has no automatic application backpressure. Bound queues, coalesce replaceable updates, drop explicitly disposable messages, or disconnect/resync if the consumer falls too far behind. Do not let an unbounded message list fill memory.\n\nWith SSE, event IDs and reconnection support depend on the server/client implementation; do not assume every library persists a resume token across process death. With polling, avoid overlapping requests and synchronized refresh bursts across all clients.\n\n## Security still applies\nUse `wss://` in production. Authenticate the connection and authorize subscriptions/resources server-side. Avoid tokens in URLs when a safer supported mechanism exists, because URLs leak into logs. Validate messages as runtime data. Limit message size and subscription fanout. Test duplicate messages, missed ranges, token expiry, reconnect storms, malformed events, and a logout while a reconnect is pending.",
+      "questions": [
+        {
+          "id": "q055",
+          "prompt": "Does TCP ordering guarantee global event order across reconnects?",
+          "options": [
+            "No; use server-defined sequence/version and resume semantics.",
+            "Yes; the phone remembers every lost message.",
+            "Only when using JSON."
+          ],
+          "answer": 0,
+          "why": "Transport ordering is scoped to the connection. Application continuity requires explicit event identities and recovery."
+        },
+        {
+          "id": "q056",
+          "prompt": "The resume cursor is older than the server’s replay retention. What now?",
+          "options": [
+            "Assume no updates were missed.",
+            "Replay the cursor forever.",
+            "Fetch a fresh authoritative snapshot and resume from a valid point."
+          ],
+          "answer": 2,
+          "why": "A replay gap cannot be repaired by wishful retries. The protocol needs a full-resynchronization path."
+        },
+        {
+          "id": "q057",
+          "prompt": "Messages arrive faster than the app can process them. What is needed?",
+          "options": [
+            "More frequent heartbeats.",
+            "A bounded buffering/coalescing or resync policy.",
+            "An unlimited in-memory array."
+          ],
+          "answer": 1,
+          "why": "The standard WebSocket API does not provide automatic application backpressure. Bound memory and define overload behavior."
+        }
+      ],
+      "sources": ["rn-networking", "websocket", "rn-appstate"],
+      "exercise": "Design order-status events with IDs and versions. Explain reconnect after a 20-minute gap, duplicate delivery, REST/socket races, token expiry, and background suspension.",
+      "lab": null
+    },
+    {
+      "id": "protocols",
+      "stage": 3,
+      "title": "REST, GraphQL, RPC, and protocol choices",
+      "subtitle": "Choose contracts for the team and the device you actually have.",
+      "minutes": 25,
+      "objectives": [
+        "Compare common API styles without treating one as magic.",
+        "Handle GraphQL partial results and RPC constraints.",
+        "Keep cross-cutting guarantees explicit."
+      ],
+      "body": "## API style is not reliability policy\nREST commonly models resources and uses HTTP methods/statuses. GraphQL lets clients request a typed shape through operations against a schema. RPC models calls to named procedures; gRPC commonly uses Protocol Buffers and HTTP/2 with generated clients. Every style still needs authentication, authorization, version compatibility, deadlines, retries, cache rules, and observability.\n\nChoose based on team skills, backend capabilities, payload patterns, tooling, and supported native clients. A screen-oriented backend-for-frontend can reduce waterfalls without forcing every service to adopt the same public protocol. Avoid exposing a complex internal service topology directly to the phone unless it serves a clear need.\n\n## GraphQL has two error layers\nA transport can succeed while a GraphQL response includes both `data` and `errors`. Partial field failures may be usable if your UI and cache handle them intentionally. Do not infer complete business success from HTTP 200 alone. Request/validation failures and transport status behavior also depend on media type and the GraphQL-over-HTTP contract; use a compatible client and current specification.\n\nDefine an error policy for partial data, stable operation names for telemetry, and normalized-cache identities if using a normalized client. Protect sensitive fields with server authorization. Query depth/complexity limits, rate limiting, and persisted/allowlisted operations can limit abuse and improve predictability. Query variables can contain personal data; avoid logging them indiscriminately.\n\nHTTP POST for GraphQL does not make every operation a mutation or unsafe to retry: inspect operation semantics. Conversely, a mutation transported through a conventional endpoint is not safe just because the response is typed. Retry and idempotency belong to the operation contract.\n\n## RPC and native compatibility\ngRPC can offer strong schemas, generated code, and streaming, but ordinary React Native Fetch is not a complete native gRPC client. You may need a maintained native bridge, platform clients, gRPC-Web-compatible infrastructure, or another transport. Verify build support, cancellation, TLS, background behavior, and release compatibility before adopting it.\n\nBinary encoding can reduce payload size for some workloads but adds tooling and debugging considerations. Measure before optimizing. “Binary” does not mean encrypted. Schema evolution still needs rules for unknown fields, optional values, and old installed versions.\n\n## One consistent boundary\nWhatever the style, keep typed domain operations above transport. Make retry ownership, trace propagation, credential destinations, and error categories consistent. If the app mixes public REST, an identity SDK, uploads, and a socket, inventory each path: the main API client's interceptors may cover only one of them.\n\nA production architecture decision should name the constraints it satisfies and how it will be tested. “Popular,” “modern,” and “the same as our web app” are not sufficient reasons when the native runtime has different capabilities.",
+      "questions": [
+        {
+          "id": "q058",
+          "prompt": "A GraphQL response has HTTP 200 plus data and errors. Is everything successful?",
+          "options": [
+            "Not necessarily; interpret partial results using an explicit error policy.",
+            "Yes; HTTP 200 guarantees every field succeeded.",
+            "No; discard all data in every product."
+          ],
+          "answer": 0,
+          "why": "GraphQL can represent partial execution results. Decide which data is safe and useful for the screen."
+        },
+        {
+          "id": "q059",
+          "prompt": "Does ordinary React Native Fetch provide a complete native gRPC client?",
+          "options": [
+            "Yes; set Content-Type to protobuf.",
+            "Yes; HTTP/2 alone is enough.",
+            "No; validate an appropriate client/bridge and infrastructure."
+          ],
+          "answer": 2,
+          "why": "gRPC includes framing, schemas, status semantics, and often streaming beyond changing a Fetch header."
+        },
+        {
+          "id": "q060",
+          "prompt": "Which concern disappears when using a typed API schema?",
+          "options": [
+            "All old-client compatibility work.",
+            "None of authorization, runtime failure, or compatibility disappears.",
+            "All runtime failures."
+          ],
+          "answer": 1,
+          "why": "Schemas help agreement and generation, but distributed failures and security decisions still need explicit handling."
+        }
+      ],
+      "sources": ["graphql", "http", "rn-networking"],
+      "exercise": "Write a one-page API choice for Fieldcart. Compare REST, GraphQL, and RPC against offline recovery, native tooling, caching, observability, and the team’s operational experience.",
+      "lab": null
+    },
+    {
+      "id": "logs",
+      "stage": 4,
+      "title": "Logs, breadcrumbs, and analytics",
+      "subtitle": "Different evidence for different questions.",
+      "minutes": 35,
+      "objectives": [
+        "Separate product analytics, diagnostics, and audit records.",
+        "Design a safe structured request event.",
+        "Correlate reports without collecting raw sensitive data."
+      ],
+      "body": "## Start with the question\n**Product analytics** asks how people use a feature: did a catalog view lead to checkout? **Diagnostic logs** describe system behavior: request attempt 2 timed out. **Breadcrumbs** are a small ordered trail before an event. **Audit records** capture security/business actions with stronger durability and integrity requirements, normally enforced server-side. Do not use a sampled client analytics event as your authoritative payment or security ledger.\n\nAn **observation** is a measurement or recorded event. **Observability** is the system's ability to explain its internal behavior from emitted evidence. You want to answer new questions without shipping another build just to add a print statement. That requires thoughtful signals, not unlimited collection.\n\n## Use a structured vocabulary\nA useful request-attempt event can include an event name, route template, method, operation type, attempt number, duration, outcome category, status if one exists, server request ID if returned, trace/span IDs when present, app release, OS version, and a bounded connectivity category. Use fields a person or tool can query; avoid a single enormous string.\n\n```json\n{\n  \"event\": \"api.attempt.completed\",\n  \"route\": \"/orders/:id\",\n  \"method\": \"GET\",\n  \"attempt\": 2,\n  \"duration_ms\": 842,\n  \"outcome\": \"http_error\",\n  \"http_status\": 503,\n  \"release\": \"2.4.0+118\",\n  \"network_type\": \"cellular\"\n}\n```\n\nThis is a safe-shape example, not a universal schema. Add identifiers only where policy allows. A local operation ID connects retries; a per-attempt request ID distinguishes actual calls; a trace ID connects causally related spans. Do not put access tokens into any of them. Hashing a stable user ID can still be personal data depending on context.\n\n## Collect enough, not everything\nNormalize `/orders/abc123?email=...` to `/orders/:id` and strip query values. Allowlist headers and fields. Error messages and stack contexts may accidentally contain user input or response fragments. Scrub on-device before transmission where feasible, and inspect actual payloads in a test environment. Server-side scrubbing is defense in depth, not permission to send raw passwords.\n\nKeep a small bounded breadcrumb ring rather than storing a full unbounded history. Limit on-device telemetry queue size, retention, upload batch size, and retry budget. Telemetry itself uses networking and battery; a monitoring outage must not freeze checkout or trigger infinite recursive logging.\n\n## Correlation and privacy\nA user report can include app version, approximate time, a safe support/request ID, and a description of the visible state. Support should not ask for tokens or full sensitive request bodies. Secure access to logs, define retention/deletion, and restrict who can inspect user-linked diagnostics. Respect applicable consent and data rules.\n\nDedupe and sample repetitive events deliberately, but preserve enough context for serious failures. Sampled diagnostic logs cannot directly establish total failure counts unless the sampling model is accounted for. Keep product conversion metrics separate from low-level attempts so retry storms do not look like increased user engagement.",
+      "questions": [
+        {
+          "id": "q061",
+          "prompt": "Which record should be authoritative for a charged order?",
+          "options": [
+            "A durable server-side business/payment record.",
+            "A sampled mobile analytics event.",
+            "A console.log line on the phone."
+          ],
+          "answer": 0,
+          "why": "Client telemetry may be missing, delayed, duplicated, or manipulated. Business truth needs an authoritative server workflow."
+        },
+        {
+          "id": "q062",
+          "prompt": "What route value is best for a metric or general diagnostic event?",
+          "options": [
+            "A full URL containing email and signed parameters.",
+            "The access token.",
+            "A normalized template such as /orders/:id."
+          ],
+          "answer": 2,
+          "why": "Route templates reduce sensitive leakage and unbounded distinct values while preserving useful grouping."
+        },
+        {
+          "id": "q063",
+          "prompt": "What should happen if the telemetry endpoint is down?",
+          "options": [
+            "Retry logs recursively without a cap.",
+            "Bound and defer telemetry without blocking the main user operation.",
+            "Block all API calls until every log uploads."
+          ],
+          "answer": 1,
+          "why": "Observability networking must have its own resource budgets and should not create a new production outage."
+        }
+      ],
+      "sources": ["otel", "sentry-data"],
+      "exercise": "Define a safe api.attempt.completed event and a user-operation event. List fields you intentionally exclude. Capture and inspect emitted telemetry for a login, search, and failed order.",
+      "lab": null
+    },
+    {
+      "id": "metrics",
+      "stage": 4,
+      "title": "Metrics, percentiles, and useful alerts",
+      "subtitle": "Measure reliability from the user’s point of view.",
+      "minutes": 40,
+      "objectives": [
+        "Define SLIs with explicit denominators.",
+        "Separate operation success from attempt success.",
+        "Interpret tail latency, sampling, and error budgets."
+      ],
+      "body": "## Begin with an SLI\nA **service-level indicator (SLI)** is a defined measurement of behavior. A **service-level objective (SLO)** is a target over a time window. An **error budget** is the allowed amount of bad behavior under that definition. An SLA is a separate agreement, often contractual; do not use the terms interchangeably.\n\nFor catalog loading, define a user operation as beginning when the user requests the screen and ending when useful content appears or the operation fails. An illustrative SLI could be “eligible foreground catalog operations that show useful content within 2 seconds / all eligible foreground catalog operations.” Explicitly define cache hits, intentional cancellation, known offline use, missing telemetry, unsupported versions, and partial data. Do not quietly exclude inconvenient failures to make the chart green.\n\n## Attempts and operations answer different questions\nSuppose 100 operations generate 120 HTTP attempts. Twenty first attempts fail transiently and all twenty retries succeed. Operation success can be 100%, while attempt success is 100/120, about 83.3%. Both are informative: users recovered, but the network/service is doing extra work and may have added latency. Reporting only final success hides deterioration.\n\nA crash or process kill can prevent a completion event. Pair start/completion where feasible and define orphaned operations or server-confirmed outcomes instead of counting only received success events. Mobile telemetry may upload hours later; distinguish event time from ingestion time.\n\n## Tail latency matters\nThe median, or p50, is the middle observed value. p95 is a threshold at or below which about 95% of the chosen observations fall, depending on the quantile method. It is not “95% faster than average.” A mean can hide a slow minority. Measure request duration, useful-content duration, and parsing/render work separately where practical.\n\nUse histograms with sensible buckets for aggregation. Do not average per-device p95 values and call the result the overall p95. Compute a population quantile from an appropriate mergeable distribution or raw observations. Document whether failed/time-out operations are included; measuring only successful requests creates survivorship bias.\n\n## Choose bounded dimensions\nUseful breakdowns can include route template, operation type, app release, OS family, region/coarse network category, and outcome class. Raw user IDs, request IDs, search strings, and full URLs create high-cardinality metrics and may expose personal data. Such identifiers belong, if allowed, in controlled logs/traces rather than general metric labels.\n\nTrack error rate, latency distribution, attempts per operation, retry exhaustion, cache hit/freshness, outbox age/depth, conflict rate, auth refresh failure, upload completion, and reconnect gaps. Pick a small actionable set first; define an owner and response for each alert.\n\n## Alerts should reflect impact\nA 99.5% objective over 10,000 eligible operations permits 50 bad operations under that definition. Watch error-budget burn over appropriate windows and segment by release/platform to detect a bad rollout. Low traffic needs different statistical care. A single device's weak signal should not page the whole team; a widespread checkout failure should.\n\nSampling must be accounted for. Failure-biased traces are excellent for diagnosis but do not represent unbiased population success rates. SDK dashboards may use different sampling pipelines for metrics and traces: verify the product's semantics before treating counts as a denominator.",
+      "questions": [
+        {
+          "id": "q064",
+          "prompt": "100 operations produce 120 attempts, of which 100 succeed. What is attempt success?",
+          "options": [
+            "About 83.3%, while operation success may still be 100%.",
+            "120%.",
+            "Always 100% if retries recover."
+          ],
+          "answer": 0,
+          "why": "Define the denominator. Retry recovery can preserve final success while hiding failed attempts and extra latency."
+        },
+        {
+          "id": "q065",
+          "prompt": "Can you average each phone’s p95 to get the overall p95?",
+          "options": [
+            "Yes, always.",
+            "Yes, if each p95 is in milliseconds.",
+            "No; aggregate the underlying distribution appropriately."
+          ],
+          "answer": 2,
+          "why": "Percentiles are not generally additive or averageable across populations. Use mergeable histograms or the combined observations."
+        },
+        {
+          "id": "q066",
+          "prompt": "At a 99.5% SLO over 10,000 eligible operations, what is the error budget?",
+          "options": [
+            "5,000 bad operations.",
+            "50 bad operations under that SLI definition.",
+            "500 bad operations."
+          ],
+          "answer": 1,
+          "why": "The allowed bad fraction is 0.5%. Multiplying 10,000 by 0.005 gives 50; eligibility and the window must be explicit."
+        }
+      ],
+      "sources": ["otel", "aws-retry"],
+      "exercise": "Write one catalog SLI and one order-submission SLI with start/end, denominator, exclusions, offline policy, missing-event handling, dimensions, target, and owner.",
+      "lab": "metrics"
+    },
+    {
+      "id": "traces",
+      "stage": 4,
+      "title": "End-to-end traces that actually connect",
+      "subtitle": "From a tap to the API, downstream calls, and database.",
+      "minutes": 45,
+      "objectives": [
+        "Explain spans, parentage, and propagation.",
+        "Connect a supported mobile SDK to compatible backend instrumentation.",
+        "Recognize sampling gaps and timing limits."
+      ],
+      "body": "## A trace tells a causal story\nA **trace** represents a connected operation. A **span** records one timed unit of work with a name, identity, parent relationship, attributes, and outcome. A trace ID groups the story; span IDs distinguish its parts. A request ID is useful correlation but is not automatically a distributed trace.\n\nFor Fieldcart, a user span `catalog.load` may contain an HTTP client span. The API extracts incoming context and creates a server span. Database and downstream calls create children. Response parsing and rendering can have their own measured work where the integration supports it. A checkout with retries should preserve one operation identity and distinguish each attempt.\n\n```text\ncatalog.load                       [user intent → useful content]\n  GET /products                    [client attempt]\n    GET /products                  [API server]\n      inventory.lookup             [downstream service]\n      SELECT products              [database]\n  catalog.decode                   [app work, if instrumented]\n```\n\n## Context crosses the network\nW3C Trace Context defines `traceparent` and `tracestate`. A typical version-00 header has a version, 32-hex-character trace ID, 16-hex-character parent/span ID, and flags. Each span gets its own identity; do not reuse a hardcoded example or generate a new unrelated trace in every service. Let a supported SDK generate, validate, and inject context.\n\nThe server must **extract** the incoming context, create the request span with the right parent, and **inject** current context into downstream calls. Add trace/span IDs to structured logs where supported. Without propagation on either side you get disconnected traces, even if both dashboards show spans.\n\n## React Native requires a supported integration\nDo not paste a Node.js auto-instrumentation bootstrap into a React Native app and assume native HTTP, navigation, startup, or async context are covered. OpenTelemetry's JavaScript runtime support and individual instrumentations must be checked against your React Native/runtime version. Choose an explicitly supported mobile integration, test its transport coverage, and document gaps.\n\nOne concrete option is the maintained Sentry React Native SDK with a matching supported backend SDK. Its distributed tracing uses Sentry's documented `sentry-trace` and `baggage` propagation, so it is not correct to claim that adding only W3C `traceparent` completes that setup. Configure `tracePropagationTargets` for your own API destinations, instrument the backend, create a test transaction/operation, and verify the parent-child relationship in one actual trace. Follow the exact installed SDK version's API. Sentry and OpenTelemetry concepts overlap, but wire formats and integration paths require explicit compatibility.\n\n## Propagation needs boundaries\nOnly propagate to approved hosts; a broad substring match can accidentally include an attacker-controlled hostname. Never put tokens, emails, or other sensitive payload in baggage. At public boundaries, treat incoming trace context as untrusted metadata, validate it, and enforce sampling/rate budgets. A trace header grants no authorization. Browser clients may also require CORS header configuration; native clients do not gain browser rules merely by adding trace headers.\n\n## Read traces carefully\nA missing span may mean unsampled work, unsupported instrumentation, dropped telemetry, a propagation bug, or a real failure before the server received anything. Head sampling chooses early; tail sampling chooses after more outcome information is available and often needs infrastructure support. Biased samples are diagnostic evidence, not automatically population metrics.\n\nA client span longer than its server child can include connection/setup, transit, queueing, transfer, and app work; check the SDK's exact span boundary. Clocks on different machines can be skewed. Distinguish sequential from parallel spans: the **critical path** determines elapsed time, not the sum of overlapping child durations. End-to-end means you have verified every boundary you claim to cover.",
+      "questions": [
+        {
+          "id": "q067",
+          "prompt": "Both app and API create spans but use unrelated trace IDs. What is missing?",
+          "options": [
+            "Compatible context propagation and parent extraction/injection.",
+            "A longer timeout.",
+            "A shared access token in baggage."
+          ],
+          "answer": 0,
+          "why": "Instrumentation in two services does not automatically connect them. Context must cross the request boundary in a compatible format."
+        },
+        {
+          "id": "q068",
+          "prompt": "Can you drop Node auto-instrumentation into React Native and assume full coverage?",
+          "options": [
+            "Yes; JavaScript is identical everywhere.",
+            "Yes, if TypeScript compiles.",
+            "No; verify an explicitly supported runtime and mobile integration."
+          ],
+          "answer": 2,
+          "why": "Native networking, async context, navigation, and startup need compatible instrumentation. Successful compilation does not prove coverage."
+        },
+        {
+          "id": "q069",
+          "prompt": "What does a missing server span prove?",
+          "options": [
+            "The API definitely succeeded.",
+            "Nothing by itself; inspect sampling, propagation, coverage, and actual receipt.",
+            "The server definitely never saw the request."
+          ],
+          "answer": 1,
+          "why": "Telemetry can be absent for many reasons. Correlate with logs and request evidence before drawing an outcome conclusion."
+        }
+      ],
+      "sources": ["tracecontext", "otel-context", "otel-js", "sentry-rn", "sentry-distributed"],
+      "exercise": "Capture a real app-to-API trace in a development environment. Verify shared trace identity, correct parentage, one child per actual attempt, downstream propagation, safe attributes, and the documented sampling policy.",
+      "lab": "trace"
+    },
+    {
+      "id": "debug",
+      "stage": 4,
+      "title": "A repeatable debugging workflow",
+      "subtitle": "Use tools to test a hypothesis, not just stare at traffic.",
+      "minutes": 35,
+      "objectives": [
+        "Move from symptom to layer-specific evidence.",
+        "Choose DevTools, native logs, proxies, and server logs appropriately.",
+        "Recognize version and instrumentation coverage gaps."
+      ],
+      "body": "## Begin with a reproducible report\nRecord the visible symptom, expected result, app build, OS/device, network context, account scope without secrets, approximate event time, and safe operation/request ID. Ask whether it affects one user, one platform, one release, one endpoint, or everyone. Preserve the user's unsynced work before recommending a destructive reset or reinstall.\n\nFollow a ladder: configuration → connectivity/DNS → TLS → HTTP → schema → cache/state → rendering. At each rung, form a hypothesis and choose evidence that could disprove it. “It is the network” is too broad to guide an investigation.\n\n## Pick the right instrument\nReact Native DevTools' built-in Network and Performance panels are documented from **React Native 0.83**. The retrieved docs describe recording Fetch, XMLHttpRequest, and Image requests; custom transports and Expo-specific behavior have coverage differences. They also list limitations such as WebSocket events, response mocking, and simulated throttling. Recheck your installed version; an absent event may be a tool gap. Older setups may use other supported inspection tools.\n\nUse Xcode device logs and Android Logcat for native trust, DNS, socket, and lifecycle errors. A desktop HTTP client can establish that an endpoint works from your laptop, but it does not reproduce the phone's native trust store, network route, app lifecycle, or auth state. Do not treat a successful curl call as proof that the app must work.\n\nA development proxy can inspect permitted test traffic and simulate conditions. It requires correct routing and a test-device CA/trust setup; release certificate pinning may intentionally block interception. Use debug-only trust changes, redact captures, and never weaken release validation to make a proxy convenient. Your proxy may also change protocol negotiation and timing.\n\n## Work through a slow request\n1. Compare user-operation duration with HTTP-attempt duration.\n2. Count attempts and waits. Is a query library or interceptor retrying?\n3. Correlate the server request ID/trace. Check backend and database time.\n4. Inspect cold/warm connection behavior, payload size, and transfer cost where observable.\n5. Measure body parsing, validation, cache update, and rendering.\n6. Segment by app release, OS, device class, and network category.\n\nDo not invent DNS timings from a generic JS timer. Do not compare raw wall-clock timestamps from different devices as a precise latency measurement.\n\n## Common misleading observations\n“HTTP 200 but broken screen” may be a schema mismatch, partial GraphQL error, swallowed exception, image failure, or stale cache. “Only release fails” often suggests environment config, native module setup, certificate trust, build optimization, or missing production permissions. “Duplicate orders” requires operation identities and server logs; a double-render explanation alone is insufficient. “Only on cellular” suggests route/carrier/VPN/IPv6, metering, or timing differences as well as app logic.\n\nWrite down the hypothesis, observation, conclusion, and next test. Keep sanitized traces/screenshots as incident evidence, and add a regression check that targets the confirmed failure rather than every speculative theory.",
+      "questions": [
+        {
+          "id": "q070",
+          "prompt": "curl succeeds on your laptop. What has that proved?",
+          "options": [
+            "The endpoint worked from that laptop under those request conditions.",
+            "The phone’s TLS and routing must work.",
+            "The mobile app cannot have a networking bug."
+          ],
+          "answer": 0,
+          "why": "Different devices can use different DNS, trust stores, routes, credentials, and lifecycle behavior."
+        },
+        {
+          "id": "q071",
+          "prompt": "A request is missing from DevTools. What should you check first?",
+          "options": [
+            "Assume the request never happened.",
+            "Disable all release certificate checks.",
+            "Your version and the tool’s transport/event coverage."
+          ],
+          "answer": 2,
+          "why": "Inspection coverage is version- and transport-dependent. Native logs and server evidence may be needed."
+        },
+        {
+          "id": "q072",
+          "prompt": "What is a good first step for a slow screen?",
+          "options": [
+            "Add retries at every layer.",
+            "Separate operation time, attempts/backoff, server time, and app processing.",
+            "Increase every timeout."
+          ],
+          "answer": 1,
+          "why": "A phase breakdown and attempt count narrows the cause. Longer waits and more retries can hide or amplify it."
+        }
+      ],
+      "sources": ["rn-devtools", "android-security", "otel"],
+      "exercise": "Use the incident notebook to investigate “catalog takes 8 seconds on cellular.” Record three hypotheses and the observation that would falsify each. Do not change code until one has evidence.",
+      "lab": "diagnosis"
+    },
+    {
+      "id": "testing",
+      "stage": 5,
+      "title": "Test failures before users find them",
+      "subtitle": "A practical test pyramid for mobile networking.",
+      "minutes": 40,
+      "objectives": [
+        "Separate policy tests from native network verification.",
+        "Build a deterministic failure matrix.",
+        "Exercise process death and lost acknowledgements."
+      ],
+      "body": "## Test the promise at the right layer\nUnit-test pure decisions such as retry eligibility, backoff bounds, error mapping, query-key construction, schema validation, and outbox state transitions. Inject clocks and randomness so tests are deterministic. Integration-test screens against controlled responses so loading, stale data, errors, and retry actions are exercised together. Contract-test client assumptions against the API schema and real server behavior.\n\nNative device/end-to-end tests cover what mocks cannot prove: certificate trust, ATS/Android config, cookie redirects, file/content URIs, actual native transports, background behavior, and release build configuration. A Jest Fetch mock cannot prove those work.\n\n## Mock the boundary accurately\nMSW can intercept at useful request boundaries, but setup depends on environment. The retrieved current React Native guide uses `@msw/react-native`, importing its environment setup before MSW handlers, configuring `network`, and enabling it only in development/test. It explicitly says older `msw/native` setup has been removed. Node-based component tests instead use the documented Node integration. Pin versions and follow the current guide for the version installed.\n\nNo mocking library automatically covers every native file transfer or SDK transport. Verify each path you rely on. Keep production mock code disabled and test the release artifact. Use a controlled mock API or network fault tool when you need server-side effects plus response loss.\n\n## A minimum failure matrix\n- Responses: valid JSON, malformed JSON, incompatible schema, empty `204`, partial GraphQL data, very large body.\n- Status: 401, 403, validation failure, conflict/precondition failure, 429 with both Retry-After forms, and transient 5xx.\n- Timing: slow headers, slow/stalled body, out-of-order reads, deadline, explicit cancellation.\n- Connectivity: DNS failure, invalid certificate, captive portal, no route, Wi-Fi/cellular transition.\n- Lifecycle: background, resume, process death, reboot, logout/account switch during a request or refresh.\n- Writes: duplicate taps, concurrent retries, response lost after commit, expired deduplication retention, conflict from another device.\n- Storage: full disk, failed credential persistence, interrupted outbox migration, stale account cache.\n\n## Assert outcomes, not implementation trivia\nFor a lost order response, assert that one business order exists, the operation identity survives restart, and the UI reconciles correctly. Do not merely assert that `fetch` was called once: safe recovery may correctly require another attempt. For retry timing, assert allowed bounds and budget behavior with a fake clock instead of waiting through real delays.\n\nTest accessibility and message correctness too. A screen that says “saved” for an unacknowledged outbox row is a failure even if every unit test about function calls passes. Verify that credentials and personal data never appear in captured diagnostic payloads.\n\n## From deterministic tests to chaos\nStart with one controlled fault and a known expected result. Then combine realistic failures: token expires while connectivity flaps and the app backgrounds, for example. Use staging/test accounts and bounded load. A chaos exercise is useful only if the team can explain the outcome and recover. Finish by preserving the smallest regression case that reproduces a confirmed bug.",
+      "questions": [
+        {
+          "id": "q073",
+          "prompt": "What can a mocked Fetch test not prove?",
+          "options": [
+            "Native certificate trust and release transport configuration.",
+            "That the UI shows an error for a controlled mocked failure.",
+            "That your pure retry predicate returns a value."
+          ],
+          "answer": 0,
+          "why": "Mocks exercise application behavior at a boundary. Real native integration still needs device/release verification."
+        },
+        {
+          "id": "q074",
+          "prompt": "What is the strongest assertion for a lost order acknowledgement?",
+          "options": [
+            "fetch was called exactly once in every scenario.",
+            "The spinner disappeared.",
+            "One business effect exists and the app recovers its stable operation outcome."
+          ],
+          "answer": 2,
+          "why": "The actual promise is safe business behavior and recoverability, not a universal fixed transport call count."
+        },
+        {
+          "id": "q075",
+          "prompt": "Which native MSW setup should you blindly copy?",
+          "options": [
+            "A Node http interceptor inside the device app.",
+            "None; use the current integration for your installed version.",
+            "Any old msw/native tutorial."
+          ],
+          "answer": 1,
+          "why": "The retrieved current guide uses @msw/react-native; APIs evolve and Node-only modules do not automatically work on-device."
+        }
+      ],
+      "sources": ["msw-native", "rn-networking", "android-security"],
+      "exercise": "Build six deterministic tests: malformed body, stale search race, retry budget, concurrent refresh, logout during refresh, and lost acknowledgement after server commit. Add real-device TLS and process-death checks.",
+      "lab": null
+    },
+    {
+      "id": "performance",
+      "stage": 5,
+      "title": "Performance, battery, and cost",
+      "subtitle": "Optimize the full experience with measured tradeoffs.",
+      "minutes": 30,
+      "objectives": [
+        "Reduce waterfalls, bytes, and redundant work.",
+        "Balance freshness against battery and data cost.",
+        "Measure release builds on realistic devices."
+      ],
+      "body": "## Optimize a measured bottleneck\nFirst establish a baseline: time to useful content, request/attempt counts, payload bytes, cache usefulness, JS processing, memory, and battery-relevant scheduling behavior. Measure a release build on a representative device and network. Debug instrumentation and emulators can distort performance; a desktop benchmark is not the same workload.\n\nMake independent requests concurrent when appropriate, remove N+1 patterns, and avoid fetching data that the screen never uses. Use pagination and field selection instead of a giant “everything” payload. Compress text where server/client stacks support it. For media, request the size and format the display needs. Repeated megabyte thumbnails can dominate a small JSON API.\n\n## Cache deliberately across layers\nA CDN can reduce server load for public cacheable content. Native HTTP caches and image libraries can reuse representations. The query cache coordinates app data and UI state. Each has its own keys, expiry, and privacy boundaries. Check `Vary`, authorization, cookies, and cache-control rules before allowing shared caching. Private user data must not leak through a public cache key.\n\nETag revalidation can save response bytes while still paying a network round trip. A query cache can avoid the request entirely while its policy permits. Prefetch can hide latency, but incorrect predictions waste data and energy. Respect metered/expensive connections and user preferences; do not prefetch the whole shop because it is technically possible.\n\n## The radio has a cost\nMany tiny requests can repeatedly activate the radio. Batch noncritical telemetry, reduce unnecessary polling, use appropriate freshness windows, and stop screen-specific work when inactive. Batching introduces delay and memory limits, so keep urgent business work separate. Reconnect floods and repeated failed probes also consume battery.\n\nA real-time connection can reduce some polling but has heartbeat, reconnect, and background limitations. Compare measured behavior for your use case rather than assuming sockets are always cheaper. Native connection pooling generally handles reuse better than ad hoc attempts to force connection headers from JavaScript.\n\n## Work continues after the wire\nLarge JSON decoding, validation, object creation, cache transformations, and image processing can block the JS thread or increase memory pressure. Reduce payloads first; move suitable heavy work to supported native/background mechanisms when needed. Streaming is useful only if your actual transport/runtime and server contract support it. Do not assume a browser streaming example works identically in React Native.\n\n## Make tradeoffs visible\nSet illustrative budgets, then tune them from evidence: maximum page size, retained pages, concurrent uploads, telemetry queue size, retry amplification, and useful-content latency. Record the device/network/build for measurements. Watch regressions by release and endpoint. A faster catalog is not worth an incorrect price or lost offline draft; preserve correctness while optimizing.",
+      "questions": [
+        {
+          "id": "q076",
+          "prompt": "What should guide your first optimization?",
+          "options": [
+            "A measured bottleneck in a representative release-device scenario.",
+            "The newest networking library.",
+            "An assumed problem based only on localhost speed."
+          ],
+          "answer": 0,
+          "why": "Baseline evidence tells you whether latency, bytes, processing, or redundant work dominates."
+        },
+        {
+          "id": "q077",
+          "prompt": "Does an ETag 304 eliminate all network latency?",
+          "options": [
+            "Yes; no request occurred.",
+            "Yes; it is identical to a fresh in-memory cache hit.",
+            "No; it can save body bytes but still involves a validation round trip."
+          ],
+          "answer": 2,
+          "why": "Conditional requests and local cache hits are distinct. Measure both request count and transferred data."
+        },
+        {
+          "id": "q078",
+          "prompt": "Why batch noncritical telemetry carefully?",
+          "options": [
+            "To avoid all privacy review.",
+            "To reduce overhead while bounding queue size, delay, and battery cost.",
+            "To make every event authoritative business truth."
+          ],
+          "answer": 1,
+          "why": "Batching trades latency and buffering against radio/network overhead. It still needs budgets and data minimization."
+        }
+      ],
+      "sources": ["cache", "rn-devtools", "websocket", "expo-file"],
+      "exercise": "Measure one catalog scenario in release mode. Remove one waterfall or redundant request, then compare useful-content time, bytes, attempts, and JS work on the same device/network.",
+      "lab": null
+    },
+    {
+      "id": "release",
+      "stage": 5,
+      "title": "API evolution and safe releases",
+      "subtitle": "Installed apps live longer than your deployment.",
+      "minutes": 35,
+      "objectives": [
+        "Design compatibility for old clients.",
+        "Roll out networking changes with observable guardrails.",
+        "Plan certificate, endpoint, and data migrations."
+      ],
+      "body": "## You cannot instantly update every phone\nServer code can deploy quickly; installed app versions may remain active for months. Design API evolution for that reality. Adding an optional field is often safer than removing a required field, but even additions can break strict validators or exhaustive enum switches. Define how clients handle unknown fields and enum values, and test old binaries against new APIs.\n\nKeep contracts stable or version them with an explicit support policy. Coordinate deprecation windows, old-client traffic measurement, migration documentation, and user communication. An endpoint should not start returning a completely different error shape without a transition. Never require a forced upgrade solely because it is easier to reason about; decide with product/security needs and provide an accessible recovery path if an update is mandatory.\n\n## Release configuration is part of the feature\nVerify production base URLs, TLS chains, ATS/Android settings, native module configuration, auth redirect registration, trace propagation hosts, source maps/symbols, and privacy filters. Public build-time configuration is not a secret store. Confirm release logging does not include debug request bodies or test credentials.\n\nCertificate and pin rotation, identity-provider changes, backend region moves, DNS/CDN changes, and signed-upload policy changes can break older clients. Rehearse these with supported versions and real devices. Keep a documented recovery plan with named owners; long-lived pins are particularly unforgiving.\n\n## Roll out with observable guardrails\nUse staged app/server rollout where available and compare operation success, tail latency, refresh failures, retries per operation, conflicts, and outbox age by release/platform. Define a rollback or pause threshold before launch. Preserve both the old and new server behavior during the compatibility window when necessary.\n\nFeature flags can disable a broken optional path or choose a supported alternative. Remote configuration needs authenticated delivery, bounded caching, validation, safe defaults, and explicit destination allowlists. A flag cannot repair an incompatible native binary or make an unsafe credential destination acceptable. Store policy and your update mechanism determine what can change without a new binary; verify those rules rather than assuming arbitrary native changes can be delivered over the air.\n\n## Migrate local state too\nApp upgrades may restore persisted queries, credentials, file sessions, and outbox rows created by older versions. Use schema versions and carefully tested migrations. A cache buster can discard a replaceable cache; it must not silently erase irreplaceable unsynced user work. Test failure during migration and rollback behavior where supported.\n\n## A launch checklist needs evidence\n“Works on my phone” is not a release decision. Require evidence for old-client compatibility, account isolation, offline recovery, write deduplication, authentication rotation, privacy-safe telemetry, monitoring ownership, and a tested incident runbook. The capstone converts these into a concrete acceptance checklist. Some products need additional compliance and threat-model work beyond this curriculum.",
+      "questions": [
+        {
+          "id": "q079",
+          "prompt": "Why test a new API against old app binaries?",
+          "options": [
+            "Installed clients cannot all update at deployment time.",
+            "Old binaries always refresh themselves instantly.",
+            "HTTP forbids optional fields."
+          ],
+          "answer": 0,
+          "why": "Mobile compatibility must account for delayed or unavailable client updates."
+        },
+        {
+          "id": "q080",
+          "prompt": "When is a cache buster insufficient or dangerous?",
+          "options": [
+            "When the data is a replaceable public catalog snapshot.",
+            "When it has a schema-version label.",
+            "When it would discard irreplaceable unsynced user operations."
+          ],
+          "answer": 2,
+          "why": "Replaceable caches and durable user intent require different migration policies. Do not erase pending work as a shortcut."
+        },
+        {
+          "id": "q081",
+          "prompt": "What should determine a rollout pause?",
+          "options": [
+            "Only whether the build uploaded successfully.",
+            "Predefined user-impact metrics and an owned recovery plan.",
+            "Only whether HTTP 200 counts increased."
+          ],
+          "answer": 1,
+          "why": "Measure operation success, latency, retries, auth, and offline health, segmented by release and platform."
+        }
+      ],
+      "sources": ["http", "tanstack-persist", "android-security", "securestore"],
+      "exercise": "Write a rollout plan with supported client versions, staged exposure, four guardrail metrics, rollback/pause criteria, owners, and migration behavior for a pending outbox row.",
+      "lab": null
+    },
+    {
+      "id": "capstone",
+      "stage": 5,
+      "title": "Build, break, observe, and recover",
+      "subtitle": "Your production-readiness project and incident rehearsal.",
+      "minutes": 60,
+      "objectives": [
+        "Combine the course into one coherent app design.",
+        "Prove recovery with concrete failure drills.",
+        "Write an actionable incident review."
+      ],
+      "body": "## A concrete starting point\n If you do not have an app yet, create a TypeScript React Native project using the current official React Native/Expo setup path for your environment. For an Expo project, the commands below add this course's suggested data-layer pieces; they do not implement your backend or configure OAuth for you.\n\n ```sh\n npx create-expo-app@latest Fieldcart\n cd Fieldcart\n npm install @tanstack/react-query zod\n npx expo install @react-native-community/netinfo expo-secure-store\n ```\n\n Follow the generated project's instructions for running on a device. Use a development build when your chosen native auth, transfer, or instrumentation integration needs native configuration; Expo Go is not proof that those integrations work. Choose versions compatible with the generated SDK rather than assuming every latest package works together.\n\n Keep the first implementation easy to inspect:\n\n ```text\n src/net/client.ts           one-attempt JSON boundary from chapter 6\n src/net/products.ts         URL building + runtime product/page schema\n src/net/retry-policy.ts     chosen retry decisions and operation budget\n src/auth/session.ts         identity, epoch, restore, shared refresh\n src/query/client.ts         one stable QueryClient per app lifetime\n src/sync/outbox.ts          durable operation state + recovery\n src/telemetry/index.ts      safe events, mobile SDK configuration\n src/features/catalog/      screen, search, pagination, UI states\n ```\n\n Mount `QueryClientProvider` at the root around your app or routing tree. Create its QueryClient once at module scope or with a stable initializer, not on every render. Register the app-level AppState/NetInfo integration once with cleanup. Keep screen navigation focus handling separate.\n\n ```tsx\n import { QueryClient, QueryClientProvider } from '@tanstack/react-query';\n const queryClient = new QueryClient({\n   defaultOptions: { queries: { retry: false, staleTime: 30_000 } },\n });\n // In App.tsx, or adapt this provider to your router's root layout:\n export function Root() {\n   return <QueryClientProvider client={queryClient}>\n     <YourAppOrRoutingTree />\n   </QueryClientProvider>;\n }\n ```\n\n `YourAppOrRoutingTree` is a placeholder for your generated app's root. Add a domain adapter that builds the request URL from the chosen filters, calls `requestJson`, and validates a documented product-page schema from `unknown`. Reject an unexpected empty response. Start with a controlled HTTPS API or test server, then verify the same contract against your real API. Do not let a mock replace release/native verification.\n\n First milestone: one catalog query renders valid data; malformed JSON gives an honest error; cancellation does not show a failure toast; a refresh preserves useful existing data. Only then add the next slice.\n\n ## Build Fieldcart in slices\nBegin with a catalog and a typed JSON API boundary. Add loading/error/empty/stale states. Introduce identity-scoped queries, search, and cursor pagination. Add supported native OAuth, secure session restore, and single-flight refresh. Then add a cart, safe order creation, a durable draft/outbox policy, a photo transfer, and order-status updates.\n\nKeep server responsibilities explicit. You need a real or controlled test API with authorization, schema contracts, version checks, order deduplication, operation-status reconciliation, file finalization, and trace extraction. A frontend-only simulation cannot establish that the production server makes those guarantees.\n\n## Instrument before the final demo\nDefine catalog and checkout operations, each HTTP attempt, safe structured errors, and backend spans. Connect an actual trace across app → API → a downstream or database call. Confirm allowed propagation destinations, sampling, privacy filters, and release tagging. Record unsupported transports as coverage gaps rather than claiming complete visibility.\n\nCreate a small dashboard with user-operation success, useful-content latency distribution, attempts per operation, auth refresh failures, and oldest pending outbox age. Define denominators and owners. Keep analytics events separate from order/payment truth.\n\n## Run the acceptance drills\n1. Expire the access token while five reads start: observe one refresh and no account mixup.\n2. Lose an order reply after the server commits, then kill the app: restart and reconcile to one order.\n3. Edit a draft offline, kill/restart, reconnect: preserve local intent and show accurate pending/synced state.\n4. Race old search results against newer ones and switch accounts while reads are in flight.\n5. Return 429/503 repeatedly: respect bounded waits, cancellation, and an operation budget.\n6. Expire an upload session after bytes are transferred but before finalization: recover without a false “attached” state.\n7. Miss real-time events while backgrounded: detect the gap and obtain authoritative state.\n8. Send malformed data and inspect logs/traces: show an honest error without leaking secrets.\n\nUse the checklist in Field notes to retain evidence. A tick means you have verified that item, not merely read about it. The final assessment checks understanding; it does not certify your app.\n\n## Rehearse one incident\nScenario: a release increases checkout failures on Android cellular networks. Stabilize first: name an incident owner, assess impact, preserve unsynced work, and pause a rollout or disable a safely switchable optional path. Avoid a hurried retry increase that amplifies load or a trust-bypass patch that introduces a security flaw.\n\nSegment by release/platform/route. Compare operation and attempt metrics, inspect sampled traces and native errors, correlate server request IDs, and check configuration/certificate/API changes. Track facts separately from hypotheses. Verify that the mitigation restores user outcomes and stops further damage.\n\n## Write a useful review\nRecord impact, detection, timeline with timezone, contributing conditions, the evidence for the cause, mitigation, recovery validation, and a small set of owned preventive actions. Avoid blaming “the network” or an individual. Add the smallest regression test or release check that would have caught the verified failure. Share only sanitized evidence.\n\nAfter completing this course, repeat the project on your own product's riskiest operation. Production judgment grows from testing assumptions, measuring outcomes, and learning from real constraints—not from memorizing a library's options.",
+      "questions": [
+        {
+          "id": "q082",
+          "prompt": "What proves end-to-end trace coverage?",
+          "options": [
+            "A verified connected trace across the boundaries and transports you claim.",
+            "Initializing a mobile SDK alone.",
+            "Seeing unrelated spans in two dashboards."
+          ],
+          "answer": 0,
+          "why": "End-to-end is a tested property. Verify parentage, compatible propagation, sampling, and actual transport coverage."
+        },
+        {
+          "id": "q083",
+          "prompt": "During an order incident, what is a dangerous reflex?",
+          "options": [
+            "Pausing a rollout using a tested plan.",
+            "Preserving unsynced user work.",
+            "Increasing retries everywhere before checking idempotency and load."
+          ],
+          "answer": 2,
+          "why": "Retry amplification can worsen overload and duplicate unsafe writes. Stabilize with evidence and bounded mechanisms."
+        },
+        {
+          "id": "q084",
+          "prompt": "What is the purpose of the capstone checklist?",
+          "options": [
+            "Replace native testing.",
+            "Record evidence that the chosen app guarantees were actually verified.",
+            "Certify every possible compliance requirement."
+          ],
+          "answer": 1,
+          "why": "A practical readiness checklist is scoped evidence. It complements, rather than replaces, product-specific review and real-device validation."
+        }
+      ],
+      "sources": ["aws-retry", "otel-context", "rn-security", "rn-devtools"],
+      "exercise": "Build the smallest version of Fieldcart that exercises your product’s risky operations. Save one sanitized trace, a failure-matrix result, a dashboard definition, and an incident review in your project repository.",
+      "lab": null
+    }
+  ],
+  "exam": [
+    {
+      "id": "q085",
+      "prompt": "The API commits an order, but its response never reaches the phone. What supports safe recovery?",
+      "options": [
+        "A persisted operation identity, server deduplication, and reconciliation.",
+        "A new order ID for every retry.",
+        "A longer spinner without a status check."
+      ],
+      "answer": 0,
+      "why": "Recovery needs stable logical identity and a documented server outcome protocol."
+    },
+    {
+      "id": "q086",
+      "prompt": "Which pair belongs in separate measurements?",
+      "options": [
+        "All retries counted as new customers.",
+        "Every cancellation counted as downtime.",
+        "User operation outcomes and individual HTTP attempt outcomes."
+      ],
+      "answer": 2,
+      "why": "These denominators answer different reliability questions and expose retry amplification."
+    },
+    {
+      "id": "q087",
+      "prompt": "A logout happens during token refresh. Which invariant matters?",
+      "options": [
+        "Logout only hides the screen.",
+        "Old-session results cannot update the new session or account cache.",
+        "Every refresh result must always be saved."
+      ],
+      "answer": 1,
+      "why": "Use generation checks and cleanup so late work cannot resurrect credentials or leak identity-scoped data."
+    },
+    {
+      "id": "q088",
+      "prompt": "What does a query becoming stale necessarily do?",
+      "options": [
+        "Mark the data stale; configured events/policies determine refetching.",
+        "Delete the persisted database.",
+        "Start a request at that exact instant in every case."
+      ],
+      "answer": 0,
+      "why": "Freshness is separate from scheduling, garbage collection, and persistence."
+    },
+    {
+      "id": "q089",
+      "prompt": "A cache key omits the tenant while the result depends on tenant. What is the risk?",
+      "options": [
+        "Only a cosmetic loading delay.",
+        "TLS automatically separates all cache entries.",
+        "Wrong-tenant data can be reused."
+      ],
+      "answer": 2,
+      "why": "Query identity must include every result-changing scope, with cleanup on account changes."
+    },
+    {
+      "id": "q090",
+      "prompt": "An SDK uses sentry-trace while your backend reads only traceparent. What is required?",
+      "options": [
+        "Put the access token in baggage.",
+        "A documented compatible integration/propagation path and verification.",
+        "Assume any header spelling is equivalent."
+      ],
+      "answer": 1,
+      "why": "Trace concepts do not make wire formats interchangeable. Configure compatible SDKs or an explicit supported bridge."
+    },
+    {
+      "id": "q091",
+      "prompt": "What belongs in a general metric label?",
+      "options": [
+        "A bounded route template or outcome category.",
+        "A raw email address.",
+        "A unique request ID for every sample."
+      ],
+      "answer": 0,
+      "why": "Bounded dimensions keep metrics useful and control cost/privacy risks."
+    },
+    {
+      "id": "q092",
+      "prompt": "An offline row is visibly saved but has no outbox entry after a crash. What design helps?",
+      "options": [
+        "A faster retry delay.",
+        "A bigger HTTP header.",
+        "Atomic persistence of the local change and synchronization intent."
+      ],
+      "answer": 2,
+      "why": "Local transactionality prevents half-saved synchronization state."
+    },
+    {
+      "id": "q093",
+      "prompt": "Why is a successful mocked networking suite insufficient for release?",
+      "options": [
+        "HTTPS bypasses every platform difference.",
+        "It cannot establish native trust, lifecycle, and actual transport behavior.",
+        "Mocks can never test UI behavior."
+      ],
+      "answer": 1,
+      "why": "Use mocks for controlled app logic plus native/release device checks for integration guarantees."
+    },
+    {
+      "id": "q094",
+      "prompt": "A signed upload URL is valid. What should the client still avoid?",
+      "options": [
+        "Sending unrelated API credentials or logging the signed URL.",
+        "Tracking transfer identity.",
+        "Checking finalization status."
+      ],
+      "answer": 0,
+      "why": "Signed URLs are sensitive scoped capabilities; keep credentials and diagnostics destination-aware."
+    },
+    {
+      "id": "q095",
+      "prompt": "How can you support old installed clients during API changes?",
+      "options": [
+        "Require every phone to update before any deployment.",
+        "Delete all old outboxes on startup.",
+        "Use compatibility rules, transition windows, and old-binary contract checks."
+      ],
+      "answer": 2,
+      "why": "API and local-schema evolution must account for delayed updates and durable user intent."
+    },
+    {
+      "id": "q096",
+      "prompt": "A background job ran in a debug trigger. What does that prove?",
+      "options": [
+        "Force-stopped apps always execute it.",
+        "The handler ran under that trigger, not a guaranteed OS schedule.",
+        "The OS will run it every minute."
+      ],
+      "answer": 1,
+      "why": "Controlled triggers test behavior when invoked. Platform scheduling remains best effort and constrained."
+    },
+    {
+      "id": "q097",
+      "prompt": "Which is a safe handling of a 204 JSON endpoint response?",
+      "options": [
+        "Handle its lack of content explicitly.",
+        "Always call response.json().",
+        "Treat it as an automatic schema-valid object."
+      ],
+      "answer": 0,
+      "why": "204 has no content. A typed domain adapter must decide whether absence is expected."
+    },
+    {
+      "id": "q098",
+      "prompt": "Why might client duration exceed server span duration?",
+      "options": [
+        "The measurements must both be false.",
+        "Server time always equals screen time.",
+        "Connection, transit, retries, transfer, and app work may add time."
+      ],
+      "answer": 2,
+      "why": "Understand span/timer boundaries before comparing measurements across layers."
+    },
+    {
+      "id": "q099",
+      "prompt": "What should a conflict from another device trigger?",
+      "options": [
+        "A fresh login in every case.",
+        "A documented version/merge/user-resolution path.",
+        "Unbounded retry of the same stale write."
+      ],
+      "answer": 1,
+      "why": "Conflicts express concurrent state change, not necessarily a transient transport problem."
+    },
+    {
+      "id": "q100",
+      "prompt": "What makes telemetry production-ready?",
+      "options": [
+        "Safe fields, verified coverage, bounded resources, useful correlation, and owned alerts.",
+        "Maximum raw payload collection.",
+        "A dashboard without defined denominators."
+      ],
+      "answer": 0,
+      "why": "Telemetry must explain behavior without introducing privacy leaks, false certainty, or resource failures."
+    }
+  ],
+  "glossary": {
+    "API": "A contract through which one program requests data or actions from another.",
+    "Attempt": "One actual network call; an operation can have several attempts.",
+    "Operation": "One logical user or system intent, potentially fulfilled from cache or multiple calls.",
+    "Asynchronous": "Work that can complete later without synchronously occupying the caller throughout the wait.",
+    "Promise": "A JavaScript object representing future completion or failure.",
+    "DNS": "A system for resolving names to connection information such as IP addresses.",
+    "TLS": "Transport Layer Security: protects a channel and authenticates the server under its trust model.",
+    "HTTP": "The application protocol defining requests, responses, methods, statuses, and headers.",
+    "TCP": "A reliable ordered byte-stream transport used by HTTP/1.1 and HTTP/2 in common deployments.",
+    "QUIC": "A UDP-based secure transport used by HTTP/3.",
+    "Latency": "Elapsed time for a defined piece of work. Always state the start and end.",
+    "Bandwidth": "Available data-transfer capacity, distinct from round-trip delay.",
+    "TTFB": "Time to first byte under the measuring tool’s definition; not necessarily pure backend time.",
+    "CORS": "A browser response-sharing policy between origins; not API authorization.",
+    "ATS": "Apple App Transport Security, which enforces security requirements for supported URL loading.",
+    "Schema": "Rules describing valid data shape and values; runtime validation checks actual received data.",
+    "Idempotent": "Repeating the same request has the same intended effect as one request, under its contract.",
+    "Idempotency key": "A stable logical-operation key used by a server deduplication protocol.",
+    "Deadline": "The time budget after which the caller stops waiting; not proof of server rollback.",
+    "Backoff": "Increasing waits between repeated attempts to reduce load.",
+    "Jitter": "Randomization of scheduling delays to reduce synchronized bursts.",
+    "Retry budget": "A bound on additional attempts, time, or load allocated to retries.",
+    "Query key": "The identity of cached server data, including every relevant result-changing input.",
+    "staleTime": "How long query data is considered fresh, separate from refetch scheduling.",
+    "gcTime": "How long inactive/unobserved query data can remain before garbage collection under the library policy.",
+    "ETag": "A server-provided representation validator used for conditional reads or writes.",
+    "Optimistic update": "A provisional local prediction of a server-accepted change.",
+    "OAuth": "A delegated authorization framework, commonly used with native Authorization Code + PKCE.",
+    "OIDC": "OpenID Connect, an identity layer built on OAuth 2.0.",
+    "PKCE": "A one-time verifier/challenge mechanism binding the authorization-code exchange to the initiating client.",
+    "Access token": "A credential for a resource API with defined scope, audience, and lifetime.",
+    "Refresh token": "A sensitive credential used to obtain replacement tokens under provider policy.",
+    "JWT": "A structured token format; Base64url payload encoding is not encryption.",
+    "Single-flight": "Sharing one in-progress operation, such as token refresh, among concurrent callers.",
+    "Session epoch": "A generation marker used to reject work owned by an earlier login/account session.",
+    "Outbox": "Durable local records of intended operations awaiting transmission or reconciliation.",
+    "Reconciliation": "Comparing local intent/state with authoritative outcomes and resolving uncertainty.",
+    "Cursor": "An opaque server marker locating a page or resume position under a defined contract.",
+    "Backpressure": "A way to control or respond to producers exceeding consumer capacity.",
+    "WebSocket": "A bidirectional long-lived messaging channel; it needs application recovery semantics.",
+    "SSE": "Server-Sent Events: a server-to-client HTTP event stream.",
+    "Trace": "A causal story of connected work across timed spans.",
+    "Span": "A timed unit of work with identity, parentage, attributes, and outcome.",
+    "Propagation": "Passing trace or other compatible context across a boundary.",
+    "Baggage": "Propagated contextual key-value data; never a place for secrets or unnecessary personal data.",
+    "Sampling": "Selecting some telemetry for retention; selection can bias conclusions.",
+    "Cardinality": "The number of distinct values for a dimension; unbounded values are costly in metrics.",
+    "SLI": "A precisely defined reliability indicator with an explicit measurement population.",
+    "SLO": "A target for an SLI over a specified window.",
+    "Error budget": "The permitted bad portion under the chosen SLO and denominator.",
+    "p95": "A 95th-percentile threshold of a defined measurement distribution, not an average.",
+    "Critical path": "The chain of dependent work that determines total elapsed time.",
+    "Breadcrumb": "A bounded diagnostic trail of recent events leading to an issue.",
+    "Contract test": "A check that clients and services agree on API behavior and data assumptions.",
+    "Chaos exercise": "A controlled failure experiment with clear scope, expected behavior, and recovery."
+  },
+  "checklist": [
+    [
+      "Contract",
+      "Endpoint success, error, empty-body, schema, pagination, and compatibility behavior documented."
+    ],
+    ["Native", "Valid HTTPS verified on supported physical-device OS versions in release mode."],
+    [
+      "State",
+      "Initial, empty, stale, refresh-error, offline, cancelled, and outcome-unknown UI states verified."
+    ],
+    [
+      "Identity",
+      "OAuth/PKCE flow and secure credential restore verified; no bundled backend secret."
+    ],
+    [
+      "Session",
+      "Concurrent expiry uses one refresh; logout/account switch rejects old-generation results."
+    ],
+    [
+      "Privacy",
+      "Memory/persisted caches and outboxes isolate accounts; logout/deletion policies tested."
+    ],
+    [
+      "Writes",
+      "Stable operation identity and atomic server deduplication verified, including concurrent duplicates."
+    ],
+    [
+      "Recovery",
+      "Lost acknowledgement after commit plus process death recovers to one business outcome."
+    ],
+    ["Retries", "One retry owner, cancellation, jitter, Retry-After, and overall budget verified."],
+    [
+      "Offline",
+      "Atomic local/outbox state, migrations, conflicts, and permanently rejected work handled."
+    ],
+    [
+      "Background",
+      "OS constraints documented; foreground recovery does not depend on guaranteed background execution."
+    ],
+    [
+      "Files",
+      "Session expiry, finalization, cancellation, memory/disk bounds, and orphan cleanup verified."
+    ],
+    ["Realtime", "Duplicate/gap/reconnect/auth/version handling and bounded buffering verified."],
+    [
+      "Signals",
+      "Operation and attempt metrics have explicit denominators, time boundaries, and missing-event policy."
+    ],
+    [
+      "Tracing",
+      "A connected app→API→downstream trace verified; unsupported transports and sampling gaps documented."
+    ],
+    [
+      "Data",
+      "Actual emitted logs/traces/analytics inspected for credentials, personal fields, and unsafe URLs."
+    ],
+    [
+      "Testing",
+      "Failure matrix, old-client contract checks, native integration, and release build checks passed."
+    ],
+    [
+      "Release",
+      "Staged rollout guardrails, certificate/config migrations, rollback/pause owners, and runbook ready."
+    ]
+  ],
+  "sources": [
+    {
+      "id": "rn-networking",
+      "title": "React Native: Networking",
+      "url": "https://reactnative.dev/docs/network",
+      "resolvedUrl": "https://reactnative.dev/docs/network",
+      "retrieved": "2026-10-26",
+      "characters": 6469,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "rn-security",
+      "title": "React Native: Security",
+      "url": "https://reactnative.dev/docs/security",
+      "resolvedUrl": "https://reactnative.dev/docs/security",
+      "retrieved": "2026-10-26",
+      "characters": 11201,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "rn-devtools",
+      "title": "React Native DevTools",
+      "url": "https://reactnative.dev/docs/react-native-devtools",
+      "resolvedUrl": "https://reactnative.dev/docs/react-native-devtools",
+      "retrieved": "2026-10-26",
+      "characters": 7434,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "rn-appstate",
+      "title": "React Native: AppState",
+      "url": "https://reactnative.dev/docs/appstate",
+      "resolvedUrl": "https://reactnative.dev/docs/appstate",
+      "retrieved": "2026-10-26",
+      "characters": 2479,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "fetch",
+      "title": "MDN: Using Fetch",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch",
+      "resolvedUrl": "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch",
+      "retrieved": "2026-10-26",
+      "characters": 22819,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "http",
+      "title": "RFC 9110: HTTP Semantics",
+      "url": "https://www.rfc-editor.org/rfc/rfc9110.txt",
+      "resolvedUrl": "https://www.rfc-editor.org/rfc/rfc9110.txt",
+      "retrieved": "2026-10-26",
+      "characters": 468136,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "cache",
+      "title": "MDN: HTTP caching",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Caching",
+      "resolvedUrl": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Caching",
+      "retrieved": "2026-10-26",
+      "characters": 33228,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "android-security",
+      "title": "Android: Network security configuration",
+      "url": "https://developer.android.com/privacy-and-security/security-config",
+      "resolvedUrl": "https://developer.android.com/privacy-and-security/security-config",
+      "retrieved": "2026-10-26",
+      "characters": 23792,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "apple-ats",
+      "title": "Apple: App Transport Security",
+      "url": "https://developer.apple.com/documentation/security/preventing-insecure-network-connections",
+      "resolvedUrl": "https://developer.apple.com/documentation/security/preventing-insecure-network-connections",
+      "retrieved": "2026-10-26",
+      "characters": 294,
+      "ok": true,
+      "usable": false
+    },
+    {
+      "id": "android-emulator",
+      "title": "Android: Emulator networking",
+      "url": "https://developer.android.com/studio/run/emulator-networking",
+      "resolvedUrl": "https://developer.android.com/studio/run/emulator-networking",
+      "retrieved": "2026-10-26",
+      "characters": 1560,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "tanstack-rn",
+      "title": "TanStack Query v5: React Native",
+      "url": "https://tanstack.com/query/latest/docs/framework/react/react-native",
+      "resolvedUrl": "https://tanstack.com/query/latest/docs/framework/react/react-native",
+      "retrieved": "2026-10-26",
+      "characters": 4805,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "tanstack-defaults",
+      "title": "TanStack Query v5: Important defaults",
+      "url": "https://tanstack.com/query/latest/docs/framework/react/guides/important-defaults",
+      "resolvedUrl": "https://tanstack.com/query/latest/docs/framework/react/guides/important-defaults",
+      "retrieved": "2026-10-26",
+      "characters": 5460,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "tanstack-offline",
+      "title": "TanStack Query v5: Network mode",
+      "url": "https://tanstack.com/query/latest/docs/framework/react/guides/network-mode",
+      "resolvedUrl": "https://tanstack.com/query/latest/docs/framework/react/guides/network-mode",
+      "retrieved": "2026-10-26",
+      "characters": 5090,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "tanstack-persist",
+      "title": "TanStack Query v5: Persist query client",
+      "url": "https://tanstack.com/query/latest/docs/framework/react/plugins/persistQueryClient",
+      "resolvedUrl": "https://tanstack.com/query/latest/docs/framework/react/plugins/persistQueryClient",
+      "retrieved": "2026-10-26",
+      "characters": 11297,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "netinfo",
+      "title": "React Native NetInfo",
+      "url": "https://raw.githubusercontent.com/react-native-netinfo/react-native-netinfo/master/README.md",
+      "resolvedUrl": "https://raw.githubusercontent.com/react-native-netinfo/react-native-netinfo/master/README.md",
+      "retrieved": "2026-10-26",
+      "characters": 24241,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "securestore",
+      "title": "Expo SecureStore",
+      "url": "https://docs.expo.dev/versions/latest/sdk/securestore/",
+      "resolvedUrl": "https://docs.expo.dev/versions/latest/sdk/securestore/",
+      "retrieved": "2026-10-26",
+      "characters": 18293,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "auth-native",
+      "title": "RFC 8252: OAuth for Native Apps",
+      "url": "https://www.rfc-editor.org/rfc/rfc8252.txt",
+      "resolvedUrl": "https://www.rfc-editor.org/rfc/rfc8252.txt",
+      "retrieved": "2026-10-26",
+      "characters": 45552,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "auth-bcp",
+      "title": "RFC 9700: OAuth 2.0 Security Best Current Practice",
+      "url": "https://www.rfc-editor.org/rfc/rfc9700.txt",
+      "resolvedUrl": "https://www.rfc-editor.org/rfc/rfc9700.txt",
+      "retrieved": "2026-10-26",
+      "characters": 115852,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "aws-retry",
+      "title": "AWS Builders Library: Timeouts, retries, backoff and jitter",
+      "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/",
+      "resolvedUrl": "https://builder.aws.com/content/3EumjoZascWd1oZiEgL8ORlv3qE/timeouts-retries-and-backoff-with-jitter",
+      "retrieved": "2026-10-26",
+      "characters": 14553,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "otel",
+      "title": "OpenTelemetry: Observability primer",
+      "url": "https://opentelemetry.io/docs/concepts/observability-primer/",
+      "resolvedUrl": "https://opentelemetry.io/docs/concepts/observability-primer/",
+      "retrieved": "2026-10-26",
+      "characters": 6273,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "otel-context",
+      "title": "OpenTelemetry: Context propagation",
+      "url": "https://opentelemetry.io/docs/concepts/context-propagation/",
+      "resolvedUrl": "https://opentelemetry.io/docs/concepts/context-propagation/",
+      "retrieved": "2026-10-26",
+      "characters": 6955,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "tracecontext",
+      "title": "W3C: Trace Context",
+      "url": "https://www.w3.org/TR/trace-context/",
+      "resolvedUrl": "https://www.w3.org/TR/trace-context/",
+      "retrieved": "2026-10-26",
+      "characters": 44880,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "sentry-rn",
+      "title": "Sentry: React Native tracing",
+      "url": "https://docs.sentry.io/platforms/react-native/tracing/",
+      "resolvedUrl": "https://docs.sentry.io/platforms/react-native/tracing/",
+      "retrieved": "2026-10-26",
+      "characters": 4004,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "sentry-data",
+      "title": "Sentry: React Native data management",
+      "url": "https://docs.sentry.io/platforms/react-native/data-management/sensitive-data/",
+      "resolvedUrl": "https://docs.sentry.io/platforms/react-native/data-management/sensitive-data/",
+      "retrieved": "2026-10-26",
+      "characters": 6961,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "expo-background",
+      "title": "Expo BackgroundTask",
+      "url": "https://docs.expo.dev/versions/latest/sdk/background-task/",
+      "resolvedUrl": "https://docs.expo.dev/versions/latest/sdk/background-task/",
+      "retrieved": "2026-10-26",
+      "characters": 15656,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "apple-background",
+      "title": "Apple: Background URLSession transfers",
+      "url": "https://developer.apple.com/documentation/foundation/downloading-files-in-the-background",
+      "resolvedUrl": "https://developer.apple.com/documentation/foundation/downloading-files-in-the-background",
+      "retrieved": "2026-10-26",
+      "characters": 290,
+      "ok": true,
+      "usable": false
+    },
+    {
+      "id": "android-work",
+      "title": "Android: WorkManager",
+      "url": "https://developer.android.com/topic/libraries/architecture/workmanager",
+      "resolvedUrl": "https://developer.android.com/develop/background-work/background-tasks/persistent",
+      "retrieved": "2026-10-26",
+      "characters": 7351,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "msw-native",
+      "title": "MSW: React Native integration",
+      "url": "https://mswjs.io/docs/integrations/react-native/",
+      "resolvedUrl": "https://mswjs.io/guides/integrations/react-native",
+      "retrieved": "2026-10-26",
+      "characters": 4257,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "graphql",
+      "title": "GraphQL: Serving over HTTP",
+      "url": "https://graphql.org/learn/serving-over-http/",
+      "resolvedUrl": "https://graphql.org/learn/serving-over-http/",
+      "retrieved": "2026-10-26",
+      "characters": 10193,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "owasp",
+      "title": "OWASP MASVS: Network communication",
+      "url": "https://mas.owasp.org/MASVS/05-MASVS-NETWORK/",
+      "ok": false,
+      "error": "HTTP Error 404: Not Found",
+      "usable": false
+    },
+    {
+      "id": "expo-file",
+      "title": "Expo FileSystem",
+      "url": "https://docs.expo.dev/versions/latest/sdk/filesystem/",
+      "resolvedUrl": "https://docs.expo.dev/versions/latest/sdk/filesystem/",
+      "retrieved": "2026-10-26",
+      "characters": 61302,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "react-effects",
+      "title": "React: Synchronizing with Effects",
+      "url": "https://react.dev/learn/synchronizing-with-effects",
+      "resolvedUrl": "https://react.dev/learn/synchronizing-with-effects",
+      "retrieved": "2026-10-26",
+      "characters": 40068,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "problem",
+      "title": "RFC 9457: Problem Details for HTTP APIs",
+      "url": "https://www.rfc-editor.org/rfc/rfc9457.txt",
+      "resolvedUrl": "https://www.rfc-editor.org/rfc/rfc9457.txt",
+      "retrieved": "2026-10-26",
+      "characters": 31291,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "websocket",
+      "title": "MDN: WebSocket",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/WebSocket",
+      "resolvedUrl": "https://developer.mozilla.org/en-US/docs/Web/API/WebSocket",
+      "retrieved": "2026-10-26",
+      "characters": 3200,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "apple-ats-text",
+      "title": "Apple: App Transport Security (Markdown)",
+      "url": "https://developer.apple.com/documentation/security/preventing-insecure-network-connections.md",
+      "resolvedUrl": "https://developer.apple.com/documentation/security/preventing-insecure-network-connections.md",
+      "retrieved": "2026-10-26",
+      "characters": 12526,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "apple-background-text",
+      "title": "Apple: Background URLSession (Markdown)",
+      "url": "https://developer.apple.com/documentation/foundation/downloading-files-in-the-background.md",
+      "resolvedUrl": "https://developer.apple.com/documentation/foundation/downloading-files-in-the-background.md",
+      "retrieved": "2026-10-26",
+      "characters": 11752,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "android-address",
+      "title": "Android: Emulator network addresses",
+      "url": "https://developer.android.com/studio/run/emulator-networking-address",
+      "resolvedUrl": "https://developer.android.com/studio/run/emulator-networking-address",
+      "retrieved": "2026-10-26",
+      "characters": 4841,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "owasp-network",
+      "title": "OWASP MASVS: Network controls (source)",
+      "url": "https://raw.githubusercontent.com/OWASP/masvs/master/Document/0x10-V5-Network_communication_requirements.md",
+      "ok": false,
+      "error": "HTTP Error 404: Not Found",
+      "usable": false
+    },
+    {
+      "id": "sentry-distributed",
+      "title": "Sentry: React Native distributed tracing",
+      "url": "https://docs.sentry.io/platforms/react-native/tracing/trace-propagation/",
+      "resolvedUrl": "https://docs.sentry.io/platforms/react-native/tracing/trace-propagation/",
+      "retrieved": "2026-10-26",
+      "characters": 5618,
+      "ok": true,
+      "usable": true
+    },
+    {
+      "id": "otel-js",
+      "title": "OpenTelemetry: JavaScript supported runtimes",
+      "url": "https://opentelemetry.io/docs/languages/js/",
+      "resolvedUrl": "https://opentelemetry.io/docs/languages/js/",
+      "retrieved": "2026-10-26",
+      "characters": 3437,
+      "ok": true,
+      "usable": true
+    }
+  ]
+}

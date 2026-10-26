@@ -4,11 +4,28 @@ export default defineConfig({
   plugins: [
     react(),
     {
-      name: 'ota-course-entry',
+      name: 'independent-course-entries',
       configureServer(server) {
         server.middlewares.use((request, _response, next) => {
           if (request.url?.split('?')[0] === '/react-native-ota') {
             request.url = request.url.replace('/react-native-ota', '/react-native-ota/index.html');
+          }
+          if (request.url?.split('?')[0] === '/react-native-networking') {
+            request.url = request.url.replace(
+              '/react-native-networking',
+              '/react-native-networking/index.html',
+            );
+          }
+          next();
+        });
+      },
+      configurePreviewServer(server) {
+        server.middlewares.use((request, _response, next) => {
+          for (const course of ['react-native-ota', 'react-native-networking']) {
+            if (request.url?.split('?')[0] === `/${course}`) {
+              request.url = request.url.replace(`/${course}`, `/${course}/index.html`);
+              break;
+            }
           }
           next();
         });
@@ -21,6 +38,7 @@ export default defineConfig({
       input: {
         course: 'index.html',
         ota: 'react-native-ota/index.html',
+        networking: 'react-native-networking/index.html',
       },
       output: {
         manualChunks(id) {

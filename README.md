@@ -18,6 +18,16 @@ The independent [React Native OTA module](https://zero-to-hero-v2.vercel.app/rea
 
 This is a separate Vite HTML entry (`react-native-ota/index.html`, `src/ota/`) with independent CSS, a theme key, and the `rn-ota-learning-v1` progress key. The original course, hash routes, and stored work are unchanged. `vercel.json` maps the exact `/react-native-ota` URL to its HTML entry. The Vite middleware provides the same URL in development. Use `#/lesson/two-parts` after the OTA path to link directly to a lesson.
 
+### React Native networking course
+
+The independent networking course lives at `/react-native-networking` (`#/lesson/mental-model` starts the path). It follows the OTA course’s sidebar, typography, themes, learning path, and **Understand → Explore → Build it (when assigned) → Check in** pattern. Its 28 lessons in six chapters cover HTTP/native transport, a typed request layer, caching, OAuth/session recovery, safe retries, offline/outbox recovery, background work, files, realtime connections, logs, metrics, distributed traces, debugging, testing, performance, API compatibility, and a production capstone.
+
+It includes eight persistent simulations plus a JavaScript workshop with six runnable exercises, 84 lesson questions and a 16-question assessment, 55 glossary flashcards, bookmarks, notes, a production evidence checklist, an incident notebook, and JSON backup/import with a review step. Completion requires all three lesson answers and any assigned coding exercise. The notebook can migrate a backup from the original standalone field guide; new coding exercises still require completion. Local records that cannot be read are preserved for download before explicit replacement/reset.
+
+The networking entry (`react-native-networking/index.html`, `src/networking/`) has its own CSS, worker, `rn-networking-learning-v1` progress key, and `rn-networking-theme-v1` theme key. Main and OTA source files and storage remain separate. Vite and Vercel route the exact path to its HTML entry; static hosts can use `/react-native-networking/`. No account or cloud sync. The portable standalone HTML has its own progress key; transfer work using JSON backups.
+
+Research used 36 readable official references retrieved on 26 October 2026. Read [the research findings and limits](research/react-native-networking/RESEARCH.md); retained snapshots and the access manifest are alongside the authored curriculum. Lab timings and guarantees are controlled teaching models; the capstone asks for real native/server verification. To edit the curriculum, update `research/react-native-networking/course.py`, run `python3 research/react-native-networking/export-react.py`, then build and test. React integration checks live in `tests/networking.test.ts`; standalone browser checks are documented separately in the research folder. With Vite running, use `uv run --with playwright scripts/verify-networking.py` for the integrated browser checks (requires Chrome); use `--base http://localhost:4173` with a production preview.
+
 ### Local development
 
 ```sh

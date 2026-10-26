@@ -1,0 +1,100 @@
+Android Emulator networking  |  Android Studio  |  Android Developers
+
+ Skip to main content
+
+ /
+
+ English
+
+ Deutsch
+
+ Español – América Latina
+
+ Français
+
+ Indonesia
+
+ Italiano
+
+ Polski
+
+ Português – Brasil
+
+ Tiếng Việt
+
+ Türkçe
+
+ Русский
+
+ עברית
+
+ العربيّة
+
+ فارسی
+
+ हिंदी
+
+ বাংলা
+
+ ภาษาไทย
+
+ 中文 – 简体
+
+ 中文 – 繁體
+
+ 日本語
+
+ 한국어
+
+ Android Studio
+
+ Sign in
+
+ Android Studio
+
+ Android Developers
+
+ Develop
+
+ Android Studio
+
+ IDE guides
+
+ Android Emulator networking
+
+ Stay organized with collections
+
+ Save and categorize content based on your preferences.
+
+Network
+API Level
+Capability
+
+Ethernet
+15+
+Internet and host access.
+
+Wi-Fi
+25+
+Simulated Wi-Fi access point (AndroidWifi).
+P2P (Network Service Discovery, Wi-Fi Direct)1
+
+Cellular
+30+
+Incoming calls and SMS
+
+Bluetooth
+31+
+Classic and BLE profiles
+
+UWB
+36+
+Ranging
+
+Available after Android Emulator version 36.5. ↩
+
+Content and code samples on this page are subject to the licenses described in the Content License. Java and OpenJDK are trademarks or registered trademarks of Oracle and/or its affiliates.
+
+Last updated 2026-03-12 UTC.
+
+ [[["Easy to understand","easyToUnderstand","thumb-up"],["Solved my problem","solvedMyProblem","thumb-up"],["Other","otherUp","thumb-up"]],[["Missing the information I need","missingTheInformationINeed","thumb-down"],["Too complicated / too many steps","tooComplicatedTooManySteps","thumb-down"],["Out of date","outOfDate","thumb-down"],["Samples / code issue","samplesCodeIssue","thumb-down"],["Other","otherDown","thumb-down"]],["Last updated 2026-03-12 UTC."],[],[]]

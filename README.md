@@ -28,6 +28,12 @@ The networking entry (`react-native-networking/index.html`, `src/networking/`) h
 
 Research used 36 readable official references retrieved on 26 October 2026. Read [the research findings and limits](research/react-native-networking/RESEARCH.md); retained snapshots and the access manifest are alongside the authored curriculum. Lab timings and guarantees are controlled teaching models; the capstone asks for real native/server verification. To edit the curriculum, update `research/react-native-networking/course.py`, run `python3 research/react-native-networking/export-react.py`, then build and test. React integration checks live in `tests/networking.test.ts`; standalone browser checks are documented separately in the research folder. With Vite running, use `uv run --with playwright scripts/verify-networking.py` for the integrated browser checks (requires Chrome); use `--base http://localhost:4173` with a production preview.
 
+### React Native reels
+
+The independent [reels feed](https://zero-to-hero-v2.vercel.app/react-native-reels) lives at `/react-native-reels`. It is a vertical, swipeable feed of short animated explainers on React internals, React Native, Android, and iOS. Each reel is a list of narrated beats. Every beat shows an animated scene: kinetic titles, code that types in, diagrams, phone mockups, comparisons, trees, timelines, stats, quizzes, and a closing summary. Word-by-word captions follow a local Kokoro voiceover, and sound effects are synthesised with WebAudio at runtime. Use `#/reel/<id>` after the path to link to a reel. Watched (at 90% played), saved, and last-reel state is stored under `rn-reels-progress-v1`; sound and caption choices are stored under `rn-reels-prefs-v1`.
+
+The entry is `react-native-reels/index.html` with source in `src/reels/`. Series files in `src/reels/series/*.ts` load automatically. Read [the authoring guide](src/reels/AUTHORING.md) before writing a reel. `npm run reels:voice` (or `npm run reels:voice -- <reel-id>`) renders changed narration with Kokoro-82M through `uv` and ffmpeg into `public/react-native-reels/audio/`. Reels without audio play silently on an estimated timeline. Checks live in `tests/reels.test.ts`.
+
 ### Local development
 
 ```sh

@@ -16,12 +16,15 @@ export default defineConfig({
               '/react-native-networking/index.html',
             );
           }
+          if (request.url?.split('?')[0] === '/react-native-reels') {
+            request.url = request.url.replace('/react-native-reels', '/react-native-reels/index.html');
+          }
           next();
         });
       },
       configurePreviewServer(server) {
         server.middlewares.use((request, _response, next) => {
-          for (const course of ['react-native-ota', 'react-native-networking']) {
+          for (const course of ['react-native-ota', 'react-native-networking', 'react-native-reels']) {
             if (request.url?.split('?')[0] === `/${course}`) {
               request.url = request.url.replace(`/${course}`, `/${course}/index.html`);
               break;
@@ -39,6 +42,7 @@ export default defineConfig({
         course: 'index.html',
         ota: 'react-native-ota/index.html',
         networking: 'react-native-networking/index.html',
+        reels: 'react-native-reels/index.html',
       },
       output: {
         manualChunks(id) {

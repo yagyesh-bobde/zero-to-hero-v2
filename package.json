@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
+    "reels:voice": "node scripts/reels-voice.mjs",
     "test:projects": "python3 scripts/verify-projects.py",
     "format": "prettier --write src tests public/python-worker.js index.html vite.config.ts tsconfig.json README.md"
   },

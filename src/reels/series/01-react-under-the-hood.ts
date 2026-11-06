@@ -1,14 +1,17 @@
 import type { Series } from '../types';
 
 const counter = `function Counter() {
-  const [count, setCount] = useState(0);
+  const [count, setCount] =
+    useState(0);
 
   const onPress = () => {
     setCount(count + 1);
     console.log(count);
   };
 
-  return <Button onPress={onPress} />;
+  return (
+    <Button onPress={onPress} />
+  );
 }`;
 
 const triple = (update: string) => `const onPress = () => {
@@ -17,32 +20,39 @@ const triple = (update: string) => `const onPress = () => {
   ${update};
 };`;
 
-const list = (key: string) => `function ShoppingList({ items }) {
-  return items.map((item, i) => (
-    <Row
-      key={${key}}
-      label={item.name}
-    />
-  ));
-}
+const list = (key: string) => `items.map((item, i) => (
+  <Row
+    key={${key}}
+    label={item.name}
+  />
+));
 
 function Row({ label }) {
-  const [note, setNote] = useState('');
-  return <Field label={label} value={note} />;
+  const [note, setNote] =
+    useState('');
+  return <Field value={note} />;
 }`;
 
-const jsxLog = `const el = <Greeting name="Ana" />;
+const greeting = `function Greeting({ name }) {
+  return <Text>Hi {name}</Text>;
+}
+`;
+
+const jsxLog = `${greeting}
+const el = <Greeting name="Ana" />;
 
 console.log(el);`;
 
-const jsxCompiled = `const el = createElement(
+const jsxCompiled = `${greeting}
+const el = createElement(
   Greeting,
   { name: 'Ana' },
 );
 
 console.log(el);`;
 
-const jsxMutate = `const el = <Greeting name="Ana" />;
+const jsxMutate = `${greeting}
+const el = <Greeting name="Ana" />;
 
 el.props.name = 'Bob';`;
 
@@ -57,7 +67,12 @@ const clock = `function Clock({ time }) {
 
 const impureClock = `function Clock({ time }) {
   sendAnalytics(time);
-  return <h1>{time}</h1>;
+  return (
+    <>
+      <h1>{time}</h1>
+      <input />
+    </>
+  );
 }`;
 
 const fiberType = `type Fiber = {
@@ -100,24 +115,26 @@ ${hook}(() => {
   );
 }, []);`;
 
-const memoChild = `const Child = memo(function Child({
-  style,
-}) {
-  return <View style={style} />;
-});
+const memoChild = `const Child = memo(
+  function Child({ style }) {
+    return <View style={style} />;
+  },
+);
 
 function Parent() {
   return (
-    <Child style={{ padding: 8 }} />
+    <Child style={{ gap: 8 }} />
   );
 }`;
 
 const memoManual = `function Parent() {
   const style = useMemo(
-    () => ({ padding: 8 }),
+    () => ({ gap: 8 }),
     [],
   );
-  return <Child style={style} />;
+  return (
+    <Child style={style} />
+  );
 }`;
 
 const babelConfig = `// babel.config.js
@@ -129,14 +146,20 @@ module.exports = {
 };`;
 
 const memoCompiled = `// no memo, no useMemo
+function Child({ style }) {
+  return <View style={style} />;
+}
+
 function Parent() {
   return (
-    <Child style={{ padding: 8 }} />
+    <Child style={{ gap: 8 }} />
   );
 }`;
 
-const transition = `const [isPending, startTransition] =
-  useTransition();
+const transition = `const [
+  isPending,
+  startTransition,
+] = useTransition();
 
 function onType(text) {
   setQuery(text);
@@ -145,9 +168,15 @@ function onType(text) {
   });
 }`;
 
-const suspense = `<Suspense fallback={<Spinner />}>
-  <TabPanel tab={tab} />
-</Suspense>`;
+const suspense = `function Tabs({ tab }) {
+  return (
+    <Suspense
+      fallback={<Spinner />}
+    >
+      <TabPanel tab={tab} />
+    </Suspense>
+  );
+}`;
 
 const searchItems = (tone: 'good' | 'muted') => [
   { id: 'r1', label: 'Pizza Palace', icon: '🍕', tone },
@@ -160,21 +189,21 @@ const hookChain = (mode: 'build' | 'walk' | 'broken') => {
   return {
     type: 'diagram' as const,
     title: broken ? 'isAdmin flipped to false' : 'Hooks on the fiber',
-    cols: 3,
+    cols: 1,
     rows: 4,
     nodes: [
-      { id: 'fiber', label: 'Profile fiber', icon: '🧵', sub: 'memoizedState', x: 0, y: 0, tone: 'info' as const },
-      { id: 'h1', label: 'Slot 1', sub: "name: ''", x: 2, y: 0, active: mode === 'walk' },
+      { id: 'fiber', label: 'Profile fiber', icon: '🧵', sub: 'hook list', x: 0, y: 0, tone: 'info' as const },
+      { id: 'h1', label: 'Slot 1', sub: "name: ''", x: 0, y: 1, active: mode === 'walk' },
       {
         id: 'h2',
         label: 'Slot 2',
         sub: broken ? "bio reads 'admin' 😱" : "role: 'admin'",
-        x: 2,
-        y: 1.5,
+        x: 0,
+        y: 2,
         tone: broken ? ('bad' as const) : undefined,
         active: mode === 'walk' || broken,
       },
-      { id: 'h3', label: 'Slot 3', sub: broken ? 'never reached' : "bio: ''", x: 2, y: 3, dim: broken },
+      { id: 'h3', label: 'Slot 3', sub: broken ? 'never reached' : "bio: ''", x: 0, y: 3, dim: broken },
     ],
     edges: [
       { from: 'fiber', to: 'h1', label: 'first', active: true },
@@ -207,8 +236,8 @@ const listNodes = (paused: boolean) => [
 
 const listEdges = [
   { from: 'app', to: 'header', label: 'child' },
-  { from: 'header', to: 'list', label: 'sibling', active: true },
-  { from: 'list', to: 'footer', label: 'sibling' },
+  { from: 'header', to: 'list', active: true },
+  { from: 'list', to: 'footer' },
   { from: 'list', to: 'item', label: 'child' },
   { from: 'footer', to: 'app', label: 'return', dashed: true },
 ];
@@ -231,7 +260,7 @@ const twoTrees = (swapped: boolean) => ({
     {
       id: 'wipHead',
       label: swapped ? 'Current' : 'Draft',
-      sub: swapped ? 'on screen now' : 'workInProgress',
+      sub: swapped ? 'on screen now' : 'work in progress',
       x: 2,
       y: 0,
       shape: 'pill' as const,
@@ -244,8 +273,8 @@ const twoTrees = (swapped: boolean) => ({
     { id: 'wList', label: 'List', x: 2, y: 2.8, tone: 'accent' as const, active: swapped },
   ],
   edges: [
-    { from: 'cApp', to: 'wApp', label: 'alternate', both: true, dashed: true, active: !swapped },
-    { from: 'cList', to: 'wList', label: 'alternate', both: true, dashed: true, active: !swapped },
+    { from: 'cApp', to: 'wApp', label: swapped ? undefined : 'alternate', both: true, dashed: true, active: !swapped },
+    { from: 'cList', to: 'wList', label: swapped ? undefined : 'alternate', both: true, dashed: true, active: !swapped },
   ],
   packets: swapped ? [{ from: 'cApp', to: 'wApp', label: 'swap', tone: 'good' as const, loop: false }] : [],
   caption: swapped ? 'the draft becomes the screen' : 'every fiber has a twin',
@@ -313,7 +342,7 @@ export const series: Series = {
         },
         {
           say: "Let's try it. Make a Greeting tag, and log it. No magic.",
-          scene: { type: 'code', lang: 'tsx', file: 'App.tsx', code: jsxLog, highlight: [1] },
+          scene: { type: 'code', lang: 'tsx', file: 'App.tsx', code: jsxLog, highlight: [5] },
           sfx: 'type',
           emphasis: ['log'],
         },
@@ -325,8 +354,8 @@ export const series: Series = {
             lang: 'tsx',
             file: 'App.tsx',
             code: jsxCompiled,
-            highlight: [[1, 4]],
-            note: { line: 1, text: 'same thing, by hand', tone: 'accent' },
+            highlight: [[5, 8]],
+            note: { line: 8, text: 'same thing, by hand', tone: 'accent' },
           },
           sfx: 'type',
           emphasis: ['sugar', 'function'],
@@ -338,7 +367,7 @@ export const series: Series = {
             title: 'Console',
             lines: [
               { out: '{' },
-              { out: '  type: [Function: Greeting],', tone: 'accent' },
+              { out: '  type: ƒ Greeting,', tone: 'accent' },
               { out: "  props: { name: 'Ana' }," },
               { out: '  key: null,' },
               { out: '  ref: null' },
@@ -397,8 +426,8 @@ export const series: Series = {
             lang: 'tsx',
             file: 'App.tsx',
             code: jsxMutate,
-            errors: [3],
-            note: { line: 3, text: 'frozen in dev 🧊', tone: 'bad' },
+            errors: [7],
+            note: { line: 7, text: 'frozen in dev 🧊', tone: 'bad' },
           },
           sfx: 'error',
           emphasis: ['freezes', 'mutate'],
@@ -523,17 +552,18 @@ export const series: Series = {
             cols: 3,
             rows: 4,
             nodes: [
-              { id: 'old', label: 'Last tree', sub: 'h1: 10:00:01', x: 0, y: 0.4, tone: 'muted' },
-              { id: 'new', label: 'New tree', sub: 'h1: 10:00:02', x: 2, y: 0.4, tone: 'accent' },
-              { id: 'diff', label: 'Compare', icon: '🔍', x: 1, y: 1.8, shape: 'pill', active: true },
-              { id: 'screen', label: 'Screen', icon: '📱', sub: '1 change', x: 1, y: 3.2, tone: 'good' },
+              { id: 'old', label: 'Last tree', sub: 'h1: 10:00:01', x: 0, y: 0, tone: 'muted' },
+              { id: 'new', label: 'New tree', sub: 'h1: 10:00:02', x: 2, y: 0, tone: 'accent' },
+              { id: 'diff', label: 'Compare', icon: '🔍', x: 1, y: 1.5, shape: 'pill', active: true },
+              { id: 'screen', label: 'Screen', icon: '📱', sub: '1 change', x: 1, y: 3, tone: 'good' },
             ],
             edges: [
               { from: 'old', to: 'diff' },
               { from: 'new', to: 'diff' },
-              { from: 'diff', to: 'screen', label: 'only the diff', active: true },
+              { from: 'diff', to: 'screen', active: true },
             ],
             packets: [{ from: 'diff', to: 'screen', label: 'h1 text', tone: 'good' }],
+            caption: 'only the difference is applied',
           },
           sfx: 'pop',
           emphasis: ['commit', 'differences'],
@@ -663,6 +693,7 @@ export const series: Series = {
             nodes: listNodes(false),
             edges: listEdges,
             packets: [{ from: 'header', to: 'list', label: '▶', tone: 'accent' }],
+            caption: 'child ↓   sibling →   return ↺',
           },
           sfx: 'pop',
           emphasis: ['one', 'stop'],
@@ -739,7 +770,7 @@ export const series: Series = {
           scene: {
             type: 'title',
             kicker: 'React internals',
-            title: 'React only *counts* your hooks',
+            title: 'React just *counts* hooks',
             emoji: '🔗',
             style: 'slam',
           },
@@ -785,7 +816,7 @@ export const series: Series = {
             file: 'Profile.tsx',
             code: profile(true),
             errors: [[4, 7]],
-            note: { line: 6, text: 'sometimes slot 2, sometimes skipped', tone: 'bad' },
+            note: { line: 7, text: 'slot 2? or skipped?', tone: 'bad' },
           },
           sfx: 'error',
           emphasis: ['if', 'shifts'],
@@ -804,7 +835,7 @@ export const series: Series = {
             items: [
               { text: 'Top level only', icon: '⬆️', sub: 'no if, no loops', tone: 'good' },
               { text: 'Same *order* every render', icon: '🔢', tone: 'good' },
-              { text: 'Only in components and custom hooks', icon: '⚛️', tone: 'good' },
+              { text: 'Only in components', icon: '⚛️', sub: 'or custom hooks', tone: 'good' },
             ],
           },
           sfx: 'pop',
@@ -856,7 +887,7 @@ export const series: Series = {
           scene: {
             type: 'title',
             kicker: 'React internals',
-            title: 'setState does *not* change your variable',
+            title: 'setState does *not* assign',
             emoji: '🤯',
             style: 'slam',
           },
@@ -865,7 +896,7 @@ export const series: Series = {
         },
         {
           say: 'Here is a counter. We tap the button, add one, then log count.',
-          scene: { type: 'code', lang: 'tsx', file: 'Counter.tsx', code: counter, highlight: [[4, 7]] },
+          scene: { type: 'code', lang: 'tsx', file: 'Counter.tsx', code: counter, highlight: [[5, 8]] },
           sfx: 'type',
           emphasis: ['log'],
         },
@@ -876,8 +907,8 @@ export const series: Series = {
             lang: 'tsx',
             file: 'Counter.tsx',
             code: counter,
-            errors: [6],
-            note: { line: 6, text: 'logs 0 😱', tone: 'bad' },
+            errors: [7],
+            note: { line: 7, text: 'logs 0 😱', tone: 'bad' },
           },
           sfx: 'error',
           emphasis: ['zero', 'old'],
@@ -889,12 +920,12 @@ export const series: Series = {
           scene: {
             type: 'diagram',
             title: 'What setCount(count + 1) does',
-            cols: 3,
+            cols: 1,
             rows: 4,
             nodes: [
-              { id: 'code', label: 'onPress', icon: '👆', x: 1, y: 0, shape: 'pill' },
-              { id: 'queue', label: 'Update queue', sub: '[ +1 ]', icon: '📥', x: 1, y: 1.6, active: true },
-              { id: 'react', label: 'React scheduler', icon: '⚛️', x: 1, y: 3.1, tone: 'info' },
+              { id: 'code', label: 'onPress', icon: '👆', x: 0, y: 0, shape: 'pill' },
+              { id: 'queue', label: 'Update queue', sub: '[ +1 ]', icon: '📥', x: 0, y: 1.6, active: true },
+              { id: 'react', label: 'React scheduler', icon: '⚛️', x: 0, y: 3.1, tone: 'info' },
             ],
             edges: [
               { from: 'code', to: 'queue', label: 'enqueue', active: true },
@@ -1028,7 +1059,7 @@ export const series: Series = {
           scene: {
             type: 'title',
             kicker: 'React lists',
-            title: 'One wrong key *swaps* your data',
+            title: 'Wrong key, *swapped* data',
             emoji: '🔑',
             style: 'glitch',
           },
@@ -1085,8 +1116,8 @@ export const series: Series = {
             lang: 'tsx',
             file: 'ShoppingList.tsx',
             code: list('i'),
-            errors: [4],
-            note: { line: 4, text: 'position, not identity', tone: 'bad' },
+            errors: [3],
+            note: { line: 3, text: 'position, not identity', tone: 'bad' },
           },
           sfx: 'type',
           emphasis: ['index'],
@@ -1137,8 +1168,8 @@ export const series: Series = {
             lang: 'tsx',
             file: 'ShoppingList.tsx',
             code: list('item.id'),
-            added: [4],
-            note: { line: 4, text: 'identity travels with data', tone: 'good' },
+            added: [3],
+            note: { line: 3, text: 'identity travels with data', tone: 'good' },
           },
           sfx: 'type',
           emphasis: ['stable', 'id'],
@@ -1173,12 +1204,12 @@ export const series: Series = {
             left: {
               title: 'key={index}',
               verdict: 'bad',
-              items: ['State sticks to positions', 'Breaks on insert & sort', 'OK only for static lists'],
+              items: ['Sticks to positions', 'Breaks on insert, sort', 'Static lists only'],
             },
             right: {
               title: 'key={item.id}',
               verdict: 'ok',
-              items: ['State follows the item', 'Unique among siblings', 'Never changes'],
+              items: ['Follows the item', 'Unique per sibling', 'Never changes'],
             },
           },
           sfx: 'whoosh',
@@ -1229,6 +1260,7 @@ export const series: Series = {
               icon: '⚙️',
               items: [
                 { id: 'help', label: 'Dark mode', icon: '🌙', checked: true },
+                { id: 'notif', label: 'Notifications', icon: '🔔', checked: true },
                 { id: 'tip', label: 'Tooltip', sub: 'height: 0 → 48 💥', icon: '💬', tone: 'bad' },
               ],
             },
@@ -1283,8 +1315,8 @@ export const series: Series = {
           scene: {
             type: 'compare',
             title: 'Which one?',
-            left: { title: 'useEffect', verdict: 'ok', icon: '🟢', items: ['Your default', "Doesn't block paint", 'Fetching, logging, subscribing'] },
-            right: { title: 'useLayoutEffect', verdict: 'neutral', icon: '📏', items: ['Blocks paint', 'Measure, then adjust', 'Keep it tiny'] },
+            left: { title: 'useEffect', verdict: 'ok', icon: '🟢', items: ['Your default', "Doesn't block paint", 'Fetch, log, subscribe'] },
+            right: { title: 'Layout effect', verdict: 'neutral', icon: '📏', items: ['Blocks paint', 'Measure, then adjust', 'Keep it tiny'] },
           },
           sfx: 'swipe',
           emphasis: ['block', 'default'],
@@ -1346,7 +1378,7 @@ export const series: Series = {
         },
         {
           say: 'Here is a memo child. Memo means: if my props look the same, skip me.',
-          scene: { type: 'code', lang: 'tsx', file: 'Parent.tsx', code: memoChild, highlight: [1] },
+          scene: { type: 'code', lang: 'tsx', file: 'Parent.tsx', code: memoChild, highlight: [[1, 2]] },
           sfx: 'type',
           emphasis: ['same', 'skip'],
         },
@@ -1369,9 +1401,9 @@ export const series: Series = {
             type: 'terminal',
             title: 'Object.is',
             lines: [
-              { cmd: 'node -p "Object.is(8, 8)"' },
+              { cmd: 'Object.is(8, 8)' },
               { out: 'true', tone: 'good' },
-              { cmd: 'node -p "Object.is({a:1},{a:1})"' },
+              { cmd: 'Object.is({a: 1}, {a: 1})' },
               { out: 'false', tone: 'bad' },
             ],
           },
@@ -1415,7 +1447,7 @@ export const series: Series = {
         },
         {
           say: 'Or let the React Compiler do it. It is a Babel plugin, it must run first, and it works best on React nineteen.',
-          scene: { type: 'code', lang: 'js', file: 'babel.config.js', code: babelConfig, added: [5], note: { line: 4, text: 'first in the pipeline', tone: 'warn' } },
+          scene: { type: 'code', lang: 'js', file: 'babel.config.js', code: babelConfig, added: [5], note: { line: 5, text: 'first in the pipeline', tone: 'warn' } },
           sfx: 'type',
           emphasis: ['Babel', 'first'],
         },
@@ -1426,8 +1458,8 @@ export const series: Series = {
             lang: 'tsx',
             file: 'Parent.tsx',
             code: memoCompiled,
-            highlight: [4],
-            note: { line: 4, text: 'cached for you ✨', tone: 'good' },
+            highlight: [8],
+            note: { line: 8, text: 'cached for you ✨', tone: 'good' },
           },
           sfx: 'ding',
           emphasis: ['safe', 'remove'],
@@ -1489,7 +1521,13 @@ export const series: Series = {
           scene: {
             type: 'phone',
             os: 'android',
-            screen: { kind: 'app', title: 'Find food', icon: '🔎', items: [{ id: 'q', label: 'Search', value: 'pi', tone: 'bad' }, ...searchItems('muted')], loading: true },
+            screen: {
+              kind: 'app',
+              title: 'Find food',
+              icon: '🔎',
+              items: [{ id: 'q', label: 'Search', value: 'pi', tone: 'bad' }, ...searchItems('muted')],
+              toast: 'Filtering 10,000 rows…',
+            },
             caption: 'every key waits for the list 🐌',
           },
           sfx: 'error',
@@ -1503,8 +1541,8 @@ export const series: Series = {
             lang: 'tsx',
             file: 'Search.tsx',
             code: transition,
-            highlight: [[6, 8]],
-            note: { line: 8, text: 'low priority', tone: 'accent' },
+            highlight: [[8, 10]],
+            note: { line: 10, text: 'low priority', tone: 'accent' },
           },
           sfx: 'type',
           emphasis: ['pause', 'startTransition'],
@@ -1529,7 +1567,7 @@ export const series: Series = {
         },
         {
           say: 'Now Suspense. A boundary shows a fallback until the stuff inside is ready.',
-          scene: { type: 'code', lang: 'tsx', file: 'Tabs.tsx', code: suspense, highlight: [1] },
+          scene: { type: 'code', lang: 'tsx', file: 'Tabs.tsx', code: suspense, highlight: [[3, 5]] },
           sfx: 'type',
           emphasis: ['Suspense', 'fallback'],
         },

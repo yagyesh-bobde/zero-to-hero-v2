@@ -24,9 +24,7 @@ const exactAlarms = `import {
 
 const ok =
   await canScheduleExactAlarms();
-if (!ok) openSettings('alarms');
-
-// back from Settings? check again`;
+if (!ok) openSettings('alarms');`;
 
 const persist = `// remember the screen stack
 <NavigationContainer
@@ -182,9 +180,13 @@ val params =
   .build()
 setPictureInPictureParams(params)`;
 
-const adIdManifest = `<!-- targeting Android 13+ -->
-<uses-permission android:name=
-  "…gms.permission.AD_ID" />`;
+const adIdManifest = `<manifest …>
+  <!-- targeting Android 13+ -->
+  <uses-permission android:name=
+    "…gms.permission.AD_ID" />
+
+  <application>…</application>
+</manifest>`;
 
 const adIdJs = `import { getAdvertisingId }
   from 'expo-tracking-transparency';
@@ -193,7 +195,7 @@ const adId = getAdvertisingId();
 
 const zeros = /^[0-]+$/;
 if (!adId || zeros.test(adId)) {
-  // no ID: a normal state
+  // skip the ads work, carry on
 }`;
 
 const gradle = `android {
@@ -251,7 +253,7 @@ export const series: Series = {
               { id: 'act', label: 'Activity', sub: 'a screen', icon: '📱', x: 0, y: 2 },
               { id: 'svc', label: 'Service', sub: 'background work', icon: '⚙️', x: 2, y: 2 },
               { id: 'rcv', label: 'Receiver', sub: 'system events', icon: '📡', x: 0, y: 3.4 },
-              { id: 'perm', label: 'Permissions', sub: 'what you touch', icon: '🔐', x: 2, y: 3.4 },
+              { id: 'perm', label: 'Permission', sub: 'what you touch', icon: '🔐', x: 2, y: 3.4 },
             ],
             edges: [
               { from: 'm', to: 'act', active: true },
@@ -309,7 +311,11 @@ export const series: Series = {
               kind: 'app',
               title: 'Play Store',
               icon: '▶️',
-              items: [{ id: 'snap', label: 'Snapcat', icon: '📷', sub: 'Your device isn’t compatible', tone: 'bad' }],
+              items: [
+                { id: 'snap', label: 'Snapcat', icon: '📷', sub: 'Your device isn’t compatible', tone: 'bad' },
+                { id: 'req', label: 'Requires', icon: '📸', sub: 'a rear camera', tone: 'warn' },
+                { id: 'dev', label: 'This device', icon: '📟', sub: 'no camera', tone: 'muted' },
+              ],
               button: 'Not available',
             },
             caption: '<uses-feature camera required>',
@@ -323,7 +329,7 @@ export const series: Series = {
           scene: {
             type: 'compare',
             title: 'Who writes it?',
-            left: { title: 'Bare RN', verdict: 'neutral', icon: '✍️', items: ['You edit the XML', 'android/app/src/main'] },
+            left: { title: 'Bare RN', verdict: 'neutral', icon: '✍️', items: ['You edit the XML', 'Lives in android/app'] },
             right: { title: 'Expo', verdict: 'ok', icon: '🪄', items: ['app.json + plugins', 'Generated on prebuild'] },
           },
           emphasis: ['never', 'prebuild'],
@@ -334,8 +340,8 @@ export const series: Series = {
             type: 'terminal',
             title: 'Check the merged manifest',
             lines: [
-              { cmd: 'cd android/app/build/intermediates' },
-              { cmd: 'grep -r permission merged_manifests' },
+              { cmd: 'cd app/build/intermediates' },
+              { cmd: 'grep -r permission merged*' },
               { out: 'android.permission.INTERNET', tone: 'muted' },
               { out: '…gms.permission.AD_ID', tone: 'warn' },
               { out: '↑ you never wrote this one', tone: 'warn' },
@@ -438,7 +444,7 @@ export const series: Series = {
             items: [
               { text: '*Normal*', sub: 'granted at install', icon: '✅' },
               { text: '*Dangerous*', sub: 'system dialog', icon: '💬' },
-              { text: '*Special*', sub: 'overlay · exact alarms · all files', icon: '⚙️', tone: 'warn' },
+              { text: '*Special*', sub: 'overlay · exact alarms', icon: '⚙️', tone: 'warn' },
             ],
           },
           sfx: 'riser',
@@ -453,10 +459,14 @@ export const series: Series = {
               kind: 'app',
               title: 'Alarms & reminders',
               icon: '⚙️',
-              items: [{ id: 'sw', label: 'Allow setting alarms and reminders', icon: '⏰', checked: true, tone: 'good' }],
-              body: 'Remindly',
+              body: 'Allow setting alarms and reminders',
+              items: [
+                { id: 'clock', label: 'Clock', icon: '⏰', checked: true, tone: 'muted' },
+                { id: 'sw', label: 'Remindly', icon: '💊', checked: true, tone: 'good' },
+                { id: 'cal', label: 'Calendar', icon: '📅', checked: false, tone: 'muted' },
+              ],
             },
-            tap: { x: 0.2, y: 0.32 },
+            tap: { x: 0.85, y: 0.42 },
             caption: 'the only way in',
           },
           sfx: 'click',
@@ -471,7 +481,7 @@ export const series: Series = {
             file: 'reminders.ts',
             code: exactAlarms,
             highlight: [[6, 8]],
-            note: { line: 8, text: 'jumps straight to the toggle', tone: 'accent' },
+            note: { line: 8, text: 'opens the toggle · recheck', tone: 'accent' },
           },
           sfx: 'type',
           emphasis: ['exact', 'page'],
@@ -530,7 +540,7 @@ export const series: Series = {
               icon: '🛍️',
               items: [
                 { id: 'cart', label: 'Cart', icon: '🛒', sub: '3 items' },
-                { id: 'addr', label: 'Address', icon: '🏠', value: '221B Baker St' },
+                { id: 'addr', label: 'Address', icon: '🏠', value: '12 Oak St' },
                 { id: 'card', label: 'Card', icon: '💳', value: '•••• 4242' },
               ],
               button: 'Pay now',
@@ -596,8 +606,8 @@ export const series: Series = {
             title: 'Simulate it',
             lines: [
               { out: '# background the app, then:', tone: 'muted' },
-              { cmd: 'adb shell am kill com.shopapp' },
-              { out: 'process gone. reopen the app.', tone: 'bad' },
+              { cmd: 'adb shell am kill com.shop' },
+              { out: 'process gone. reopen it.', tone: 'bad' },
               { out: '# or: Don’t keep activities', tone: 'muted' },
             ],
           },
@@ -629,13 +639,13 @@ export const series: Series = {
               icon: '🛍️',
               items: [
                 { id: 'cart', label: 'Cart', icon: '🛒', sub: '3 items', tone: 'good' },
-                { id: 'addr', label: 'Address', icon: '🏠', value: '221B Baker St', tone: 'good' },
+                { id: 'addr', label: 'Address', icon: '🏠', value: '12 Oak St', tone: 'good' },
                 { id: 'card', label: 'Card', icon: '💳', value: '•••• 4242', tone: 'good' },
               ],
               button: 'Pay now',
               toast: 'Restored ✅',
             },
-            caption: 'same process? new process? same screen.',
+            caption: 'new process, same screen',
           },
           sfx: 'success',
           emphasis: ['same', 'checkout'],
@@ -697,12 +707,12 @@ export const series: Series = {
           scene: {
             type: 'diagram',
             title: 'WorkManager',
-            cols: 3,
+            cols: 1,
             rows: 4,
             nodes: [
-              { id: 'app', label: 'Your app', icon: '📱', x: 1, y: 0 },
-              { id: 'wm', label: 'WorkManager', icon: '🗓️', x: 1, y: 1.5, active: true },
-              { id: 'db', label: 'Job database', sub: 'flush-outbox · 1h', icon: '🗄️', x: 1, y: 3 },
+              { id: 'app', label: 'Your app', icon: '📱', x: 0, y: 0 },
+              { id: 'wm', label: 'WorkManager', icon: '🗓️', x: 0, y: 1.5, active: true },
+              { id: 'db', label: 'Job database', sub: 'hourly job', icon: '🗄️', x: 0, y: 3 },
             ],
             edges: [
               { from: 'app', to: 'wm', label: 'enqueue', active: true },
@@ -718,17 +728,18 @@ export const series: Series = {
           scene: {
             type: 'diagram',
             title: 'WorkManager',
-            cols: 3,
+            cols: 2,
             rows: 4,
             nodes: [
-              { id: 'app', label: 'Your app', sub: 'killed ✕', icon: '📱', x: 1, y: 0, dim: true, tone: 'bad' },
-              { id: 'wm', label: 'WorkManager', icon: '🗓️', x: 1, y: 1.5, active: true },
-              { id: 'db', label: 'Job database', sub: 'still there ✓', icon: '🗄️', x: 1, y: 3, tone: 'good', active: true },
-              { id: 'boot', label: 'Reboot', icon: '🔄', x: 0, y: 1.5, dim: true },
+              { id: 'app', label: 'Your app', sub: 'killed ✕', icon: '📱', x: 0, y: 0, dim: true, tone: 'bad' },
+              { id: 'boot', label: 'Reboot', sub: 'power cycle', icon: '🔄', x: 1, y: 0, dim: true },
+              { id: 'wm', label: 'WorkManager', icon: '🗓️', x: 0.5, y: 1.5, active: true },
+              { id: 'db', label: 'Job database', sub: 'still here ✓', icon: '🗄️', x: 0.5, y: 3, tone: 'good', active: true },
             ],
             edges: [
-              { from: 'wm', to: 'db', label: 'reload', active: true, both: true },
+              { from: 'app', to: 'wm', dashed: true, tone: 'bad' },
               { from: 'boot', to: 'wm', dashed: true },
+              { from: 'wm', to: 'db', label: 'reload', active: true, both: true },
             ],
           },
           sfx: 'ding',
@@ -742,7 +753,7 @@ export const series: Series = {
             file: 'Scheduler.kt',
             code: workRequest,
             highlight: [[6, 10]],
-            note: { line: 8, text: 'every hour', tone: 'accent' },
+            note: { line: 10, text: 'every hour', tone: 'accent' },
           },
           sfx: 'type',
           emphasis: ['every', 'hour'],
@@ -755,7 +766,7 @@ export const series: Series = {
             file: 'Scheduler.kt',
             code: workRequest,
             highlight: [[1, 5]],
-            note: { line: 4, text: 'online + battery OK', tone: 'good' },
+            note: { line: 5, text: 'online + battery OK', tone: 'good' },
           },
           emphasis: ['network', 'battery'],
         },
@@ -799,7 +810,7 @@ export const series: Series = {
             file: 'index.ts',
             code: expoTask,
             highlight: [1, [10, 13]],
-            note: { line: 12, text: 'minutes · WorkManager underneath', tone: 'accent' },
+            note: { line: 13, text: 'minutes · WorkManager underneath', tone: 'accent' },
           },
           sfx: 'type',
           emphasis: ['JavaScript', 'done'],
@@ -810,10 +821,10 @@ export const series: Series = {
             type: 'list',
             title: 'Perfect for…',
             items: [
-              { text: 'Flush the analytics *outbox*', icon: '📤' },
+              { text: 'Flush the *outbox*', icon: '📤' },
               { text: 'Sync *offline* edits', icon: '📝' },
               { text: 'Upload crash *logs*', icon: '🪵' },
-              { text: 'Refresh content *overnight*', icon: '🌙' },
+              { text: 'Refresh *overnight*', icon: '🌙' },
             ],
           },
           sfx: 'pop',
@@ -856,9 +867,9 @@ export const series: Series = {
             type: 'phone',
             os: 'android',
             screen: {
-              kind: 'notification',
-              behind: 'lock',
-              notice: { app: 'Dashly', title: 'Tracking your route', body: 'Delivery 3 of 8 · 2.4 km to go', icon: '🛵' },
+              kind: 'lock',
+              time: '9:41',
+              notices: [{ app: 'Dashly', title: 'Tracking your route', body: 'Delivery 3 of 8 · 2.4 km to go', icon: '🛵' }],
             },
             caption: 'the price of running',
           },
@@ -873,7 +884,7 @@ export const series: Series = {
             items: [
               { text: 'Music with the *screen off*', icon: '🎧' },
               { text: 'Route *tracking*', icon: '🗺️' },
-              { text: 'A 300-photo *upload* they started', icon: '⬆️' },
+              { text: 'A 300-photo *upload*', icon: '⬆️' },
             ],
           },
           sfx: 'pop',
@@ -922,7 +933,7 @@ export const series: Series = {
           scene: {
             type: 'phone',
             os: 'android',
-            screen: { kind: 'crash', app: 'Dashly', message: 'ForegroundServiceStartNotAllowedException' },
+            screen: { kind: 'crash', app: 'Dashly', message: 'ForegroundService\u200BStartNotAllowed\u200BException' },
             caption: 'started from a background timer',
           },
           sfx: 'error',
@@ -947,8 +958,8 @@ export const series: Series = {
           scene: {
             type: 'compare',
             title: 'Which one?',
-            left: { title: 'Foreground service', verdict: 'neutral', icon: '👀', items: ['User is watching', 'Visible notification', 'Type + Play review'] },
-            right: { title: 'WorkManager', verdict: 'ok', icon: '🗓️', items: ['Can wait a bit', 'No notification', 'Survives reboots'] },
+            left: { title: 'Right now', verdict: 'neutral', icon: '👀', items: ['Foreground service', 'User is watching', 'Visible notification', 'Type + Play review'] },
+            right: { title: 'Later', verdict: 'ok', icon: '🗓️', items: ['A scheduled job', 'Can wait a bit', 'No notification', 'Survives reboots'] },
           },
           sfx: 'swipe',
           emphasis: ['wait', 'watches'],
@@ -1048,8 +1059,8 @@ export const series: Series = {
             cols: 3,
             rows: 4,
             nodes: [
-              { id: 'push', label: 'High-priority push', icon: '⚡', x: 0, y: 0, tone: 'good' },
-              { id: 'idle', label: 'Idle alarm', sub: '≤ 1 per 9 min', icon: '⏰', x: 1, y: 0, tone: 'good' },
+              { id: 'push', label: 'Push', sub: 'high priority', icon: '⚡', x: 0, y: 0, tone: 'good' },
+              { id: 'idle', label: 'Idle alarm', sub: '1 per 9 min', icon: '⏰', x: 1, y: 0, tone: 'good' },
               { id: 'clock', label: 'Alarm clock', icon: '🔔', x: 2, y: 0, tone: 'good' },
               { id: 'doze', label: 'Doze', icon: '😴', x: 1, y: 1.6, shape: 'pill', tone: 'info' },
               { id: 'timer', label: 'setInterval', sub: 'blocked', icon: '⏲️', x: 0, y: 3.2, dim: true, tone: 'bad' },
@@ -1179,7 +1190,7 @@ export const series: Series = {
             lang: 'xml',
             file: 'AndroidManifest.xml',
             code: bootManifest,
-            highlight: [[4, 11]],
+            highlight: [[4, 9]],
             note: { line: 9, text: 'call me after boot', tone: 'accent' },
           },
           sfx: 'type',
@@ -1216,13 +1227,13 @@ export const series: Series = {
           scene: {
             type: 'diagram',
             title: 'After a reboot',
-            cols: 3,
+            cols: 1,
             rows: 4,
             nodes: [
-              { id: 'boot', label: 'Boot done', icon: '🔌', x: 1, y: 0, shape: 'pill' },
-              { id: 'rcv', label: 'BootReceiver', sub: 'seconds to live', icon: '📡', x: 1, y: 1.1, active: true },
-              { id: 'wm', label: 'WorkManager', sub: 'does the work', icon: '🗓️', x: 1, y: 2.2 },
-              { id: 'alarm', label: 'Reminders', sub: 're-armed ✓', icon: '⏰', x: 1, y: 3.3, tone: 'good' },
+              { id: 'boot', label: 'Boot done', icon: '🔌', x: 0, y: 0, shape: 'pill' },
+              { id: 'rcv', label: 'BootReceiver', sub: 'seconds to live', icon: '📡', x: 0, y: 1.1, active: true },
+              { id: 'wm', label: 'WorkManager', sub: 'does the work', icon: '🗓️', x: 0, y: 2.2 },
+              { id: 'alarm', label: 'Reminders', sub: 're-armed ✓', icon: '⏰', x: 0, y: 3.3, tone: 'good' },
             ],
             edges: [
               { from: 'boot', to: 'rcv', active: true },
@@ -1254,7 +1265,7 @@ export const series: Series = {
             items: [
               { text: '*NetInfo*', sub: 'network changes', icon: '📶' },
               { text: '*Headless JS*', sub: 'run JS after boot', icon: '👻' },
-              { text: '*expo-background-task*', sub: 're-registers after reboot', icon: '🔁' },
+              { text: '*Background tasks*', sub: 'expo-background-task re-registers', icon: '🔁' },
             ],
           },
           sfx: 'pop',
@@ -1297,9 +1308,13 @@ export const series: Series = {
             type: 'phone',
             os: 'android',
             screen: {
-              kind: 'notification',
-              behind: 'lock',
-              notice: { app: 'Foodie', title: 'Driver is 2 min away', body: 'Order #4821', icon: '🛵' },
+              kind: 'lock',
+              time: '9:41',
+              notices: [
+                { app: 'Foodie', title: 'Driver is 2 min away', body: 'Order #4821', icon: '🛵' },
+                { app: 'Foodie', title: 'Maya: on my way!', body: 'Chat', icon: '💬' },
+                { app: 'Foodie', title: 'Half-price pizza tonight', body: 'Promo', icon: '🍕' },
+              ],
             },
             caption: 'orders · chat · promos',
           },
@@ -1463,7 +1478,10 @@ export const series: Series = {
               title: 'Chrome',
               icon: '🌐',
               body: 'shop.example.com/p/42',
-              items: [{ id: 'banner', label: 'Get the app for a better experience', icon: '📲', tone: 'bad' }],
+              items: [
+                { id: 'banner', label: 'Get the app for a better experience', icon: '📲', tone: 'bad' },
+                { id: 'page', label: 'Sneaker X', icon: '👟', sub: 'loading the web page…', tone: 'muted' },
+              ],
               loading: true,
             },
             tap: { x: 0.5, y: 0.3 },
@@ -1503,7 +1521,7 @@ export const series: Series = {
           scene: {
             type: 'code',
             lang: 'json',
-            file: '.well-known/assetlinks.json',
+            file: 'assetlinks.json',
             code: assetLinks,
             highlight: [[5, 9]],
           },
@@ -1515,7 +1533,7 @@ export const series: Series = {
           scene: {
             type: 'code',
             lang: 'json',
-            file: '.well-known/assetlinks.json',
+            file: 'assetlinks.json',
             code: assetLinks,
             errors: [8],
             note: { line: 8, text: 'Play Console → App signing', tone: 'warn' },
@@ -1532,12 +1550,12 @@ export const series: Series = {
             rows: 4,
             nodes: [
               { id: 'phone', label: 'Android', icon: '🤖', x: 0, y: 0.4 },
-              { id: 'site', label: 'Your domain', sub: 'assetlinks.json', icon: '🌐', x: 2, y: 0.4 },
+              { id: 'site', label: 'Your domain', sub: 'assetlinks\u200B.json', icon: '🌐', x: 2, y: 0.4 },
               { id: 'ok', label: 'Verified', sub: 'opens your app', icon: '✅', x: 0, y: 3, tone: 'good', active: true },
               { id: 'bad', label: 'Failed', sub: 'opens browser', icon: '🌐', x: 2, y: 3, tone: 'bad', dim: true },
             ],
             edges: [
-              { from: 'phone', to: 'site', label: 'fetch', active: true, both: true },
+              { from: 'phone', to: 'site', active: true, both: true },
               { from: 'phone', to: 'ok', label: 'match', active: true, tone: 'good' },
               { from: 'site', to: 'bad', label: 'mismatch', dashed: true, tone: 'bad' },
             ],
@@ -1554,8 +1572,8 @@ export const series: Series = {
             title: 'Is it verified?',
             lines: [
               { cmd: 'adb shell pm get-app-links com.shop.app' },
-              { out: '  Domain verification state:', tone: 'muted' },
-              { out: '    shop.example.com: verified', tone: 'good' },
+              { out: 'Domain verification state:', tone: 'muted' },
+              { out: 'shop.example.com: verified', tone: 'good' },
             ],
           },
           sfx: 'type',
@@ -1672,10 +1690,17 @@ export const series: Series = {
               kind: 'app',
               title: 'Display over other apps',
               icon: '⚙️',
-              items: [{ id: 'sw', label: 'Allow display over other apps', icon: '🪟', checked: false, tone: 'warn' }],
-              body: 'ScreenTint',
+              body: 'Allow display over other apps',
+              items: [
+                { id: 'twi', label: 'Twilight', icon: '🌅', checked: true, tone: 'muted' },
+                { id: 'sw', label: 'ScreenTint', icon: '🪟', checked: false, tone: 'warn' },
+                { id: 'maps', label: 'Maps', icon: '🗺️', checked: false, tone: 'muted' },
+                { id: 'chat', label: 'Messenger', icon: '💬', checked: true, tone: 'muted' },
+                { id: 'notes', label: 'Sticky notes', icon: '🗒️', checked: false, tone: 'muted' },
+              ],
             },
-            caption: 'special permission · Play reviews it',
+            tap: { x: 0.85, y: 0.42 },
+            caption: 'special · Play reviews it',
           },
           sfx: 'riser',
           emphasis: ['nuclear', 'settings'],
@@ -1687,12 +1712,14 @@ export const series: Series = {
             type: 'code',
             lang: 'tsx',
             file: 'Call.tsx',
-            code: `<VideoView
+            code: `// expo-video; react-native-video too
+
+<VideoView
   player={player}
   allowsPictureInPicture
   startsPictureInPictureAutomatically
 />`,
-            added: [[3, 4]],
+            added: [[5, 6]],
           },
           sfx: 'type',
           emphasis: ['free'],
@@ -1829,8 +1856,8 @@ export const series: Series = {
             lang: 'xml',
             file: 'AndroidManifest.xml',
             code: adIdManifest,
-            highlight: [[2, 3]],
-            note: { line: 3, text: 'missing? you read zeros', tone: 'warn' },
+            highlight: [[3, 4]],
+            note: { line: 4, text: 'missing? you read zeros', tone: 'warn' },
           },
           sfx: 'type',
           emphasis: ['thirteen', 'permission'],
@@ -1857,7 +1884,7 @@ export const series: Series = {
             file: 'ads.ts',
             code: adIdJs,
             added: [[6, 8]],
-            note: { line: 7, text: 'normal, not an error', tone: 'good' },
+            note: { line: 8, text: 'normal, not an error', tone: 'good' },
           },
           sfx: 'ding',
           emphasis: ['zero', 'normal'],
@@ -1868,7 +1895,7 @@ export const series: Series = {
           scene: {
             type: 'compare',
             title: 'Which ID?',
-            left: { title: 'Advertising ID', verdict: 'neutral', icon: '📣', items: ['Ads + attribution', 'User can delete it', 'Never a user ID'] },
+            left: { title: 'Ad ID', verdict: 'neutral', icon: '📣', items: ['Ads + attribution', 'User can delete it', 'Never a user ID'] },
             right: { title: 'App Set ID', verdict: 'ok', icon: '📊', items: ['Analytics', 'Fraud checks', 'Non-ad uses'] },
           },
           sfx: 'swipe',
@@ -1883,7 +1910,11 @@ export const series: Series = {
               kind: 'app',
               title: 'App content',
               icon: '▶️',
-              items: [{ id: 'adid', label: 'Advertising ID', icon: '🆔', sub: 'Does your app use one? Yes', checked: true, tone: 'good' }],
+              items: [
+                { id: 'safety', label: 'Data safety', icon: '🛡️', sub: 'Completed', checked: true, tone: 'muted' },
+                { id: 'ads', label: 'Ads', icon: '📣', sub: 'Contains ads: yes', checked: true, tone: 'muted' },
+                { id: 'adid', label: 'Advertising ID', icon: '🆔', sub: 'Does your app use one? Yes', checked: true, tone: 'good' },
+              ],
               button: 'Save',
             },
             tap: { x: 0.5, y: 0.86 },
@@ -1948,7 +1979,7 @@ export const series: Series = {
               icon: '▶️',
               items: [
                 { id: 'v1', label: 'MyApp', icon: '📱', sub: 'v1.0 · stuck forever', tone: 'bad' },
-                { id: 'v2', label: 'MyApp (NEW, please reinstall)', icon: '🙏', sub: '0 users', tone: 'warn' },
+                { id: 'v2', label: 'MyApp (new!)', icon: '🙏', sub: 'please reinstall · 0 users', tone: 'warn' },
               ],
             },
             caption: 'no key, no updates',
@@ -2006,7 +2037,7 @@ export const series: Series = {
           scene: {
             type: 'code',
             lang: 'gradle',
-            file: 'android/app/build.gradle',
+            file: 'app/build.gradle',
             code: gradle,
             added: [[6, 7]],
             note: { line: 7, text: 'R8 strips and renames', tone: 'good' },
@@ -2021,8 +2052,8 @@ export const series: Series = {
             title: 'Production crash',
             lines: [
               { out: 'FATAL EXCEPTION: main', tone: 'bad' },
-              { out: '  at a.b.c(Unknown Source:12)', tone: 'bad' },
-              { out: '  at a.b.d(Unknown Source:4)', tone: 'bad' },
+              { out: '  at a.b.c(SourceFile:12)', tone: 'bad' },
+              { out: '  at a.b.d(SourceFile:4)', tone: 'bad' },
               { out: '# …which class was that? 🤷', tone: 'muted' },
             ],
           },
@@ -2036,8 +2067,8 @@ export const series: Series = {
             title: 'Production crash',
             lines: [
               { out: 'FATAL EXCEPTION: main', tone: 'bad' },
-              { out: '  at CartRepository.save(Cart.kt:12)', tone: 'good' },
-              { out: '  at Checkout.pay(Checkout.kt:4)', tone: 'good' },
+              { out: '  at Cart.save(Cart.kt:12)', tone: 'good' },
+              { out: '  at Checkout.pay(Pay.kt:4)', tone: 'good' },
               { out: '✓ mapping.txt uploaded', tone: 'good' },
             ],
           },

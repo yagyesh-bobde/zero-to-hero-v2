@@ -98,7 +98,45 @@ button {
 }
 
 /* ───────────── Stage ───────────── */
+/*
+ * Layout system. Every scene is sized in cqw of the stage width, so a phone
+ * (390px) and the laptop frame (~488px) share one rhythm. The tokens below
+ * define the spacing scale, the type scale (clamped so phones never drop below
+ * readable sizes) and the safe zones: top chrome, right rail (phone) and the
+ * caption home at the bottom. Scene content lives in .stage-scenes, which is the
+ * area left over once the zones and a guaranteed caption gap are reserved.
+ */
 .stage {
+  --s-1: 1cqw;
+  --s-2: 2cqw;
+  --s-3: 3cqw;
+  --s-4: 4cqw;
+  --s-6: 6cqw;
+  --s-8: 8cqw;
+  --fs-display: clamp(34px, 10.5cqw, 54px);
+  --fs-display-lg: clamp(44px, 14.5cqw, 74px);
+  --fs-h1: clamp(20px, 6cqw, 31px);
+  --fs-h2: clamp(17px, 4.8cqw, 25px);
+  --fs-body: clamp(15px, 4.2cqw, 22px);
+  --fs-small: clamp(12px, 3.2cqw, 16px);
+  --fs-mono: clamp(12px, 3.3cqw, 17px);
+  --fs-micro: clamp(11px, 2.8cqw, 14px);
+  --fs-caption: clamp(20px, 6.3cqw, 32px);
+  --fs-meta: clamp(11px, 2.9cqw, 14px);
+  --r-sm: 2.4cqw;
+  --r-md: 3.4cqw;
+  --r-lg: 4.2cqw;
+  --zone-top: max(20cqw, 84px);
+  --zone-left: 6cqw;
+  --zone-right: 6cqw;
+  --caption-h: calc(var(--fs-caption) * 1.15 * 2 + 1.5cqw);
+  --caption-bottom: max(7cqw, calc(env(safe-area-inset-bottom) + 18px));
+  --caption-gap: 5cqw;
+  --zone-bottom: calc(var(--caption-bottom) + var(--caption-h) + var(--caption-gap));
+  /* Caption column inset (phones keep caption text clear of the rail). */
+  --caption-x: var(--zone-left);
+  /* Width a scene is laid out in. Stage.tsx overrides it per scene when zooming. */
+  --col-w: calc(100cqw - var(--zone-left) - var(--zone-right));
   position: absolute;
   inset: 0;
   overflow: hidden;
@@ -114,13 +152,10 @@ button {
   -webkit-tap-highlight-color: transparent;
   isolation: isolate;
 }
+/* Fills the stage: on laptops the stage is 9:16; on phones the extra height goes to the zones. */
 .stage-canvas {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  translate: -50% -50%;
-  width: min(100cqw, 56.25cqh);
-  height: min(100cqh, 177.78cqw);
+  inset: 0;
   container-type: size;
 }
 .stage-bg {
@@ -181,8 +216,8 @@ button {
   position: absolute;
   inset: 0 0 auto;
   z-index: 5;
-  padding: max(12px, env(safe-area-inset-top)) 14px 0;
-  background: linear-gradient(180deg, rgb(0 0 0 / 0.5), transparent);
+  padding: max(12px, env(safe-area-inset-top)) var(--zone-right) 16px var(--zone-left);
+  background: linear-gradient(180deg, rgb(0 0 0 / 0.55), rgb(0 0 0 / 0.2) 60%, transparent);
   pointer-events: none;
 }
 .segments {
@@ -220,26 +255,32 @@ button {
 .stage-meta {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  margin-top: 4px;
+  gap: 3px;
+  margin-top: 6px;
+}
+.stage-series,
+.stage-reel-title {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .stage-series {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--fs-meta);
+  font-weight: 650;
   color: color-mix(in oklab, var(--accent) 70%, #fff);
   letter-spacing: 0.01em;
 }
 .stage-reel-title {
-  font-size: 14px;
+  font-size: calc(var(--fs-meta) + 2px);
   font-weight: 750;
+  letter-spacing: -0.01em;
   text-shadow: 0 1px 8px rgb(0 0 0 / 0.6);
 }
 .stage-silent {
   position: absolute;
-  left: 50%;
-  bottom: 3cqw;
-  translate: -50% 0;
-  font: 500 2.6cqw var(--mono);
+  left: var(--zone-left);
+  bottom: calc(var(--caption-bottom) * 0.3);
+  font: 500 var(--fs-micro) var(--mono);
   color: var(--faint);
   white-space: nowrap;
 }
@@ -264,30 +305,72 @@ button {
 }
 
 /* Scene layers */
+/* The content safe zone: everything a scene draws stays inside this box. */
 .stage-scenes {
   position: absolute;
-  inset: 22cqw 6cqw 50cqw;
+  inset: var(--zone-top) var(--zone-right) var(--zone-bottom) var(--zone-left);
 }
 .scene-layer {
   position: absolute;
   inset: 0;
+}
+/*
+ * Centres the scene. The inner box is a shrunk replica of the zone that is scaled
+ * back up by up to --zoom-max, so scenes grow into the space they have (see
+ * Stage.tsx, which sets the size, --col-w and the transform). Scenes taller than
+ * the zone are scaled down instead.
+ */
+.scene-fit {
+  --zoom-max: 1.2;
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+.scene-fit-inner {
+  /* Optical centre: a touch above the geometric middle of the zone. */
+  padding-bottom: var(--s-4);
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: safe center;
+  transform-origin: 50% 50%;
+  will-change: transform;
 }
+.scene-fit-inner > * {
+  flex: none;
+}
+/*
+ * Scenes with a heading (diagram, tree, list, timeline, compare, terminal) pin it
+ * to the top of the zone, so it sits at the same y on every beat of a reel; only
+ * the body is centred in the space left under it (QA: `heading-jump`).
+ */
+.fit-head {
+  padding: 1cqw 0 var(--s-4);
+}
+.fit-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: safe center;
+}
+.fit-body > * {
+  flex: none;
+}
+/* The new scene lands fast (opaque by ~90ms) so a beat change never shows a blank stage. */
 .scene-layer.is-current {
-  animation: layer-in 0.6s var(--smooth) both;
+  animation: layer-in 0.45s var(--smooth) both;
 }
 .scene-layer.is-leaving {
-  animation: layer-out 0.45s var(--smooth) both;
+  animation: layer-out 0.28s ease-out both;
   pointer-events: none;
 }
 @keyframes layer-in {
-  from { opacity: 0; transform: translateY(8cqw) scale(0.94); filter: blur(6px); }
-  to { opacity: 1; transform: none; filter: none; }
+  0% { opacity: 0; transform: translateY(4cqw) scale(0.98); filter: blur(3px); }
+  30% { opacity: 1; filter: none; }
+  100% { opacity: 1; transform: none; filter: none; }
 }
 @keyframes layer-out {
-  to { opacity: 0; transform: translateY(-8cqw) scale(1.04); filter: blur(6px); }
+  to { opacity: 0; transform: translateY(-3cqw) scale(1.01); }
 }
 @keyframes rise-in {
   from { opacity: 0; transform: translateY(4cqw) scale(0.96); }
@@ -302,12 +385,13 @@ button {
   from { opacity: 0; }
 }
 .scene-title {
-  margin: 0 0 4cqw;
-  font-size: 6cqw;
+  margin: 0;
+  font-size: var(--fs-h1);
   font-weight: 800;
   letter-spacing: -0.02em;
-  line-height: 1.1;
+  line-height: 1.12;
   text-align: center;
+  text-wrap: balance;
   animation: rise-in 0.5s var(--smooth) both;
 }
 .scene-title em,
@@ -319,10 +403,18 @@ button {
   font-style: normal;
   color: var(--accent);
 }
+/* A diagram/phone caption: a tag pinned ~24px under the picture it describes. */
 .scene-caption {
-  margin: 4cqw 0 0;
+  align-self: center;
+  margin: var(--s-6) 0 0;
+  padding: 1.2cqw 3cqw;
+  max-width: 100%;
+  border-radius: 99px;
+  background: color-mix(in oklab, var(--accent) 12%, #121219);
+  border: 1px solid color-mix(in oklab, var(--accent) 35%, transparent);
   text-align: center;
-  font: 600 3.6cqw var(--mono);
+  text-wrap: balance;
+  font: 600 var(--fs-mono) / 1.35 var(--mono);
   color: color-mix(in oklab, var(--accent) 75%, #fff);
   animation: rise-in 0.5s 0.35s var(--smooth) both;
 }
@@ -341,7 +433,7 @@ button {
   background: color-mix(in oklab, var(--accent) 18%, transparent);
   border: 1px solid color-mix(in oklab, var(--accent) 45%, transparent);
   color: color-mix(in oklab, var(--accent) 80%, #fff);
-  font-size: 3.4cqw;
+  font-size: var(--fs-small);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -359,13 +451,21 @@ button {
   75% { transform: translateY(-1cqw) rotate(-4deg); }
   100% { transform: none; }
 }
+/*
+ * Two size steps, picked in Cards.tsx from an estimate of the wrapped line count
+ * on a phone: `is-big` (display-lg) for titles that fit 2 lines, display otherwise.
+ * Balanced wrapping; never more than 4 lines (QA: `title-lines`).
+ */
 .title-text {
   margin: 0;
-  font-size: 12.5cqw;
-  line-height: 0.98;
+  font-size: var(--fs-display);
+  line-height: 1;
   font-weight: 900;
   letter-spacing: -0.045em;
   text-wrap: balance;
+}
+.title-text.is-big {
+  font-size: var(--fs-display-lg);
 }
 .title-word {
   display: inline-block;
@@ -373,8 +473,8 @@ button {
   animation: slam 0.55s var(--d, 0s) var(--spring) both;
 }
 @keyframes slam {
-  0% { opacity: 0; transform: scale(2.4) translateY(-3cqw); filter: blur(10px); }
-  60% { opacity: 1; transform: scale(0.94); filter: none; }
+  0% { opacity: 0; transform: scale(1.7) translateY(-2cqw); filter: blur(8px); }
+  60% { opacity: 1; transform: scale(0.96); filter: none; }
   100% { transform: none; }
 }
 .title-text em {
@@ -383,18 +483,18 @@ button {
   background-clip: text;
   color: transparent;
 }
-.title-stack .title-text {
-  font-size: 15cqw;
-}
+/* Stacked words get a line each only when that stays within 4 lines (Cards.tsx sets `is-stacked`). */
 .title-stack .title-word {
-  display: block;
   animation-name: stack-in;
 }
+.title-stack .is-stacked .title-word {
+  display: block;
+}
 .title-stack .title-word:nth-child(even) {
-  --from: 30cqw;
+  --from: 10cqw;
 }
 @keyframes stack-in {
-  from { opacity: 0; transform: translateX(var(--from, -30cqw)) skewX(-12deg); }
+  from { opacity: 0; transform: translateX(var(--from, -10cqw)) skewX(-10deg); }
   to { opacity: 1; transform: none; }
 }
 .title-glitch .title-text {
@@ -403,13 +503,15 @@ button {
 }
 @keyframes glitch {
   0%, 86%, 100% { text-shadow: none; transform: none; }
-  88% { text-shadow: -1.2cqw 0 #ff2bd6, 1.2cqw 0 #00f0ff; transform: translateX(0.8cqw) skewX(-4deg); }
-  91% { text-shadow: 1cqw 0 #ff2bd6, -1cqw 0 #00f0ff; transform: translateX(-0.8cqw); }
+  88% { text-shadow: -1.2cqw 0 #ff2bd6, 1.2cqw 0 #00f0ff; transform: translateX(0.5cqw) skewX(-3deg); }
+  91% { text-shadow: 1cqw 0 #ff2bd6, -1cqw 0 #00f0ff; transform: translateX(-0.5cqw); }
   94% { text-shadow: -0.5cqw 0 #ff2bd6, 0.5cqw 0 #00f0ff; transform: none; }
 }
 .title-sub {
+  text-wrap: balance;
   margin: 0;
-  font-size: 4.6cqw;
+  font-size: var(--fs-body);
+  line-height: 1.3;
   color: var(--muted);
   font-weight: 500;
   animation: rise-in 0.5s var(--d, 0.3s) var(--smooth) both;
@@ -428,47 +530,61 @@ button {
 .code-chrome {
   display: flex;
   align-items: center;
-  gap: 1.4cqw;
-  padding: 2.6cqw 3.4cqw;
+  gap: 1.2cqw;
+  padding: 2.6cqw 3cqw;
   border-bottom: 1px solid rgb(255 255 255 / 0.06);
   background: rgb(255 255 255 / 0.025);
 }
 .code-chrome .dot {
-  width: 2.2cqw;
-  height: 2.2cqw;
+  flex: none;
+  width: 2cqw;
+  height: 2cqw;
   border-radius: 50%;
   background: #ff5f57;
 }
 .code-chrome .dot:nth-child(2) { background: #febc2e; }
 .code-chrome .dot:nth-child(3) { background: #28c840; }
+/* File name and language badge share the bar: file + lang ≤ LIMITS.code.chrome chars. */
 .code-file {
-  margin-left: 2cqw;
-  font: 600 3cqw var(--mono);
+  margin-left: 1.4cqw;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 var(--fs-micro) var(--mono);
   color: var(--ink);
 }
 .code-lang {
+  flex: none;
+}
+.code-lang {
   margin-left: auto;
-  font: 600 2.6cqw var(--mono);
+  font: 600 var(--fs-micro) var(--mono);
   color: var(--accent);
   text-transform: uppercase;
 }
 .code-body {
+  --code-cols: 34;
+  /* Mono glyphs are 0.62em wide; the gutter (1.4em) and paddings (0.5em each) scale with the
+     font, so the rendered size is the same at any Fit zoom: col-w / (cols × 0.62 + 2.4). */
+  --code-fs: min(3.6cqw, calc(var(--col-w) / (var(--code-cols) * 0.62 + 2.4)));
   padding: 2.6cqw 0;
   font-family: var(--mono);
   font-weight: 500;
+  font-size: var(--code-fs);
   line-height: 1.62;
 }
 .code-line {
   display: flex;
   position: relative;
-  padding-right: 3cqw;
+  padding-right: calc(var(--code-fs) * 0.5);
   transition: opacity 0.4s, background-color 0.4s, box-shadow 0.4s;
 }
 .code-gutter {
   flex: none;
-  width: 7cqw;
-  padding-right: 2.2cqw;
-  font-size: 2.8cqw;
+  width: calc(var(--code-fs) * 1.9);
+  padding-right: calc(var(--code-fs) * 0.5);
+  font-size: var(--fs-micro);
   line-height: inherit;
   align-self: center;
   text-align: right;
@@ -539,7 +655,7 @@ button {
 }
 .code-note-row > div {
   overflow: hidden;
-  padding-left: 7cqw;
+  padding-left: calc(var(--code-fs) * 1.9);
 }
 .code-note {
   --tone: var(--accent);
@@ -550,7 +666,7 @@ button {
   border-radius: 2.4cqw;
   background: var(--tone);
   color: #0b0b10;
-  font: 800 3.4cqw var(--font);
+  font: 800 var(--fs-small) var(--font);
   animation: pop-in 0.45s 0.1s var(--spring) both;
 }
 .code-note::before {
@@ -565,19 +681,32 @@ button {
 
 /* Terminal */
 .term-body {
+  --term-cols: 30;
   padding: 3cqw 3.6cqw;
-  font: 500 3.4cqw/1.55 var(--mono);
+  font-family: var(--mono);
+  font-weight: 500;
+  /* The widest output row sets the size (down to a floor that still fits LIMITS.terminal.outCols);
+     commands keep this size and wrap at spaces with a hanging indent. */
+  font-size: clamp(2.6cqw, calc((var(--col-w) - 7.2cqw) / (var(--term-cols) * 0.62)), var(--fs-mono));
+  line-height: 1.55;
   min-height: 40cqw;
 }
 .term-line {
   animation: fade-in 0.25s both;
 }
 .term-cmd {
+  display: flex;
   color: #f1f0f5;
+}
+.term-cmd-text {
+  min-width: 0;
   white-space: pre-wrap;
-  word-break: break-all;
+}
+.term-tok {
+  white-space: nowrap;
 }
 .term-prompt {
+  flex: none;
   color: var(--good);
   margin-right: 2cqw;
   font-weight: 700;
@@ -586,28 +715,42 @@ button {
   margin: 0.6cqw 0 2cqw;
   font: inherit;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
   color: var(--tone, var(--muted));
   animation: fade-in 0.3s both;
 }
 
 /* ───────────── Diagram + tree ───────────── */
+/* The phone mock is height-driven (it fills the zone), so it is laid out at zoom 1. */
+.scene-phone {
+  flex: 1 1 0;
+  min-height: 0;
+}
+.type-phone .scene-fit {
+  --zoom-max: 1;
+}
+/* Diagrams have a content-driven height (rows × row height) and are width-bound (node = cell), so they
+   are laid out at zoom 1 and only ever shrink. */
+.type-diagram .scene-fit,
+.type-tree .scene-fit {
+  --zoom-max: 1;
+}
 .scene-diagram,
 .scene-tree {
-  flex: 1;
-  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
+/* Row centres sit on the canvas's top and bottom edges (Diagram.tsx adds the node overhang as
+   margin), so the heading and the caption hug the graph instead of a half-row of dead space. */
 .dia-canvas {
   position: relative;
   width: 100%;
-  flex: 0 1 calc(var(--rows) * 27cqw);
-  min-height: 0;
+  height: calc(var(--spans) * 28cqw);
 }
 .dia-tree {
-  flex-basis: calc(var(--rows) * 20cqw);
+  height: calc(var(--spans) * 21cqw);
 }
 .dia-canvas svg {
   position: absolute;
@@ -670,7 +813,7 @@ button {
   position: absolute;
   left: 0;
   top: 0;
-  z-index: 2;
+  z-index: 2; /* under edge labels (z 3), which have an opaque backdrop */
   display: grid;
   place-items: center;
   min-width: 3.6cqw;
@@ -678,7 +821,7 @@ button {
   border-radius: 99px;
   background: var(--tone);
   color: #0b0b10;
-  font: 800 2.8cqw var(--mono);
+  font: 800 var(--fs-micro) var(--mono);
   box-shadow: 0 0 3cqw var(--tone), 0 0 0 0.6cqw color-mix(in oklab, var(--tone) 30%, transparent);
   offset-rotate: 0deg;
   offset-distance: 0%;
@@ -695,33 +838,40 @@ button {
   85% { opacity: 1; }
   100% { offset-distance: 100%; opacity: 0; transform: scale(0.8); }
 }
+/* Sits beside its edge (Diagram.tsx sets the normal --nx/--ny), on an opaque backdrop above packets. */
 .dia-edge-label {
   --tone: var(--muted);
   position: absolute;
-  translate: -50% -50%;
+  z-index: 3;
+  translate: calc(-50% + var(--nx, 0) * (50% + 0.6cqw)) calc(-50% + var(--ny, 0) * (50% + 0.6cqw));
   padding: 0.6cqw 1.8cqw;
   border-radius: 99px;
   background: #121219;
   border: 1px solid rgb(255 255 255 / 0.1);
   color: var(--tone);
-  font: 600 2.7cqw var(--mono);
+  font: 600 var(--fs-micro) var(--mono);
   white-space: nowrap;
   animation: pop-in 0.4s 0.7s var(--spring) both;
 }
+/* A node is its cell minus a small gap (Diagram.tsx mirrors this as --node-px for the label fit). */
 .dia-node {
   --tone: var(--accent);
+  --cell: calc(100% / var(--cols));
   position: absolute;
   translate: -50% -50%;
-  width: min(40cqw, calc(100% / var(--cols) * 0.9));
+  width: min(56cqw, calc(var(--cell) * 0.96));
   transition: left 0.6s var(--smooth), top 0.6s var(--smooth), opacity 0.4s;
   z-index: 1;
 }
+/* Nodes sharing a row get one min-height (Diagram.tsx measures the tallest). */
 .dia-node-inner {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.6cqw;
-  padding: 2.2cqw 2cqw;
+  justify-content: center;
+  gap: 0.7cqw;
+  padding: 2.2cqw 0.5cqw; /* thin sides: a long label may use the full node width (limits.ts budgets) */
   border-radius: 3.2cqw;
   background: color-mix(in oklab, var(--tone) 12%, #121219);
   border: 2px solid color-mix(in oklab, var(--tone) 55%, transparent);
@@ -729,12 +879,13 @@ button {
   animation: pop-in 0.5s calc(var(--i, 0) * 0.08s) var(--spring) both;
   transition: background-color 0.4s, border-color 0.4s, box-shadow 0.4s, transform 0.4s;
 }
+/* A capsule for one line; a taller pill (icon, sub) becomes a soft rounded box so its text stays inside. */
 .dia-node.shape-pill .dia-node-inner {
-  border-radius: 99px;
-  padding: 1.8cqw 2.4cqw;
+  border-radius: 6cqw;
+  padding: 1.8cqw 0.5cqw;
 }
 .dia-node.shape-circle {
-  width: min(26cqw, calc(100% / var(--cols) * 0.75));
+  width: min(26cqw, calc(var(--cell) * 0.78));
 }
 .dia-node.shape-circle .dia-node-inner {
   aspect-ratio: 1;
@@ -742,19 +893,23 @@ button {
   justify-content: center;
 }
 .dia-icon {
-  font-size: 6cqw;
+  font-size: 6.4cqw;
   line-height: 1;
 }
+/* All labels of a diagram share one size, shrunk (to a 15px floor) so its widest word fits a node. */
 .dia-label {
-  font-size: 3.5cqw;
+  --label-max: clamp(15px, 4.3cqw, 20px);
+  font-size: min(var(--label-max), max(15px, calc((var(--node-px, 1000px) - 4px - 1cqw) / var(--dia-label-em, 1))));
   font-weight: 750;
   line-height: 1.15;
 }
 .dia-tree .dia-label {
-  font-size: 3.2cqw;
+  --label-max: clamp(15px, 4cqw, 18px);
 }
 .dia-sub {
-  font: 500 2.6cqw var(--mono);
+  overflow-wrap: anywhere;
+  margin-top: 0.3cqw;
+  font: 500 max(11px, 3cqw) / 1.3 var(--mono);
   color: color-mix(in oklab, var(--tone) 70%, #fff);
   animation: fade-in 0.4s both;
 }
@@ -799,7 +954,7 @@ button {
   position: relative;
   flex: 1 1 0;
   min-height: 0;
-  max-height: 100cqw;
+  max-height: 130cqw;
   aspect-ratio: 9 / 19;
   padding: 1.6cqw;
   border-radius: 9cqw;
@@ -819,6 +974,8 @@ button {
   background: #f4f4f7;
   color: #121216;
   font-size: 3.1cqw;
+  /* Mock UI text wraps rather than escaping the screen (long identifiers, URLs). */
+  overflow-wrap: break-word;
 }
 .phone-android .phone-screen {
   border-radius: 5cqw;
@@ -879,6 +1036,36 @@ button {
   flex-direction: column;
   gap: 2cqw;
 }
+/* A screen with nothing on it: calmer grey with a faint empty "canvas", not a bright white slab. */
+.is-empty .phone-screen {
+  background: #e7e7ed;
+}
+.ph-app.is-empty::after {
+  content: '';
+  flex: 1;
+  margin-top: 2cqw;
+  border-radius: 3cqw;
+  border: 0.5cqw dashed #c9c9d3;
+  background: repeating-linear-gradient(135deg, transparent 0 2.5cqw, rgb(0 0 0 / 0.025) 2.5cqw 5cqw);
+}
+/* The stand-in app behind dialogs and bubbles: a calm grey screen of varied skeleton rows. */
+.ph-fake {
+  background: #ececf1;
+}
+.ph-fake .ph-skeleton {
+  background: linear-gradient(90deg, #dcdce3, #e6e6ec, #dcdce3);
+  background-size: 200% 100%;
+}
+.ph-fake .ph-skeleton:nth-child(3n) {
+  width: 62%;
+}
+.ph-fake .ph-skeleton:nth-child(3n + 1) {
+  width: 84%;
+}
+.ph-fake .ph-skeleton:nth-child(2) {
+  height: 22cqw;
+  border-radius: 3cqw;
+}
 .ph-appbar {
   display: flex;
   align-items: center;
@@ -919,8 +1106,9 @@ button {
 .ph-row-text {
   display: flex;
   flex-direction: column;
-  min-width: 0;
-  flex: 1;
+  flex: 0 1 auto;
+  /* Short labels never wrap; a long value shrinks (ellipsis) first. */
+  min-width: min(45%, 7ch);
 }
 .ph-row-label {
   font-weight: 750;
@@ -935,8 +1123,11 @@ button {
   color: #6b6a74;
 }
 .ph-input {
-  max-width: 50%;
-  padding: 1cqw 1.8cqw;
+  flex: 0 1 auto;
+  margin-left: auto;
+  min-width: 0;
+  max-width: 65%;
+  padding: 1cqw 1.4cqw;
   border-radius: 1.6cqw;
   background: #f0f0f4;
   border: 0.3cqw solid #dcdce3;
@@ -994,13 +1185,12 @@ button {
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(4cqw) scale(0.8); }
 }
+/* In flow: below the rows (centred in the free space), never on top of them. */
 .ph-spinner {
-  position: absolute;
-  left: 50%;
-  top: 50%;
+  flex: none;
   width: 8cqw;
   height: 8cqw;
-  margin: -4cqw;
+  margin: auto;
   border-radius: 50%;
   border: 1cqw solid #d8d8e0;
   border-top-color: #15151b;
@@ -1028,9 +1218,9 @@ button {
 }
 .ph-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 3cqw 1.4cqw;
-  padding: 11cqw 3cqw 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2.6cqw 1cqw;
+  padding: 10cqw 2.4cqw 0;
 }
 .ph-home-app {
   display: flex;
@@ -1042,14 +1232,14 @@ button {
 .ph-home-app span {
   display: grid;
   place-items: center;
-  width: 9cqw;
-  height: 9cqw;
-  border-radius: 2.4cqw;
+  width: 8cqw;
+  height: 8cqw;
+  border-radius: 2.2cqw;
   background: rgb(255 255 255 / 0.16);
-  font-size: 5cqw;
+  font-size: 4.4cqw;
 }
 .ph-home-app small {
-  font-size: 1.8cqw;
+  font-size: 2.2cqw;
 }
 .ph-home-app.is-hl span {
   background: #fff;
@@ -1110,6 +1300,9 @@ button {
 @keyframes notice-in {
   from { opacity: 0; transform: translateY(-10cqw) scale(0.9); }
 }
+.ph-notice > div {
+  min-width: 0;
+}
 .ph-notice-icon {
   display: grid;
   place-items: center;
@@ -1121,7 +1314,7 @@ button {
   font-size: 4cqw;
 }
 .ph-notice-app {
-  font-size: 2.1cqw;
+  font-size: 2.2cqw;
   color: #6b6a74;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -1138,6 +1331,10 @@ button {
   position: absolute;
   inset: 7cqw 2.4cqw auto;
   z-index: 4;
+}
+/* On the lock screen the banner sits under the clock, like the real thing. */
+.ph-lock + .ph-banner {
+  top: 34cqw;
 }
 .ph-bubble {
   position: absolute;
@@ -1287,6 +1484,8 @@ button {
 }
 .ph-killed-label {
   position: absolute;
+  inset-inline: 8%;
+  text-align: center;
   font-size: 3.4cqw;
   font-weight: 800;
   color: var(--bad);
@@ -1316,59 +1515,95 @@ button {
 }
 
 /* ───────────── Compare ───────────── */
+/*
+ * Two cards on a shared row grid (subgrid): heads, code and lists line up across
+ * the cards whether or not one has an icon. The VS badge owns the gutter: the
+ * cards pad their inner edge so it never covers text (QA: `overlay-covers-text`).
+ */
 .cmp-grid {
+  --vs: 8.5cqw;
   position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 3cqw;
+  grid-template-rows: auto auto auto;
+  gap: 2cqw;
   align-items: stretch;
+  /* Room for the verdict stamps that sit on the cards' top corners. */
+  padding-top: 3cqw;
 }
 .cmp-side {
   --tone: var(--muted);
   position: relative;
   min-width: 0;
-  padding: 3.6cqw 3cqw 4cqw;
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 3;
+  align-content: start;
+  padding: 3.6cqw 2.6cqw 4cqw;
   border-radius: 4cqw;
   background: color-mix(in oklab, var(--tone) 10%, #121219);
   border: 2px solid color-mix(in oklab, var(--tone) 40%, transparent);
   animation: cmp-left 0.6s var(--spring) both;
 }
+.cmp-left {
+  padding-right: calc(var(--vs) / 2 + 0.4cqw);
+}
 .cmp-right {
+  padding-left: calc(var(--vs) / 2 + 0.4cqw);
   animation-name: cmp-right;
   animation-delay: 0.15s;
 }
 @keyframes cmp-left {
-  from { opacity: 0; transform: translateX(-20cqw) rotate(-4deg); }
+  from { opacity: 0; transform: translateY(6cqw) scale(0.94); }
 }
 @keyframes cmp-right {
-  from { opacity: 0; transform: translateX(20cqw) rotate(4deg); }
+  from { opacity: 0; transform: translateY(6cqw) scale(0.94); }
 }
 .verdict-bad { --tone: var(--bad); }
 .verdict-ok { --tone: var(--good); }
 .cmp-head {
+  grid-row: 1;
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
   gap: 1cqw;
-  margin-bottom: 2.4cqw;
+}
+/* Without an icon the title would sit under the verdict stamp (top-right corner): start below it. */
+.verdict-ok .cmp-head:not(:has(.cmp-icon)),
+.verdict-bad .cmp-head:not(:has(.cmp-icon)) {
+  padding-top: 4.5cqw;
+}
+.nowrap {
+  white-space: nowrap;
+}
+/*
+ * Both cards share one type size, set by the widest word on either side (Cards.tsx
+ * sets --cmp-title-em / --cmp-item-em, the word's width in em): a long identifier
+ * shrinks the text rather than breaking mid-word. --cmp-inner is a card's content width.
+ */
+.cmp-grid {
+  --cmp-inner: calc((var(--col-w) - 2cqw) / 2 - 3cqw - var(--vs) / 2);
 }
 .cmp-head strong {
-  font: 700 3.6cqw var(--mono);
+  text-wrap: balance;
+  font: 700 min(clamp(13px, 3.6cqw, 18px), calc(var(--cmp-inner) / (var(--cmp-title-em, 1) * 1.04))) var(--mono);
   color: var(--tone);
-  word-break: break-word;
 }
 .cmp-icon {
   font-size: 7cqw;
 }
 .cmp-code {
-  margin: 0 0 2cqw;
+  grid-row: 2;
+  margin: 0;
   padding: 2cqw;
   border-radius: 2cqw;
   background: rgb(0 0 0 / 0.35);
-  font: 500 2.7cqw/1.5 var(--mono);
+  font: 500 var(--fs-micro) / 1.5 var(--mono);
   white-space: pre-wrap;
   color: #d9d7e3;
 }
 .cmp-side ul {
+  grid-row: 3;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1377,15 +1612,17 @@ button {
   gap: 2cqw;
 }
 .cmp-side li {
-  font-size: 3.5cqw;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+  font-size: min(clamp(13px, 3.5cqw, 18px), calc(var(--cmp-inner) / (var(--cmp-item-em, 1) * 1.04)));
   font-weight: 600;
-  line-height: 1.25;
+  line-height: 1.3;
   animation: rise-in 0.4s var(--d, 0s) var(--smooth) both;
 }
 .cmp-stamp {
   position: absolute;
-  top: -4cqw;
-  right: -2cqw;
+  top: -3cqw;
+  right: 1cqw;
   display: grid;
   place-items: center;
   width: 10cqw;
@@ -1410,12 +1647,13 @@ button {
   z-index: 2;
   display: grid;
   place-items: center;
-  width: 10cqw;
-  height: 10cqw;
+  width: var(--vs);
+  height: var(--vs);
   border-radius: 50%;
   background: #fff;
   color: #0b0b10;
-  font-size: 3.4cqw;
+  box-shadow: 0 0 0 0.6cqw #0c0c11;
+  font-size: 3cqw;
   font-weight: 900;
   animation: pop-in 0.5s 0.45s var(--spring) both;
 }
@@ -1423,7 +1661,8 @@ button {
 /* ───────────── List ───────────── */
 .scene-list ol {
   margin: 0;
-  padding: 0;
+  /* Room for the active item's scale-up to stay inside the zone. */
+  padding: 0 2cqw;
   list-style: none;
   display: flex;
   flex-direction: column;
@@ -1442,7 +1681,7 @@ button {
   transition: opacity 0.4s, transform 0.4s var(--spring), border-color 0.4s, box-shadow 0.4s;
 }
 @keyframes list-in {
-  from { opacity: 0; transform: translateX(-12cqw) scale(0.9); }
+  from { opacity: 0; transform: translateY(3cqw) scale(0.96); }
 }
 .list-marker {
   display: grid;
@@ -1456,16 +1695,19 @@ button {
   font-size: 4.6cqw;
   font-weight: 900;
 }
+/* Inline flow, so a *starred* accent stays on the line; only the sub drops below. */
 .list-text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6cqw;
-  font-size: 4.6cqw;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+  min-width: 0;
+  font-size: var(--fs-h2);
   font-weight: 700;
   line-height: 1.2;
 }
 .list-text small {
-  font-size: 3.1cqw;
+  display: block;
+  margin-top: 0.6cqw;
+  font-size: var(--fs-small);
   font-weight: 500;
   color: var(--muted);
 }
@@ -1531,16 +1773,19 @@ button {
   transition: all 0.45s var(--spring);
 }
 .tl-text {
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
   display: flex;
   flex-direction: column;
   gap: 0.4cqw;
 }
 .tl-text strong {
-  font-size: 4.8cqw;
+  text-wrap: balance;
+  font-size: var(--fs-h2);
   font-weight: 800;
 }
 .tl-text small {
-  font: 500 3cqw var(--mono);
+  font: 500 var(--fs-small) var(--mono);
   color: var(--muted);
 }
 .tl-step.is-todo {
@@ -1583,7 +1828,10 @@ button {
   animation: spin 30s linear infinite, fade-in 0.8s both;
 }
 .stat-value {
-  font-size: 30cqw;
+  --stat-chars: 4;
+  /* Never wraps (a range like 40–70 stays whole); heavy digits are ~0.66em wide. */
+  white-space: nowrap;
+  font-size: min(clamp(96px, 30cqw, 160px), calc(var(--col-w) / (var(--stat-chars) * 0.66)));
   font-weight: 900;
   letter-spacing: -0.06em;
   line-height: 0.9;
@@ -1592,39 +1840,50 @@ button {
   text-shadow: 0 0 12cqw color-mix(in oklab, var(--tone) 50%, transparent);
   animation: pop-in 0.6s var(--spring) both;
 }
+/* A third of the value size; 0.25em of its own size ≈ 0.08em of the value (QA: `stat-unit-gap`). */
 .stat-unit {
   font-size: 10cqw;
-  margin-left: 1cqw;
+  margin-left: 0.25em;
   letter-spacing: -0.02em;
 }
 .stat-label {
+  text-wrap: balance;
   margin: 4cqw 0 0;
-  font-size: 6cqw;
+  font-size: var(--fs-h1);
   font-weight: 800;
   line-height: 1.15;
   animation: rise-in 0.5s 0.4s var(--smooth) both;
 }
 .stat-sub {
+  text-wrap: balance;
   margin: 2cqw 0 0;
-  font-size: 3.8cqw;
+  font-size: var(--fs-body);
   color: var(--muted);
   animation: rise-in 0.5s 0.6s var(--smooth) both;
 }
 
 /* ───────────── Quiz ───────────── */
+/* Centred like the other body scenes. */
 .scene-quiz {
   position: relative;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
   gap: 3cqw;
 }
+.quiz-options,
+.quiz-timer,
+.quiz-explain {
+  width: 100%;
+}
 .quiz-badge {
-  align-self: flex-start;
+  align-self: center;
   padding: 1.2cqw 3cqw;
   border-radius: 99px;
   background: var(--warn);
   color: #0b0b10;
-  font-size: 3.2cqw;
+  font-size: var(--fs-small);
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -1634,8 +1893,9 @@ button {
   background: var(--good);
 }
 .quiz-q {
+  text-wrap: balance;
   margin: 0 0 1cqw;
-  font-size: 6.4cqw;
+  font-size: var(--fs-h1);
   font-weight: 850;
   letter-spacing: -0.02em;
   line-height: 1.15;
@@ -1647,14 +1907,17 @@ button {
   gap: 2.4cqw;
 }
 .quiz-option {
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
   display: flex;
   align-items: center;
+  text-align: left;
   gap: 3cqw;
   padding: 3cqw;
   border-radius: 3.6cqw;
   background: #15151d;
   border: 2px solid rgb(255 255 255 / 0.1);
-  font-size: 4.2cqw;
+  font-size: var(--fs-body);
   font-weight: 650;
   animation: rise-in 0.45s var(--d, 0s) var(--spring) both;
   transition: all 0.5s var(--spring);
@@ -1698,16 +1961,22 @@ button {
   to { transform: scaleX(0); }
 }
 .quiz-explain {
+  text-wrap: balance;
   margin: 1cqw 0 0;
   padding: 3cqw;
   border-radius: 3cqw;
   background: rgb(255 255 255 / 0.05);
-  font: 500 3.4cqw/1.45 var(--mono);
+  font: 500 var(--fs-mono) / 1.45 var(--mono);
   color: color-mix(in oklab, var(--good) 70%, #fff);
   animation: rise-in 0.5s 0.6s var(--smooth) both;
 }
 
 /* ───────────── Outro ───────────── */
+/* Uses the full column (no zoom) and steps the points down (to body size) so the longest
+   point stays on one line where the column allows it (Cards.tsx sets --outro-em). */
+.type-outro .scene-fit {
+  --zoom-max: 1;
+}
 .scene-outro {
   position: relative;
   display: flex;
@@ -1722,8 +1991,9 @@ button {
   width: fit-content;
 }
 .outro-title {
+  text-wrap: balance;
   margin: 0;
-  font-size: 10cqw;
+  font-size: clamp(32px, 10cqw, 52px);
   font-weight: 900;
   letter-spacing: -0.04em;
   line-height: 1;
@@ -1742,10 +2012,12 @@ button {
   gap: 3cqw;
 }
 .scene-outro li {
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
   display: flex;
   gap: 3cqw;
   align-items: flex-start;
-  font-size: 4.8cqw;
+  font-size: max(var(--fs-body), min(var(--fs-h2), calc((var(--col-w) - 10cqw) / var(--outro-em, 1))));
   font-weight: 700;
   line-height: 1.25;
   animation: list-in 0.55s var(--d, 0s) var(--spring) both;
@@ -1763,12 +2035,14 @@ button {
   font-weight: 900;
 }
 .outro-tagline {
-  margin: 2cqw 0 0;
+  text-wrap: balance;
+  /* Side margins keep the tilted stamp inside the zone. */
+  margin: 2cqw 1cqw 0;
   padding: 3cqw 4cqw;
   border-radius: 4cqw;
   background: var(--accent);
   color: #0b0b10;
-  font-size: 6cqw;
+  font-size: var(--fs-h1);
   font-weight: 900;
   letter-spacing: -0.02em;
   text-align: center;
@@ -1780,35 +2054,50 @@ button {
 }
 
 /* ───────────── Captions ───────────── */
+/* Captions have a fixed home: a two-line box above the bottom inset, top-aligned so
+   the gap to the scene never changes, with a soft scrim for legibility. */
 .captions {
   position: absolute;
-  left: 5cqw;
-  right: 5cqw;
-  bottom: 12cqw;
-  min-height: 30cqw;
+  left: var(--caption-x);
+  right: var(--caption-x);
+  bottom: var(--caption-bottom);
+  height: var(--caption-h);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   pointer-events: none;
 }
+.captions::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: calc(-1.5 * var(--caption-gap)) calc(-1 * var(--caption-x)) calc(-1 * var(--caption-bottom)) calc(-1 * var(--caption-x));
+  background: linear-gradient(180deg, transparent, rgb(0 0 0 / 0.42));
+}
+/*
+ * Inline flow with balanced wrapping (a second line never holds a lone word) and
+ * unbreakable words: a word wider than the box shrinks the chunk to fit
+ * (Player.tsx sets --cap-word-em). QA: `caption-words`, `caption-orphan-line`.
+ */
 .caption-line {
   margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.6cqw 1.8cqw;
+  width: 100%;
   text-align: center;
-  font-size: 7cqw;
+  text-wrap: pretty; /* plus Player.tsx forces the break when the last line would hold a lone word */
+  word-spacing: 0.3em;
+  font-size: min(var(--fs-caption), calc((100cqw - 2 * var(--caption-x)) / (var(--cap-word-em, 1) * 1.04)));
   font-weight: 850;
-  line-height: 1.12;
+  line-height: 1.15;
   letter-spacing: -0.02em;
   animation: caption-in 0.25s var(--spring) both;
 }
 @keyframes caption-in {
-  from { opacity: 0; transform: translateY(2cqw) scale(0.94); }
+  from { opacity: 0; transform: translateY(2cqw) scale(0.96); }
 }
 .cw {
   position: relative;
+  display: inline-block;
+  white-space: nowrap;
   color: rgb(255 255 255 / 0.5);
   text-shadow: 0 0.4cqw 2cqw rgb(0 0 0 / 0.8);
   transition: color 0.12s, transform 0.18s var(--spring);
@@ -1819,21 +2108,23 @@ button {
 .cw.is-em {
   color: color-mix(in oklab, var(--accent) 55%, transparent);
 }
-.cw.is-em.is-said,
-.cw.is-em.is-now {
+.cw.is-em.is-said {
   color: var(--accent);
 }
+/* The spoken word: dark ink on a crisp series-accent chip, tight to the glyphs so the gap to the
+   neighbours stays visible (word gap ≈ 0.4em, chip inset 0.12em). */
 .cw.is-now {
-  color: #fff;
-  transform: scale(1.12) translateY(-0.4cqw);
+  color: #0b0b10;
+  text-shadow: none;
+  transform: scale(1.02);
 }
 .cw.is-now::before {
   content: '';
   position: absolute;
-  inset: -0.4cqw -1.2cqw;
+  inset: -0.04em -0.12em;
   z-index: -1;
-  border-radius: 1.6cqw;
-  background: color-mix(in oklab, var(--accent) 30%, rgb(0 0 0 / 0.5));
+  border-radius: 0.22em;
+  background: var(--accent);
 }
 
 /* ───────────── End card ───────────── */
@@ -2320,22 +2611,32 @@ button {
     border-radius: 0;
     box-shadow: none;
   }
-  /* Compact icon-only rail parked low on the right so it stays out of the scene area. */
+  /*
+   * The rail overlays the lower right of the stage. The content column stays
+   * centred on the screen's axis with symmetric insets sized so that content and
+   * captions keep ≥ 12px clear of the (compact, 32px) rail icons: 390 − 13cqw
+   * (50.7px) = 339.3 vs rail left edge 390 − 6 − 32 = 352. QA: `rail-clear`.
+   */
+  .stage {
+    --zone-left: 13cqw;
+    --zone-right: 13cqw;
+    --caption-x: 13.5cqw;
+  }
   .rail {
     left: auto;
-    right: 10px;
-    bottom: max(22px, calc(env(safe-area-inset-bottom) + 14px));
+    right: 6px;
+    bottom: max(20px, calc(env(safe-area-inset-bottom) + 12px));
     gap: 8px;
   }
   .rail-icon {
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
     background: rgb(0 0 0 / 0.42);
     border-color: rgb(255 255 255 / 0.12);
   }
   .rail-icon svg {
-    width: 19px;
-    height: 19px;
+    width: 18px;
+    height: 18px;
   }
   .rail-label {
     display: none;
@@ -2343,14 +2644,6 @@ button {
   .rail-btn.is-on .rail-icon {
     background: color-mix(in oklab, var(--accent) 28%, rgb(0 0 0 / 0.5));
     border-color: color-mix(in oklab, var(--accent) 55%, transparent);
-  }
-  .captions {
-    right: 16cqw;
-    bottom: 10cqw;
-  }
-  .stage-silent {
-    left: 5cqw;
-    translate: none;
   }
   .map {
     top: auto;

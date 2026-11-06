@@ -1,9 +1,12 @@
 import type { Series } from '../types';
 
-const cameraPlist = `<key>NSCameraUsageDescription</key>
-<string>Scan your receipts.</string>
-<key>NSPhotoLibraryUsageDescription</key>
-<string>Pick a receipt photo.</string>`;
+// Zero-width space: lets long identifiers wrap at a sensible point on phones.
+const ZW = '​';
+
+const cameraPlist = `<key>CFBundleName</key>
+<string>Expenses</string>
+<key>NSCameraUsageDescription</key>
+<string>Scan your receipts.</string>`;
 
 const cameraConfig = `{
   "ios": {
@@ -33,29 +36,31 @@ if (s === RESULTS.DENIED) {
 }`;
 
 const appState = (extra: string) => `useEffect(() => {
-  const sub = AppState.addEventListener(
-    'change',
-    (s) => {
-      if (s === 'background') flush();
-      if (s === 'active') refetch();${extra}
-    },
-  );
+  const sub = AppState
+    .addEventListener(
+      'change', onChange);
   return () => sub.remove();
-}, []);`;
+}, []);
+
+function onChange(s: string) {
+  if (s === 'background') flush();
+  if (s === 'active') refetch();${extra}
+}`;
 
 const backgroundTask = `TaskManager.defineTask(
   'sync-outbox',
   async () => {
     await flushOutbox(); // ~30 s
-    return BackgroundTask
-      .BackgroundTaskResult.Success;
+    return BackgroundTaskResult
+      .Success;
   },
 );
 
-await BackgroundTask.registerTaskAsync(
-  'sync-outbox',
-  { minimumInterval: 15 }, // minutes
-);`;
+await BackgroundTask
+  .registerTaskAsync(
+    'sync-outbox',
+    { minimumInterval: 15 },
+  );`;
 
 const provisional = `// Notifee
 await notifee.requestPermission({
@@ -78,9 +83,12 @@ const richPayload = `{
   "image": "https://cdn…/box.jpg"
 }`;
 
-const apsEntitlement = `<!-- App.entitlements -->
-<key>aps-environment</key>
-<string>production</string>`;
+const apsEntitlement = `<dict>
+  <key>get-task-allow</key>
+  <true/>
+  <key>aps-environment</key>
+  <string>production</string>
+</dict>`;
 
 const aasa = `{
   "applinks": {
@@ -117,15 +125,15 @@ const idfa = status === 'granted'
 const entitlements = `<!-- push -->
 <key>aps-environment</key>
 <string>production</string>
-<!-- shared drawer for widgets -->
+<!-- widgets: shared drawer -->
 <key>…application-groups</key>
 <array>
-  <string>group.com.example.shop</string>
+  <string>group.com.shop</string>
 </array>
 <!-- universal links -->
 <key>…associated-domains</key>
 <array>
-  <string>applinks:shop.example.com</string>
+  <string>applinks:shop.app</string>
 </array>`;
 
 const appGroup = `// app side: a tiny native module
@@ -170,7 +178,7 @@ export const series: Series = {
           scene: {
             type: 'title',
             kicker: 'iOS Must-Knows',
-            title: 'One missing string, *instant crash*',
+            title: 'One missing string: *crash*',
             emoji: '💥',
             style: 'glitch',
           },
@@ -189,6 +197,8 @@ export const series: Series = {
               items: [
                 { id: 'coffee', label: 'Coffee', icon: '☕', sub: 'today', value: '$4.50' },
                 { id: 'lunch', label: 'Team lunch', icon: '🍜', sub: 'yesterday', value: '$62.00' },
+                { id: 'taxi', label: 'Taxi', icon: '🚕', sub: 'Monday', value: '$38.00' },
+                { id: 'hotel', label: 'Hotel', icon: '🏨', sub: '2 nights', value: '$410' },
               ],
               button: '📷 Scan receipt',
             },
@@ -216,8 +226,11 @@ export const series: Series = {
             type: 'terminal',
             title: 'Xcode console',
             lines: [
-              { out: 'This app has crashed because it attempted to access privacy-sensitive data without a usage description.', tone: 'bad' },
-              { out: 'Missing: NSCameraUsageDescription', tone: 'warn' },
+              {
+                out: 'This app has crashed because\nit attempted to access\nprivacy-sensitive data\nwithout a usage description.',
+                tone: 'bad',
+              },
+              { out: 'Missing:\nNSCameraUsageDescription', tone: 'warn' },
             ],
           },
           sfx: 'type',
@@ -231,8 +244,8 @@ export const series: Series = {
             lang: 'xml',
             file: 'Info.plist',
             code: cameraPlist,
-            added: [[1, 2]],
-            note: { line: 2, text: 'shown to the user, word for word', tone: 'good' },
+            added: [[3, 4]],
+            note: { line: 4, text: 'shown to the user, word for word', tone: 'good' },
           },
           sfx: 'success',
           emphasis: ['key', 'why'],
@@ -247,7 +260,7 @@ export const series: Series = {
               { text: 'Photo library', icon: '🖼️' },
               { text: 'Location', icon: '📍' },
               { text: 'Contacts & Bluetooth', icon: '👥' },
-              { text: 'Tracking', icon: '🕵️', sub: 'NSUserTrackingUsageDescription' },
+              { text: 'Tracking', icon: '🕵️', sub: `NSUserTracking${ZW}UsageDescription` },
             ],
           },
           sfx: 'pop',
@@ -283,7 +296,7 @@ export const series: Series = {
               notice: {
                 app: 'App Store Connect',
                 title: 'ITMS-90683: Missing purpose string',
-                body: 'NSCameraUsageDescription not found in Info.plist',
+                body: 'NSCamera\u200BUsageDescription not found in Info.plist',
                 icon: '✉️',
               },
             },
@@ -371,6 +384,8 @@ export const series: Series = {
                 { id: 'cam', label: 'Camera', icon: '📷', checked: false, tone: 'bad' },
                 { id: 'notif', label: 'Notifications', icon: '🔔', checked: true },
                 { id: 'photos', label: 'Photos', icon: '🖼️', sub: 'None' },
+                { id: 'siri', label: 'Siri & Search', icon: '🎙️', checked: true },
+                { id: 'refresh', label: 'Background App Refresh', icon: '🔄', checked: true },
               ],
             },
             caption: 'the only way back 🪦',
@@ -626,8 +641,8 @@ export const series: Series = {
             lang: 'tsx',
             file: 'useLifecycle.ts',
             code: appState(''),
-            highlight: [[5, 6]],
-            note: { line: 5, text: 'seconds, not minutes', tone: 'warn' },
+            highlight: [[9, 10]],
+            note: { line: 9, text: 'seconds, not minutes', tone: 'warn' },
           },
           sfx: 'type',
           emphasis: ['flush', 'refetch'],
@@ -638,9 +653,9 @@ export const series: Series = {
             type: 'code',
             lang: 'tsx',
             file: 'useLifecycle.ts',
-            code: appState("\n      if (s === 'inactive') pauseAll();"),
-            errors: [7],
-            note: { line: 7, text: 'fires on every pull-down 😬', tone: 'bad' },
+            code: appState("\n  if (s === 'inactive') pause();"),
+            errors: [11],
+            note: { line: 11, text: 'fires on every pull-down 😬', tone: 'bad' },
           },
           sfx: 'error',
           emphasis: ['inactive', 'left'],
@@ -824,8 +839,8 @@ export const series: Series = {
             lang: 'ts',
             file: 'sync.ts',
             code: backgroundTask,
-            highlight: [12],
-            note: { line: 12, text: 'iOS treats it as a hint', tone: 'warn' },
+            highlight: [13],
+            note: { line: 13, text: '15 minutes? a hint, not a promise', tone: 'warn' },
           },
           sfx: 'click',
           emphasis: ['hint', 'device'],
@@ -869,9 +884,9 @@ export const series: Series = {
             rows: 4,
             nodes: [
               { id: 'app', label: 'Your app', sub: 'register', icon: '📱', x: 0, y: 0 },
-              { id: 'server', label: 'Your server', sub: 'or Expo, Firebase', icon: '🖥️', x: 2, y: 0 },
-              { id: 'apns', label: 'Apple push', sub: 'APNs', icon: '☁️', x: 2, y: 2, active: true },
-              { id: 'phone', label: 'iPhone', icon: '🔔', x: 0, y: 3, tone: 'good' },
+              { id: 'server', label: 'Your server', sub: 'or Expo, Firebase', icon: '🖥️', x: 2, y: 1 },
+              { id: 'apns', label: 'Apple push', sub: 'APNs', icon: '☁️', x: 0, y: 2, active: true },
+              { id: 'phone', label: 'iPhone', icon: '🔔', x: 2, y: 3, tone: 'good' },
             ],
             edges: [
               { from: 'app', to: 'server', label: 'device token', active: true },
@@ -953,8 +968,9 @@ export const series: Series = {
             lang: 'xml',
             file: 'App.entitlements',
             code: apsEntitlement,
-            errors: [3],
-            note: { line: 3, text: 'dev build + production = no token', tone: 'bad' },
+            highlight: [3],
+            errors: [5],
+            note: { line: 5, text: 'debug build + production = no token', tone: 'bad' },
           },
           sfx: 'error',
           emphasis: ['match', 'build'],
@@ -1018,11 +1034,13 @@ export const series: Series = {
               title: 'Messages',
               icon: '💬',
               items: [
+                { id: 'hey', label: 'Alex', icon: '🧑', sub: 'hey, you around?' },
+                { id: 'you', label: 'You', icon: '🙂', sub: 'yeah, what’s up?' },
                 { id: 'msg', label: 'Alex', icon: '🧑', sub: 'these are on sale!!' },
                 { id: 'link', label: 'shop.example.com/p/42', icon: '🔗', sub: 'tap to open', tone: 'accent' },
               ],
             },
-            tap: { x: 0.5, y: 0.42 },
+            tap: { x: 0.5, y: 0.46 },
             caption: 'should open the app',
           },
           sfx: 'pop',
@@ -1051,7 +1069,7 @@ export const series: Series = {
           scene: {
             type: 'code',
             lang: 'json',
-            file: 'apple-app-site-association',
+            file: '.well-known/AASA',
             code: aasa,
             highlight: [[4, 10]],
             note: { line: 6, text: 'Team ID + bundle ID', tone: 'info' },
@@ -1124,7 +1142,7 @@ export const series: Series = {
             nodes: [
               { id: 'server', label: 'Your server', sub: 'deployed ✅', icon: '🖥️', x: 0, y: 0, tone: 'good' },
               { id: 'cdn', label: 'Apple CDN', sub: 'skipped', icon: '☁️', x: 2, y: 1.4, dim: true },
-              { id: 'phone', label: 'Dev build', sub: '?mode=developer', icon: '🛠️', x: 0, y: 3, tone: 'good', active: true },
+              { id: 'phone', label: 'Dev build', sub: '?mode=\u200Bdeveloper', icon: '🛠️', x: 0, y: 3, tone: 'good', active: true },
             ],
             edges: [
               { from: 'server', to: 'cdn', dashed: true },
@@ -1154,7 +1172,7 @@ export const series: Series = {
           say: "Remember this. A Universal Link is a file, an entitlement, and Apple's cache. Be patient with the cache.",
           scene: {
             type: 'outro',
-            points: ['AASA file + Associated Domains', 'Apple’s CDN serves the file', 'Dev builds: *?mode=developer*'],
+            points: ['AASA file + Associated Domains', 'Apple’s CDN serves the file', 'Dev builds use *mode=developer*'],
             tagline: 'Deploy, then wait.',
           },
           sfx: 'success',
@@ -1227,7 +1245,7 @@ export const series: Series = {
             title: 'ATT house rules',
             items: [
               { text: 'Ask before you track', icon: '✋' },
-              { text: 'Usage string, or crash', icon: '💥', sub: 'NSUserTrackingUsageDescription', tone: 'bad' },
+              { text: 'Usage string, or crash', icon: '💥', sub: `NSUserTracking${ZW}UsageDescription`, tone: 'bad' },
               { text: 'No “allow tracking to unlock”', icon: '🔒', tone: 'warn' },
             ],
           },
@@ -1244,8 +1262,8 @@ export const series: Series = {
             nodes: [
               { id: 'ad', label: 'Ad tap', icon: '📣', x: 0, y: 0 },
               { id: 'install', label: 'Install', icon: '📲', x: 2, y: 0 },
-              { id: 'apple', label: 'Apple', sub: 'SKAdNetwork', icon: '🍎', x: 1, y: 1.6, active: true },
-              { id: 'net', label: 'Ad network', sub: 'campaign 12 ✓ · who? ✕', icon: '📊', x: 1, y: 3.1, tone: 'good' },
+              { id: 'apple', label: 'Apple', sub: 'SKAdNetwork', icon: '🍎', x: 1, y: 1.5, active: true },
+              { id: 'net', label: 'Ad network', sub: 'campaign 12, not you', icon: '📊', x: 1, y: 3, tone: 'good' },
             ],
             edges: [
               { from: 'ad', to: 'install' },
@@ -1268,9 +1286,9 @@ export const series: Series = {
             nodes: [
               { id: 'ad', label: 'Ad tap', icon: '📣', x: 0, y: 0 },
               { id: 'install', label: 'Install', icon: '📲', x: 2, y: 0 },
-              { id: 'apple', label: 'Apple', sub: 'AdAttributionKit', icon: '🍎', x: 1, y: 1.6, active: true, tone: 'accent' },
-              { id: 'net', label: 'Ad network', sub: 'campaign 12 ✓ · who? ✕', icon: '📊', x: 1, y: 3.1, tone: 'good' },
-              { id: 'eu', label: 'EU stores', sub: 'alt marketplaces', icon: '🇪🇺', x: 0, y: 2.2, tone: 'info' },
+              { id: 'apple', label: 'Apple', sub: 'iOS 17.4+', icon: '🍎', x: 1, y: 1.5, active: true, tone: 'accent' },
+              { id: 'net', label: 'Ad network', sub: 'campaign 12, not you', icon: '📊', x: 2, y: 3, tone: 'good' },
+              { id: 'eu', label: 'EU stores', sub: 'alt markets', icon: '🇪🇺', x: 0, y: 3, tone: 'info' },
             ],
             edges: [
               { from: 'ad', to: 'install' },
@@ -1279,6 +1297,7 @@ export const series: Series = {
               { from: 'apple', to: 'net', label: 'postback', active: true },
             ],
             packets: [{ from: 'apple', to: 'net', label: '✉️' }],
+            caption: 'AdAttributionKit replaces SKAdNetwork',
           },
           sfx: 'pop',
           emphasis: ['AdAttributionKit', 'EU'],
@@ -1354,8 +1373,11 @@ export const series: Series = {
             type: 'terminal',
             title: 'CI · iOS release',
             lines: [
-              { cmd: 'xcodebuild archive -scheme Shop' },
-              { out: 'error: Provisioning profile "Shop App Store" doesn\'t include the com.apple.developer.associated-domains entitlement.', tone: 'bad' },
+              { cmd: 'xcodebuild archive' },
+              {
+                out: 'error: Provisioning profile\n"Shop" doesn\'t include the\nassociated-domains entitlement.',
+                tone: 'bad',
+              },
               { out: '** ARCHIVE FAILED **', tone: 'bad' },
             ],
           },
@@ -1386,7 +1408,7 @@ export const series: Series = {
             title: 'Your app’s passport',
             items: [
               { text: 'Certificate', icon: '📸', sub: 'who built it' },
-              { text: 'App ID', icon: '🏷️', sub: 'ABCDE12345.com.example.shop' },
+              { text: 'App ID', icon: '🏷️', sub: `ABCDE12345.${ZW}com.example.shop` },
               { text: 'Entitlements', icon: '🛂', sub: 'what it may use' },
               { text: 'Provisioning profile', icon: '🎫', sub: 'Apple’s signed visa' },
             ],
@@ -1418,9 +1440,9 @@ export const series: Series = {
             nodes: [
               { id: 'cert', label: 'Certificate', icon: '📸', x: 0, y: 0 },
               { id: 'appid', label: 'App ID', icon: '🏷️', x: 2, y: 0 },
-              { id: 'ents', label: 'Entitlements', sub: 'push · groups', icon: '🛂', x: 0, y: 3 },
+              { id: 'ents', label: 'Entitlement', sub: 'push · groups', icon: '🛂', x: 0, y: 3 },
               { id: 'devices', label: 'Devices', sub: 'dev builds', icon: '📱', x: 2, y: 3 },
-              { id: 'profile', label: 'Profile', sub: 'signed by Apple', icon: '🎫', x: 1, y: 1.5, active: true, tone: 'good', shape: 'circle' },
+              { id: 'profile', label: 'Profile', sub: 'signed by Apple', icon: '🎫', x: 1, y: 1.5, active: true, tone: 'good', shape: 'pill' },
             ],
             edges: [
               { from: 'cert', to: 'profile' },
@@ -1443,9 +1465,9 @@ export const series: Series = {
             nodes: [
               { id: 'cert', label: 'Certificate', icon: '📸', x: 0, y: 0 },
               { id: 'appid', label: 'App ID', icon: '🏷️', x: 2, y: 0 },
-              { id: 'ents', label: 'Entitlements', sub: '+ associated domains', icon: '🛂', x: 0, y: 3, tone: 'warn', active: true },
+              { id: 'ents', label: 'Entitlement', sub: '+ assoc. domains', icon: '🛂', x: 0, y: 3, tone: 'warn', active: true },
               { id: 'devices', label: 'Devices', sub: 'dev builds', icon: '📱', x: 2, y: 3 },
-              { id: 'profile', label: 'Profile', sub: 'stale, regenerate', icon: '🎫', x: 1, y: 1.5, tone: 'bad', shape: 'circle' },
+              { id: 'profile', label: 'Profile', sub: 'stale, renew it', icon: '🎫', x: 1, y: 1.5, tone: 'bad', shape: 'pill' },
             ],
             edges: [
               { from: 'cert', to: 'profile' },
@@ -1463,8 +1485,8 @@ export const series: Series = {
           scene: {
             type: 'compare',
             title: 'Two visas',
-            left: { title: 'Development', verdict: 'neutral', icon: '🛠️', items: ['Listed test devices', 'aps: development'] },
-            right: { title: 'Production', verdict: 'neutral', icon: '🚀', items: ['TestFlight & App Store', 'aps: production'] },
+            left: { title: 'Dev', verdict: 'neutral', icon: '🛠️', items: ['Listed test devices', 'aps: development'] },
+            right: { title: 'Prod', verdict: 'neutral', icon: '🚀', items: ['TestFlight & App Store', 'aps: production'] },
           },
           sfx: 'swipe',
           emphasis: ['separate', 'match'],
@@ -1539,10 +1561,10 @@ export const series: Series = {
             cols: 3,
             rows: 4,
             nodes: [
-              { id: 'app', label: 'Your app', sub: 'JS · Redux · MMKV', icon: '📱', x: 0, y: 0.6, active: true },
-              { id: 'widget', label: 'Widget', sub: 'status = ???', icon: '🧩', x: 2, y: 0.6, tone: 'bad' },
+              { id: 'app', label: 'Your app', sub: 'JS · Redux · MMKV', icon: '📱', x: 0, y: 1.5, active: true },
+              { id: 'widget', label: 'Widget', sub: 'status = ???', icon: '🧩', x: 2, y: 1.5, tone: 'bad' },
             ],
-            edges: [{ from: 'app', to: 'widget', label: 'no access', dashed: true, tone: 'bad', both: true }],
+            edges: [{ from: 'app', to: 'widget', dashed: true, tone: 'bad', both: true }],
             caption: 'separate processes, separate memory',
           },
           sfx: 'error',
@@ -1559,7 +1581,7 @@ export const series: Series = {
             nodes: [
               { id: 'app', label: 'Your app', sub: 'JS · Redux · MMKV', icon: '📱', x: 0, y: 0.6 },
               { id: 'widget', label: 'Widget', sub: 'status = ???', icon: '🧩', x: 2, y: 0.6 },
-              { id: 'group', label: 'App Group', sub: 'group.com.example.shop', icon: '🗄️', x: 1, y: 2.6, active: true, tone: 'good' },
+              { id: 'group', label: 'App Group', sub: 'shared container', icon: '🗄️', x: 1, y: 2.6, active: true, tone: 'good' },
             ],
             edges: [
               { from: 'app', to: 'group', label: 'write', active: true },
@@ -1602,10 +1624,10 @@ export const series: Series = {
           say: "Budget check: iOS gives a widget roughly forty to seventy refreshes a day. So don't ring the bell every second.",
           scene: {
             type: 'stat',
-            value: '40–70',
+            value: '70',
             unit: '/day',
-            label: 'widget reloads, *roughly*',
-            sub: 'iOS decides the exact budget',
+            label: 'widget reloads, *at most*',
+            sub: 'roughly 40–70, iOS picks the number',
             tone: 'warn',
           },
           sfx: 'pop',
@@ -1633,8 +1655,8 @@ export const series: Series = {
             title: '@bacons/apple-targets',
             lines: [
               { cmd: 'npx create-target widget' },
-              { out: 'targets/widget → SwiftUI widget target', tone: 'good' },
-              { out: 'App Group on app + widget, or reads return nil', tone: 'warn' },
+              { out: '✓ targets/widget (SwiftUI)', tone: 'good' },
+              { out: 'App Group on both targets,\nor reads come back nil', tone: 'warn' },
             ],
           },
           sfx: 'type',

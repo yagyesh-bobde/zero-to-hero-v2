@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { sound } from '../sfx';
+import { QA } from '../qa';
 import type { Tone } from '../types';
 
 export const toneClass = (tone: Tone | undefined, fallback: Tone | '' = '') =>
@@ -17,8 +18,14 @@ export function stars(text: string): ReactNode {
   );
 }
 
+/** Each space-separated word in its own unbreakable run, so code-like text ("key={item.id}") only wraps at spaces. */
+export function nowrapWords(text: string): ReactNode {
+  return text.split(/(\s+)/).map((part, i) => (i % 2 ? part : <span key={i} className="nowrap">{part}</span>));
+}
+
+/** Also true in QA mode so JS-driven motion (typing, count-ups, FLIP) lands in its final state. */
 export const prefersReducedMotion = () =>
-  typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  QA || (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
 
 /**
  * Types `target` out character by character. When the target changes, the shared

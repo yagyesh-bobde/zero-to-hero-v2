@@ -14,6 +14,8 @@ import {
 import {
   beatIndexAt,
   captionChunks,
+  captionFitEm,
+  chunkLinesOk,
   estimateManifest,
   lineSet,
   splitWords,
@@ -22,6 +24,7 @@ import {
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { runStart, Stage } from '../src/reels/Stage';
+import { textFitProblems } from '../src/reels/limits';
 
 const seriesDir = path.resolve(__dirname, '../src/reels/series');
 const audioDir = path.resolve(__dirname, '../public/react-native-reels/audio');
@@ -123,6 +126,23 @@ describe('reel timeline', () => {
 
   it('chunks captions, expands line ranges and groups same-type scenes', () => {
     expect(captionChunks(splitWords('a b c d e f g'), 5)).toEqual([[0, 1, 2, 3, 4], [5, 6]]);
+    // Long words break early: a chunk fits one phone caption line (two words may shrink to) or wraps into two lines of ≥ 2 words.
+    expect(captionChunks(splitWords('reconciliation schedules another render pass'))).toEqual([[0, 1], [2, 3, 4]]);
+    expect(captionChunks(splitWords('Chat heads are Bubbles, Android eleven and up'))).toEqual([[0, 1, 2, 3], [4, 5, 6, 7]]);
+    expect(chunkLinesOk(['Persist', 'navigation'])).toBe(true);
+    expect(chunkLinesOk(['Persist', 'navigation', 'state'])).toBe(false);
+    expect(chunkLinesOk(['Make', 'the', 'update', 'honest.'])).toBe(true);
+    // A two-word chunk that cannot wrap well shrinks to one line; otherwise only the widest word matters.
+    expect(captionFitEm(['from', 'react-native-worklets'])).toBeGreaterThan(captionFitEm(['react-native-worklets']));
+    expect(captionFitEm(['Persist', 'navigation'])).toBe(captionFitEm(['navigation']));
+    const text = (say: string) => captionChunks(splitWords(say)).map((c) => c.map((i) => splitWords(say)[i]).join(' '));
+    // Never crosses a sentence end, even when the chunk has room.
+    expect(text('Same line. We used the array index.')).toEqual(['Same line.', 'We used the array index.']);
+    expect(text('Not the same line. We used the array index.')).toEqual(['Not the same line.', 'We used the array index.']);
+    // A sentence does not end on a lone short word; the previous chunk spares one.
+    expect(text('Once your activity is stopped, Android kills it.')).toEqual(['Once your activity', 'is stopped,', 'Android kills it.']);
+    // Breaks after commas; a trailing "the" leads the next chunk instead of dangling.
+    expect(text('It renders the view on the native side.')).toEqual(['It renders the view', 'on the native side.']);
     expect([...lineSet([1, [3, 5]])]).toEqual([1, 3, 4, 5]);
     expect(runStart(reel.beats, 1)).toBe(0);
     expect(runStart(reel.beats, 2)).toBe(2);
@@ -174,6 +194,13 @@ describe('reel content integrity', () => {
       expect(beat.say.trim()).not.toBe('');
       expect(sceneProblems(beat)).toEqual([]);
     }
+  });
+
+  it.each(reels.map((r) => [r.id, r] as const))('%s keeps scene text within the layout budgets', (_id, reel) => {
+    const problems = reel.beats.flatMap((beat, i) =>
+      textFitProblems(beat.scene).map((p) => `beat ${i} (${beat.scene.type}): ${p}`),
+    );
+    expect(problems).toEqual([]);
   });
 
   it.each(reels.map((r) => [r.id, r] as const))('%s renders every beat without crashing', (_id, reel) => {

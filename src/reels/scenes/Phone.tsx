@@ -41,8 +41,9 @@ function AppScreen({ screen }: { screen: Extract<PhoneScreen, { kind: 'app' }> }
   const list = useRef<HTMLDivElement>(null);
   const items = screen.items ?? [];
   useFlip(list, items.map((item) => item.id ?? item.label).join('|'));
+  const empty = !items.length && !screen.button && !screen.loading && !screen.toast;
   return (
-    <div className="ph-app">
+    <div className={`ph-app ${empty ? 'is-empty' : ''}`}>
       <div className="ph-appbar">
         {screen.icon && <span className="ph-appicon">{screen.icon}</span>}
         <strong key={screen.title}>{screen.title}</strong>
@@ -132,7 +133,7 @@ function FakeApp() {
         <span className="ph-appicon">📱</span>
         <strong>Your app</strong>
       </div>
-      {[0, 1, 2, 3].map((i) => (
+      {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
         <div key={i} className="ph-skeleton" />
       ))}
     </div>
@@ -232,9 +233,11 @@ function Screen({ screen }: { screen: PhoneScreen }) {
 export function Phone({ scene }: { scene: PhoneScene }) {
   const os = scene.os ?? 'ios';
   const tap = scene.tap;
+  const s = scene.screen;
+  const empty = s.kind === 'app' && !s.items?.length && !s.button && !s.loading && !s.toast;
   return (
     <div className="scene-phone">
-      <div className={`phone phone-${os}`}>
+      <div className={`phone phone-${os} ${empty ? 'is-empty' : ''}`}>
         <div className="phone-screen">
           <div className="phone-status">
             <span>9:41</span>

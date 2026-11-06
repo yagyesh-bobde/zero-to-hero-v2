@@ -1,4 +1,6 @@
 import type { AudioManifest, LineRange, Reel } from './types';
+// Explicit extension: the QA script loads this file straight into Node (no bundler).
+import { CAPTION_LINE_EM, captionEm } from './limits.ts';
 
 export const WORDS_PER_SECOND = 2.6;
 const LEAD_IN = 0.3;
@@ -71,20 +73,87 @@ export function wordIndexAt(times: [number, number][], time: number) {
   return index;
 }
 
-/** Split caption words into short chunks (≤ max words, breaking after punctuation). */
-export function captionChunks(words: string[], max = 5) {
+/** A word that closes a sentence ("world.", "really?!", "done.”"). */
+export const endsSentence = (word: string) => /[.!?…]["'”’)\]]*$/.test(word);
+const endsClause = (word: string) => /[,;:—]["'”’)\]]*$/.test(word);
+/** Words a chunk should not end on ("stopped in the" | "background"). */
+const FUNCTION_WORD = /^(a|an|the|of|to|in|on|at|for|and|or|but|is|are|was|were|be|your|my|our|its|with|as|by|that|this|than|from|not|so|if)$/i;
+
+/**
+ * A chunk's caption lines on a phone never end with a lone word: it fits one line
+ * (one or two words shrink to fit, see `captionFitEm`), or it can wrap into two
+ * lines of ≥ 2 words that each fit (`text-wrap: pretty` finds that split).
+ */
+export function chunkLinesOk(words: string[], lineEm = CAPTION_LINE_EM) {
+  if (words.length <= 2 || captionEm(words) <= lineEm) return true;
+  for (let i = 2; i <= words.length - 2; i++)
+    if (captionEm(words.slice(0, i)) <= lineEm && captionEm(words.slice(i)) <= lineEm) return true;
+  return false;
+}
+
+/**
+ * Split caption words into short chunks: ≤ max words and ≤ maxChars characters
+ * (so a chunk never needs more than two caption lines), and never a chunk whose
+ * second line would hold a single word (`chunkLinesOk`). A chunk never crosses a
+ * sentence end, prefers to break after a comma/clause, and a sentence's last
+ * word is never left dangling alone when the previous chunk can spare a word.
+ */
+export function captionChunks(words: string[], max = 5, maxChars = 24) {
+  const length = (chunk: number[]) => chunk.reduce((n, i) => n + words[i].length + 1, -1);
+  const text = (chunk: number[]) => chunk.map((i) => words[i]);
   const chunks: number[][] = [];
+  let sentence: number[][] = [];
   let current: number[] = [];
+  const flush = () => {
+    if (current.length) sentence.push(current);
+    current = [];
+  };
+  const endSentence = () => {
+    flush();
+    const last = sentence[sentence.length - 1];
+    const prev = sentence[sentence.length - 2];
+    // Orphan: "… the array" / "line." → borrow a word so the sentence ends with ≥ 2 words.
+    if (
+      last &&
+      prev &&
+      last.length === 1 &&
+      prev.length >= 3 &&
+      length([prev[prev.length - 1], last[0]]) <= maxChars &&
+      chunkLinesOk(text([prev[prev.length - 1], last[0]])) &&
+      chunkLinesOk(text(prev.slice(0, -1)))
+    )
+      last.unshift(prev.pop() as number);
+    chunks.push(...sentence);
+    sentence = [];
+  };
+  const fits = (chunk: number[]) => chunk.length <= max && length(chunk) <= maxChars && chunkLinesOk(text(chunk));
   words.forEach((word, i) => {
-    current.push(i);
-    const punct = /[,.!?;:]$/.test(word) && current.length >= 2;
-    if (current.length >= max || punct) {
-      chunks.push(current);
-      current = [];
+    if (current.length && !fits([...current, i])) {
+      // Carry a trailing function word over so it leads the next chunk instead of dangling.
+      const carry =
+        current.length >= 3 && FUNCTION_WORD.test(words[current[current.length - 1]]) && chunkLinesOk(text(current.slice(0, -1)))
+          ? current.pop()
+          : undefined;
+      flush();
+      if (carry !== undefined) current.push(carry);
     }
+    current.push(i);
+    if (endsSentence(word)) endSentence();
+    else if (endsClause(word) && current.length >= 2) flush();
   });
-  if (current.length) chunks.push(current);
+  endSentence();
   return chunks;
+}
+
+/**
+ * Width (em) the caption box must hold on one line for this chunk: its widest word,
+ * or the whole chunk when it is one or two words that would otherwise wrap with a
+ * lone word. The caption shrinks its type to fit it (`--cap-word-em`).
+ */
+export function captionFitEm(words: string[], lineEm = CAPTION_LINE_EM) {
+  const whole = captionEm(words);
+  if (words.length === 2 && whole > lineEm) return whole;
+  return Math.max(1, ...words.map((w) => captionEm([w])));
 }
 
 export function lineSet(ranges: LineRange[] | undefined) {

@@ -9,17 +9,18 @@ import type {
   TimelineScene,
   TitleScene,
 } from '../types';
-import { SceneTitle, stars, toneClass, useCountUp } from './shared';
+import { titleLines, widestWordEm, words } from '../limits';
+import { nowrapWords, stars, toneClass, useCountUp } from './shared';
 
 const delay = (i: number, step = 0.12, base = 0.1) => ({ '--d': `${base + i * step}s` }) as CSSProperties;
 
 export function Title({ scene }: { scene: TitleScene }) {
   const style = scene.style ?? 'slam';
-  const words = scene.title.split(/\s+/);
+  const split = scene.title.split(/\s+/);
   // Keep *starred phrases* together while splitting the rest into words.
   const tokens: string[] = [];
   let open: string[] | null = null;
-  for (const w of words) {
+  for (const w of split) {
     if (open) {
       open.push(w);
       if (w.includes('*')) {
@@ -30,11 +31,15 @@ export function Title({ scene }: { scene: TitleScene }) {
     else tokens.push(w);
   }
   if (open) tokens.push(open.join(' '));
+  // Two size steps (see .title-text): big when the title wraps to ≤ 2 lines on a phone at that
+  // size; stacked (a word per line) only when that stays within 4 lines.
+  const stacked = style === 'stack' && words(scene.title).length <= 4;
+  const big = stacked || titleLines(scene.title, 'big') <= 2;
   return (
     <div className={`scene-title-card title-${style}`} key={scene.title}>
       {scene.kicker && <span className="title-kicker">{scene.kicker}</span>}
       {scene.emoji && <span className="title-emoji">{scene.emoji}</span>}
-      <h1 className="title-text" data-text={scene.title.replace(/\*/g, '')}>
+      <h1 className={`title-text ${big ? 'is-big' : ''} ${stacked ? 'is-stacked' : ''}`} data-text={scene.title.replace(/\*/g, '')}>
         {tokens.map((token, i) => (
           <span key={i} className="title-word" style={delay(i, style === 'stack' ? 0.16 : 0.09)}>
             {stars(token)}{' '}
@@ -52,7 +57,7 @@ function Side({ side, which }: { side: CompareSide; which: 'left' | 'right' }) {
     <div className={`cmp-side cmp-${which} verdict-${verdict}`}>
       <div className="cmp-head">
         {side.icon && <span className="cmp-icon">{side.icon}</span>}
-        <strong>{side.title}</strong>
+        <strong>{nowrapWords(side.title)}</strong>
       </div>
       {side.code && <pre className="cmp-code">{side.code}</pre>}
       {side.items && (
@@ -70,10 +75,15 @@ function Side({ side, which }: { side: CompareSide; which: 'left' | 'right' }) {
 }
 
 export function Compare({ scene }: { scene: CompareScene }) {
+  const sides = [scene.left, scene.right];
+  // The widest word on either side (in em) sets the shared type size (see .cmp-grid in reels.css).
+  const fit = {
+    '--cmp-title-em': Math.max(1, ...sides.map((side) => widestWordEm(side.title, true))),
+    '--cmp-item-em': Math.max(1, ...sides.flatMap((side) => side.items ?? []).map((item) => widestWordEm(item))),
+  } as CSSProperties;
   return (
     <div className="scene-compare">
-      <SceneTitle>{scene.title}</SceneTitle>
-      <div className="cmp-grid">
+      <div className="cmp-grid" style={fit}>
         <Side side={scene.left} which="left" key={`l:${scene.left.title}`} />
         <span className="cmp-vs">VS</span>
         <Side side={scene.right} which="right" key={`r:${scene.right.title}`} />
@@ -85,7 +95,6 @@ export function Compare({ scene }: { scene: CompareScene }) {
 export function List({ scene }: { scene: ListScene }) {
   return (
     <div className="scene-list">
-      <SceneTitle>{scene.title}</SceneTitle>
       <ol className={scene.numbered ? 'is-numbered' : ''}>
         {scene.items.map((raw, i) => {
           const item = typeof raw === 'string' ? { text: raw } : raw;
@@ -113,7 +122,6 @@ export function Timeline({ scene }: { scene: TimelineScene }) {
   const fill = scene.steps.length > 1 ? active / (scene.steps.length - 1) : 1;
   return (
     <div className="scene-timeline">
-      <SceneTitle>{scene.title}</SceneTitle>
       <div className="tl" style={{ '--fill': fill, '--n': scene.steps.length } as CSSProperties}>
         <span className="tl-rail">
           <span className="tl-fill" />
@@ -140,10 +148,12 @@ export function Stat({ scene }: { scene: StatScene }) {
   const match = /^(-?\d+(?:\.(\d+))?)(.*)$/.exec(scene.value.trim());
   const number = match ? Number(match[1]) : 0;
   const shown = useCountUp(number, match?.[2]?.length ?? 0);
+  // Long values shrink to fit the zone width (see .stat-value); the unit is a third of the size.
+  const chars = scene.value.trim().length + (scene.unit?.length ?? 0) * 0.4;
   return (
     <div className={`scene-stat ${toneClass(scene.tone, 'accent')}`} key={scene.label}>
       <div className="stat-burst" />
-      <div className="stat-value">
+      <div className="stat-value" style={{ '--stat-chars': chars } as CSSProperties}>
         {match ? `${shown}${match[3]}` : scene.value}
         {scene.unit && <span className="stat-unit">{scene.unit}</span>}
       </div>
@@ -177,9 +187,14 @@ export function Quiz({ scene }: { scene: QuizScene }) {
   );
 }
 
+/** Width of a line of text in em (Inter 700): words plus 0.3em spaces. */
+const lineEm = (text: string) => words(text).reduce((n, w) => n + widestWordEm(w), 0) + (words(text).length - 1) * 0.3;
+
 export function Outro({ scene }: { scene: OutroScene }) {
+  // The longest point sets the point size so it stays on one line where the column allows (see .scene-outro li).
+  const longest = Math.max(1, ...scene.points.map(lineEm));
   return (
-    <div className="scene-outro">
+    <div className="scene-outro" style={{ '--outro-em': longest.toFixed(2) } as CSSProperties}>
       <span className="outro-spark">✦</span>
       <h2 className="outro-title">{scene.title ?? 'Remember this'}</h2>
       <ul>

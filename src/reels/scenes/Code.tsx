@@ -1,8 +1,8 @@
 import { Fragment } from 'react';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { lineSet } from '../timeline';
 import type { CodeLang, CodeScene, TerminalScene } from '../types';
-import { SceneTitle, toneClass, useTyping } from './shared';
+import { toneClass, useTyping } from './shared';
 
 const KEYWORDS = new Set(
   `const let var function return if else for while do switch case break continue new class extends
@@ -61,9 +61,8 @@ export function Code({ scene, playing }: { scene: CodeScene; playing: boolean })
   const marked = highlight.size + errors.size + added.size > 0;
   const focus = scene.focus ?? marked;
   const done = typed >= code.length;
-  // Shrink the font so the longest line fits (mono glyphs are 0.6em wide; ~76cqw of room).
+  // The longest line sets the font size (see .code-body: it shrinks to fit the zone width).
   const longest = Math.max(...lines.map((line) => line.length), 1);
-  const fontSize = `${Math.min(3.6, 76 / (longest * 0.6)).toFixed(2)}cqw`;
   let offset = 0;
   return (
     <div className="scene-code">
@@ -75,7 +74,7 @@ export function Code({ scene, playing }: { scene: CodeScene; playing: boolean })
           {scene.file && <span className="code-file">{scene.file}</span>}
           <span className="code-lang">{lang}</span>
         </div>
-        <div className="code-body" style={{ fontSize }}>
+        <div className="code-body" style={{ '--code-cols': longest } as CSSProperties}>
           {lines.map((line, index) => {
             const n = index + 1;
             const start = offset;
@@ -121,18 +120,21 @@ export function Code({ scene, playing }: { scene: CodeScene; playing: boolean })
 
 function TypedCommand({ text, playing }: { text: string; playing: boolean }) {
   const typed = useTyping(text, playing, 26);
+  // A long command wraps at spaces only: each token is unbreakable (no "force-|idle").
+  const tokens = text.slice(0, typed).split(/(\s+)/);
   return (
     <>
-      {text.slice(0, typed)}
+      {tokens.map((token, i) => (i % 2 ? token : <span key={i} className="term-tok">{token}</span>))}
       {typed < text.length && <span className="code-cursor" />}
     </>
   );
 }
 
 export function Terminal({ scene, playing }: { scene: TerminalScene; playing: boolean }) {
+  // The widest output row sets the font size (see .term-body); commands wrap at spaces instead.
+  const cols = Math.max(1, ...scene.lines.flatMap((line) => line.out?.split('\n').map((row) => row.length) ?? []));
   return (
     <div className="scene-terminal">
-      <SceneTitle>{scene.title}</SceneTitle>
       <div className="term-window">
         <div className="code-chrome">
           <span className="dot" />
@@ -140,13 +142,15 @@ export function Terminal({ scene, playing }: { scene: TerminalScene; playing: bo
           <span className="dot" />
           <span className="code-file">terminal</span>
         </div>
-        <div className="term-body">
+        <div className="term-body" style={{ '--term-cols': cols } as CSSProperties}>
           {scene.lines.map((line, i) => (
             <div key={`${i}:${line.cmd ?? ''}:${line.out ?? ''}`} className={`term-line ${toneClass(line.tone)}`}>
               {line.cmd !== undefined && (
                 <div className="term-cmd">
                   <span className="term-prompt">$</span>
-                  <TypedCommand text={line.cmd} playing={playing} />
+                  <span className="term-cmd-text">
+                    <TypedCommand text={line.cmd} playing={playing} />
+                  </span>
                 </div>
               )}
               {line.out && (

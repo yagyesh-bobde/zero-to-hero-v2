@@ -14,14 +14,14 @@ const threadNodes = (mode: ThreadMode): DiagramNode[] => [
     label: 'JS thread',
     sub: mode === 'busy' ? 'busy for 200ms' : 'your React code',
     icon: mode === 'busy' ? '🔥' : '🟨',
-    x: 0,
+    x: 1,
     y: 0,
     active: mode === 'js' || mode === 'busy',
     tone: mode === 'busy' ? 'bad' : undefined,
   },
-  { id: 'bg', label: 'Background', sub: 'layout + commit', icon: '⚙️', x: 2, y: 0, active: mode === 'bg', dim: mode === 'busy' },
-  { id: 'ui', label: 'UI thread', sub: 'aka main', icon: '📱', x: 1, y: 1.6, active: mode === 'ui', tone: 'info' },
-  { id: 'views', label: 'Real views', icon: '🖼️', x: 1, y: 3, shape: 'pill', dim: mode === 'js' || mode === 'bg' },
+  { id: 'bg', label: 'BG thread', sub: 'layout + commit', icon: '⚙️', x: 2, y: 1.5, active: mode === 'bg', dim: mode === 'busy' },
+  { id: 'ui', label: 'UI thread', sub: 'aka main', icon: '📱', x: 1, y: 3, active: mode === 'ui', tone: 'info' },
+  { id: 'views', label: 'Real views', icon: '🖼️', x: 0, y: 1.5, shape: 'pill', dim: mode === 'js' || mode === 'bg' },
 ];
 const threadEdges = (mode: ThreadMode): DiagramEdge[] => [
   { from: 'js', to: 'bg', label: 'new tree', active: mode === 'js', dashed: mode === 'busy' },
@@ -63,7 +63,7 @@ const mountNodes = (sent: boolean): DiagramNode[] => [
   {
     id: 'host',
     label: 'Host view',
-    sub: sent ? 'backgroundColor: yellow' : 'UI thread',
+    sub: sent ? 'now yellow' : 'UI thread',
     icon: '📱',
     x: 1,
     y: 3,
@@ -88,8 +88,8 @@ export default TurboModuleRegistry
   );`;
 
 const codegenNodes = (filled: boolean): DiagramNode[] => [
-  { id: 'spec', label: 'Your spec', sub: 'NativeLocalStorage.ts', icon: '📄', x: 1, y: 0, dim: filled },
-  { id: 'cg', label: 'Codegen', sub: 'every build', icon: '⚙️', x: 1, y: 1.2, shape: 'circle', active: !filled, dim: filled },
+  { id: 'spec', label: 'Your spec', sub: 'TS interface', icon: '📄', x: 1, y: 0, dim: filled },
+  { id: 'cg', label: 'Codegen', sub: 'every build', icon: '⚙️', x: 1, y: 1.2, shape: 'pill', active: !filled, dim: filled },
   { id: 'cpp', label: 'C++ glue', sub: '…SpecJSI', icon: '🔌', x: 0, y: 2.5 },
   { id: 'java', label: 'Java class', sub: '…Spec', icon: '☕', x: 1, y: 2.5, active: filled },
   { id: 'objc', label: 'ObjC++ protocol', sub: '<…Spec>', icon: '🍎', x: 2, y: 2.5, active: filled },
@@ -123,18 +123,23 @@ const changeQuiz: QuizScene = {
 // ---------- js-to-kotlin-call-path ----------
 type HopStep = 'host' | 'cpp' | 'back';
 const hopNodes = (step: HopStep): DiagramNode[] => [
-  { id: 'js', label: 'getItem()', sub: 'JS thread', icon: '🟨', x: 1, y: 0, active: step === 'back', tone: step === 'back' ? 'good' : undefined },
-  { id: 'host', label: 'Host object', sub: 'JSI', icon: '🔌', x: 1, y: 1, active: step === 'host' },
-  { id: 'cpp', label: 'C++ spec', sub: '…SpecJSI', icon: '⚙️', x: 1, y: 2, active: step === 'cpp' || step === 'back' },
-  { id: 'kt', label: 'Kotlin getItem', sub: 'your code', icon: '🤖', x: 1, y: 3, active: step === 'cpp', dim: step === 'host' },
-  { id: 'prefs', label: 'SharedPrefs', sub: 'on disk', icon: '💾', x: 1, y: 4, dim: step !== 'back' },
+  { id: 'js', label: 'getItem()', sub: 'JS thread', icon: '🟨', x: 0, y: 0, active: step === 'back', tone: step === 'back' ? 'good' : undefined },
+  { id: 'host', label: 'Host object', sub: 'JSI', icon: '🔌', x: 0, y: 4 / 3, active: step === 'host' },
+  { id: 'cpp', label: 'C++ spec', sub: '…SpecJSI', icon: '⚙️', x: 0, y: 8 / 3, active: step === 'cpp' || step === 'back' },
+  { id: 'kt', label: 'Kotlin getItem', sub: 'your code', icon: '🤖', x: 0, y: 4, active: step === 'cpp', dim: step === 'host' },
 ];
 const hopEdges: DiagramEdge[] = [
   { from: 'js', to: 'host', both: true },
   { from: 'host', to: 'cpp', both: true },
   { from: 'cpp', to: 'kt', both: true },
-  { from: 'kt', to: 'prefs', both: true },
 ];
+
+const authCall = `import NativeLocalStorage
+  from './NativeLocalStorage';
+
+const token =
+  NativeLocalStorage
+    .getItem('token');`;
 
 const kotlinModule = `class NativeLocalStorageModule(
   ctx: ReactApplicationContext
@@ -156,21 +161,24 @@ const threadQuiz: QuizScene = {
 
 // ---------- hermes-bytecode ----------
 const hermesNodes = (compiled: boolean): DiagramNode[] => [
-  { id: 'files', label: 'Your files', sub: 'App.tsx, …', icon: '🗂️', x: 1, y: 0, dim: compiled },
-  { id: 'metro', label: 'Metro', sub: 'follows imports', icon: '🚇', x: 1, y: 1, active: !compiled, dim: compiled },
-  { id: 'bundle', label: 'index.bundle', sub: 'one JS file', icon: '📜', x: 1, y: 2, active: compiled },
+  { id: 'files', label: 'Your files', sub: 'App.tsx, …', icon: '🗂️', x: 0, y: 0, dim: compiled },
+  { id: 'metro', label: 'Metro', sub: 'follows imports', icon: '🚇', x: 0, y: 1, active: !compiled, dim: compiled },
+  { id: 'bundle', label: 'JS bundle', sub: 'one file', icon: '📜', x: 0, y: 2, active: compiled },
   ...(compiled
-    ? [{ id: 'hbc', label: '.hbc file', sub: 'Hermes bytecode', icon: '⚡', x: 1, y: 3.2, tone: 'good' as const, active: true }]
+    ? [{ id: 'hbc', label: '.hbc file', sub: 'Hermes bytecode', icon: '⚡', x: 0, y: 3.2, tone: 'good' as const, active: true }]
     : []),
 ];
 const hermesEdges = (compiled: boolean): DiagramEdge[] => [
   { from: 'files', to: 'metro', active: !compiled },
-  { from: 'metro', to: 'bundle', label: 'one file', active: !compiled },
+  { from: 'metro', to: 'bundle', active: !compiled },
   ...(compiled ? [{ from: 'bundle', to: 'hbc', label: 'at build time', active: true }] : []),
 ];
 
 const isHermes = `const isHermes = () =>
-  !!global.HermesInternal;`;
+  !!global.HermesInternal;
+
+console.log(isHermes());
+// true in dev builds too`;
 
 const v1Quiz: QuizScene = {
   type: 'quiz',
@@ -746,7 +754,7 @@ const value =
               { from: 'new', to: 'diff' },
               { from: 'diff', to: 'host', label: '1 mutation', active: true, tone: 'good' },
             ],
-            packets: [{ from: 'diff', to: 'host', label: 'UpdateView', tone: 'good' }],
+            packets: [{ from: 'diff', to: 'host', label: '🟨', tone: 'good' }],
           },
           sfx: 'ding',
           emphasis: ['three', 'nothing'],
@@ -761,7 +769,7 @@ const value =
               { text: 'createView', icon: '➕' },
               { text: 'updateView', icon: '✏️' },
               { text: 'removeView', icon: '➖' },
-              { text: '*Flatten* layout-only wrappers', icon: '🥞' },
+              { text: 'Flatten wrappers', icon: '🥞', sub: 'layout-only Views get dropped' },
             ],
           },
           sfx: 'pop',
@@ -856,9 +864,9 @@ const value =
             nodes: codegenNodes(false),
             edges: codegenEdges(false),
             packets: [
-              { from: 'cg', to: 'cpp', label: 'C++', tone: 'accent' },
-              { from: 'cg', to: 'java', label: 'Java', tone: 'accent' },
-              { from: 'cg', to: 'objc', label: 'ObjC++', tone: 'accent' },
+              { from: 'cg', to: 'cpp', tone: 'accent' },
+              { from: 'cg', to: 'java', tone: 'accent' },
+              { from: 'cg', to: 'objc', tone: 'accent' },
             ],
           },
           sfx: 'pop',
@@ -885,8 +893,8 @@ const value =
             type: 'list',
             title: 'Register it',
             items: [
-              { text: '*Android*: add a package', icon: '🤖' },
-              { text: '*iOS*: modulesProvider entry', icon: '🍎' },
+              { text: 'Android: add a package', icon: '🤖' },
+              { text: 'iOS: modules\u200bProvider', icon: '🍎' },
               { text: 'JS finds it by name', icon: '🔎', sub: "'NativeLocalStorage'" },
             ],
           },
@@ -946,11 +954,9 @@ const value =
             type: 'code',
             lang: 'ts',
             file: 'auth.ts',
-            code: `const token =
-  NativeLocalStorage
-    .getItem('token');`,
-            highlight: [3],
-            note: { line: 3, text: 'sync · string | null', tone: 'info' },
+            code: authCall,
+            highlight: [[4, 6]],
+            note: { line: 6, text: 'sync · string | null', tone: 'info' },
           },
           sfx: 'type',
           emphasis: ['token'],
@@ -961,7 +967,7 @@ const value =
           scene: {
             type: 'diagram',
             title: 'The call stack',
-            cols: 3,
+            cols: 1,
             rows: 5,
             nodes: hopNodes('host'),
             edges: hopEdges,
@@ -976,7 +982,7 @@ const value =
           scene: {
             type: 'diagram',
             title: 'The call stack',
-            cols: 3,
+            cols: 1,
             rows: 5,
             nodes: hopNodes('cpp'),
             edges: hopEdges,
@@ -994,7 +1000,7 @@ const value =
           scene: {
             type: 'code',
             lang: 'kotlin',
-            file: 'NativeLocalStorageModule.kt',
+            file: 'StorageModule.kt',
             code: kotlinModule,
             highlight: [[3, 9]],
             note: { line: 3, text: 'base class from Codegen', tone: 'info' },
@@ -1008,13 +1014,13 @@ const value =
           scene: {
             type: 'diagram',
             title: 'Back up the stack',
-            cols: 3,
+            cols: 1,
             rows: 5,
             nodes: hopNodes('back'),
             edges: hopEdges,
             packets: [
-              { from: 'prefs', to: 'kt', label: '"abc123"', tone: 'good' },
-              { from: 'cpp', to: 'js', label: 'jsi::Value', tone: 'good' },
+              { from: 'kt', to: 'cpp', label: '"abc123"', tone: 'good' },
+              { from: 'cpp', to: 'host', label: 'jsi::Value', tone: 'good' },
             ],
           },
           sfx: 'ding',
@@ -1091,8 +1097,9 @@ const value =
             type: 'terminal',
             title: 'Release build',
             lines: [
-              { cmd: 'npm run android -- --mode="release"' },
-              { cmd: 'npm run ios -- --mode="Release"' },
+              { cmd: './gradlew bundleRelease' },
+              { cmd: 'yarn ios --mode Release' },
+              { out: 'BUILD SUCCESSFUL in 1m 52s', tone: 'good' },
             ],
           },
           sfx: 'type',
@@ -1103,7 +1110,7 @@ const value =
           scene: {
             type: 'diagram',
             title: 'From files to bytecode',
-            cols: 3,
+            cols: 1,
             rows: 4,
             nodes: hermesNodes(false),
             edges: hermesEdges(false),
@@ -1121,11 +1128,11 @@ const value =
           scene: {
             type: 'diagram',
             title: 'From files to bytecode',
-            cols: 3,
+            cols: 1,
             rows: 4,
             nodes: hermesNodes(true),
             edges: hermesEdges(true),
-            packets: [{ from: 'bundle', to: 'hbc', label: 'compile', tone: 'good' }],
+            packets: [],
           },
           emphasis: ['build', 'bytecode'],
         },
@@ -1146,9 +1153,9 @@ const value =
             type: 'list',
             title: 'Why Hermes',
             items: [
-              { text: 'Faster *startup*', icon: '🚀' },
-              { text: 'Less *memory*', icon: '🧠' },
-              { text: 'Smaller *app*', icon: '📦' },
+              { text: 'Faster startup', icon: '🚀', sub: 'no parse, no compile' },
+              { text: 'Less memory', icon: '🧠', sub: 'bytecode, not source' },
+              { text: 'Smaller app', icon: '📦', sub: 'a lean engine' },
             ],
           },
           sfx: 'pop',
@@ -1250,7 +1257,7 @@ const value =
             cols: 3,
             rows: 4,
             nodes: runtimeNodes('two'),
-            edges: [{ from: 'rn', to: 'ui', label: 'separate', dashed: true }],
+            edges: [{ from: 'rn', to: 'ui', dashed: true }],
             caption: 'two runtimes, two threads',
           },
           sfx: 'pop',
@@ -1385,7 +1392,7 @@ const value =
           scene: {
             type: 'title',
             kicker: 'Lists',
-            title: 'Don’t build rows. *Recycle* them.',
+            title: 'Don’t build rows, *recycle*',
             emoji: '♻️',
             style: 'stack',
           },
@@ -1491,9 +1498,8 @@ const value =
             title: 'FlashList v2',
             items: [
               { text: 'Pure JS, no native code', icon: '🟨' },
-              { text: '*New Architecture* only', icon: '🏗️' },
-              { text: 'Sync layout measuring', icon: '📏' },
-              { text: 'estimatedItemSize: gone', icon: '🗑️', tone: 'muted' },
+              { text: 'New Architecture only', icon: '🏗️' },
+              { text: 'Measures layout for real', icon: '📏', sub: 'estimatedItemSize is gone' },
             ],
           },
           sfx: 'pop',
@@ -1582,10 +1588,10 @@ const value =
             type: 'list',
             title: 'The only pipeline',
             items: [
-              { text: '*JSI*: calls', icon: '🔌' },
-              { text: '*Fabric*: views', icon: '🧩' },
-              { text: '*TurboModules*: native code', icon: '⚙️' },
-              { text: '*Codegen*: type safety', icon: '🛡️' },
+              { text: '*JSI*', icon: '🔌', sub: 'direct native calls' },
+              { text: '*Fabric*', icon: '🧩', sub: 'renders your views' },
+              { text: '*TurboModules*', icon: '⚙️', sub: 'your native code' },
+              { text: '*Codegen*', icon: '🛡️', sub: 'types across the border' },
             ],
           },
           sfx: 'pop',
@@ -1596,10 +1602,21 @@ const value =
           speak:
             'So a tutorial using Native Modules with callbacks is showing the legacy A P I. Look for Turbo Module specs instead.',
           scene: {
-            type: 'compare',
-            title: 'Spot the old API',
-            left: { title: 'NativeModules.Foo', verdict: 'bad', icon: '📼', items: ['Callbacks', 'Legacy API', 'Old blog posts'] },
-            right: { title: 'TurboModule spec', verdict: 'ok', icon: '✨', items: ['Typed spec', 'Codegen glue', 'Sync or Promise'] },
+            type: 'code',
+            lang: 'ts',
+            file: 'spot-the-old-api.ts',
+            code: `// old tutorial (legacy)
+NativeModules.Foo.bar(
+  (result) => use(result),
+);
+
+// New Architecture
+import NativeFoo from
+  './specs/NativeFoo';
+const result = NativeFoo.bar();`,
+            errors: [[2, 4]],
+            added: [[7, 9]],
+            note: { line: 4, text: 'callbacks = legacy API 📼', tone: 'bad' },
           },
           sfx: 'swipe',
           emphasis: ['legacy', 'TurboModule'],

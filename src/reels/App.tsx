@@ -22,6 +22,7 @@ import { readPrefs, readProgress, writePrefs, writeProgress } from './storage';
 import type { ReelsPrefs } from './storage';
 import type { AudioManifest, ReelsProgress } from './types';
 import { prefersReducedMotion } from './scenes/shared';
+import { QA } from './qa';
 
 const reelFromHash = () => /^#\/reel\/([\w-]+)/.exec(window.location.hash)?.[1] ?? null;
 const indexOf = (id: string | null) => (id ? feed.findIndex((reel) => reel.id === id) : -1);
@@ -41,18 +42,25 @@ export default function App() {
   const [progress, setProgress] = useState(readProgress);
   const [prefs, setPrefs] = useState(readPrefs);
   const [manifests, setManifests] = useState<Record<string, AudioManifest>>({});
+  const [manifestsLoaded, setManifestsLoaded] = useState(false);
   const [active, setActive] = useState(() => {
     const fromHash = indexOf(reelFromHash());
     return fromHash >= 0 ? fromHash : Math.max(0, indexOf(readProgress().lastReel));
   });
-  const [started, setStarted] = useState(false);
+  // QA mode skips the start gate (it never plays audio).
+  const [started, setStarted] = useState(QA);
   const [paused, setPaused] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
   const [toast, setToast] = useState<{ text: string; id: number } | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const reel = feed[active];
 
-  useEffect(() => void loadManifests().then(setManifests), []);
+  useEffect(() => {
+    void loadManifests().then((loaded) => {
+      setManifests(loaded);
+      setManifestsLoaded(true);
+    });
+  }, []);
   useEffect(() => void writeProgress(progress), [progress]);
   useEffect(() => void writePrefs(prefs), [prefs]);
   useEffect(() => sound.setMuted(prefs.muted), [prefs.muted]);
@@ -200,7 +208,7 @@ export default function App() {
             >
               <div className="slot-backdrop" aria-hidden="true" />
               <div className="frame">
-                {i === active ? (
+                {i === active && (!QA || manifestsLoaded) ? (
                   <Player
                     reel={item}
                     manifest={manifests[item.id]}

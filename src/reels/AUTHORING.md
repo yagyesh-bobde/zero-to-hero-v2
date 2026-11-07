@@ -6,7 +6,8 @@ The reels in `series/01-react-under-the-hood.ts` set the quality bar. Read two b
 
 ## 1. Where reels live
 
-- Every file in `src/reels/series/*.ts` is loaded automatically. You don't need to register anything.
+- Every file in `src/reels/series/*.ts` is loaded automatically into the course feed at `/react-native-reels`. You don't need to register anything.
+- Short-form sampler reels (motivation, quick hits, stories, life topics: the 10–30s format) go in `src/reels/shorts/*.ts` instead. They play on `/shorts` with the same engine, rules and checks; only the feed, branding and saved progress differ. Moving a file between the two folders is all it takes to move it between pages.
 - Each file exports **exactly** `export const series: Series = {...}`.
 - Use **type-only imports** (`import type { Series } from '../types';`). Don't import runtime code: the voice script and the QA script load these files directly with Node.
 - Name files `NN-kebab-name.ts`. `order` decides feed order. If a series file already exists, append to its `reels` array.
@@ -30,7 +31,10 @@ Good accents: React `#61dafb`, Android `#3ddc84`, iOS `#0a84ff`, perf `#facc15`,
 ## 2. Data model
 
 ```ts
-Reel = { id: string; title: string; beats: Beat[] }
+Reel = { id: string; title: string; beats: Beat[];
+  voice?: string;       // Kokoro voice for this reel (default `af_heart`), e.g. `am_onyx` for a deep male read
+  speed?: number;       // Kokoro speed for this reel (default 1.1); ~0.9 reads heavier
+}
 
 Beat = {
   say: string;          // ONE narration sentence (or two very short ones). Also the captions.
@@ -41,7 +45,7 @@ Beat = {
 }
 ```
 
-- `id` must be unique across **all** series, kebab-case, stable. It's the audio file name and the share link: `/react-native-reels#/reel/<id>`.
+- `id` must be unique across **all** series in both folders, kebab-case, stable. It's the audio file name (audio for both pages lives in `public/react-native-reels/audio/`) and the share link: `/react-native-reels#/reel/<id>` or `/shorts#/reel/<id>`.
 - `speak` is for words TTS mispronounces: `setState` → `set state`, `JSI` → `J S I`, `.tsx` → `T S X`. Keep the same number of words in `speak` and `say` where you can so word-timed captions stay aligned.
 - `emphasis` words must appear in `say`. Pick 1–3 per beat.
 
@@ -201,7 +205,7 @@ Captions are built from `say` in chunks of ≤ 5 words / 24 characters, never cr
 npm run reels:voice                    # renders every reel whose narration changed
 npm run reels:voice -- my-reel-id      # just one reel (--force to re-render)
 ```
-Kokoro-82M via `uv`, `af_heart` at speed 1.1, encoded with ffmpeg to `public/react-native-reels/audio/<id>.m4a` + `<id>.json` (beat and word timings) + `index.json`. Needs `uv` and `ffmpeg`. Reels without audio play silently on an estimated clock so you can preview layout first.
+Kokoro-82M via `uv`, `af_heart` at speed 1.1 unless the reel sets `voice`/`speed` (both are part of the render hash, so changing them re-renders), encoded with ffmpeg to `public/react-native-reels/audio/<id>.m4a` + `<id>.json` (beat and word timings) + `index.json`. Needs `uv` and `ffmpeg`. Reels without audio play silently on an estimated clock so you can preview layout first.
 
 ## 9. Before you ship a reel (mandatory)
 

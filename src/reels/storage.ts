@@ -1,5 +1,6 @@
+import { collection, RN_REELS } from './data';
 import type { ReelsProgress } from './types';
-export const REELS_STORAGE_KEY = 'rn-reels-progress-v1';
+export const REELS_STORAGE_KEY = RN_REELS.progressKey;
 export const REELS_PREFS_KEY = 'rn-reels-prefs-v1';
 export interface ReelsPrefs {
   muted: boolean;
@@ -47,7 +48,8 @@ export function parsePrefs(value: unknown): ReelsPrefs {
     music: flag(value.music, base.music),
   };
 }
-export const readProgress = () => parseProgress(read(REELS_STORAGE_KEY));
-export const writeProgress = (progress: ReelsProgress) => write(REELS_STORAGE_KEY, progress);
+// Progress is per collection; prefs (sound, captions) are shared.
+export const readProgress = () => parseProgress(read(collection.progressKey));
+export const writeProgress = (progress: ReelsProgress) => write(collection.progressKey, progress);
 export const readPrefs = () => parsePrefs(read(REELS_PREFS_KEY));
 export const writePrefs = (prefs: ReelsPrefs) => write(REELS_PREFS_KEY, prefs);

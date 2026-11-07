@@ -13,6 +13,7 @@ For every reel in the narration file it writes, into public/react-native-reels/a
     <id>.json   {beats: [{start, end, words?}], duration, hash, file}
 and finally index.json mapping reel id -> manifest. A reel is skipped when its
 manifest hash (voice, speed, gaps, model, all `speak`/`say` text) is unchanged.
+A reel's optional `voice`/`speed` fields override --voice/--speed for that reel.
 """
 from __future__ import annotations
 
@@ -241,7 +242,10 @@ def main() -> int:
             if existing:
                 index[reel_id] = existing
             continue
-        hash_ = compute_hash(reel["beats"], args.voice, args.speed)
+        # A reel's own voice/speed win over the CLI/global default.
+        voice: str = reel.get("voice") or args.voice
+        speed: float = reel.get("speed") or args.speed
+        hash_ = compute_hash(reel["beats"], voice, speed)
         if existing and existing.get("hash") == hash_ and not args.force:
             index[reel_id] = existing
             print(f"{reel_id:32} {existing['duration']:6.1f}s  skipped (unchanged)")
@@ -250,7 +254,7 @@ def main() -> int:
             from kokoro import KPipeline  # heavy import
 
             pipeline = KPipeline(lang_code=LANG_CODE, repo_id=MODEL_ID)
-        manifest = render_reel(pipeline, reel, args.voice, args.speed, out_dir, hash_)
+        manifest = render_reel(pipeline, reel, voice, speed, out_dir, hash_)
         index[reel_id] = manifest
         aligned = sum("words" in b for b in manifest["beats"])
         print(f"{reel_id:32} {manifest['duration']:6.1f}s  rendered ({len(manifest['beats'])} beats, words {aligned}/{len(manifest['beats'])})")

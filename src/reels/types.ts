@@ -1,4 +1,4 @@
-// Reel data model. Series files in ./series/*.ts export `series: Series`.
+// Reel data model. Series files in ./series/*.ts and ./shorts/*.ts export `series: Series`.
 // Keep series files free of runtime imports (type-only imports are fine) so
 // scripts/reels-extract.mjs can load them with Node's TypeScript stripping.
 
@@ -321,6 +321,10 @@ export interface Reel {
   id: string;
   title: string;
   beats: Beat[];
+  /** Kokoro voice for this reel's narration, e.g. `am_onyx`. Default: `af_heart`. */
+  voice?: string;
+  /** Kokoro speaking speed for this reel. Default: 1.1. */
+  speed?: number;
 }
 
 export interface Series {

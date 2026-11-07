@@ -5,6 +5,8 @@
     { "source": "/react-native-networking", "destination": "/react-native-networking/index.html" },
     { "source": "/react-native-networking/", "destination": "/react-native-networking/index.html" },
     { "source": "/react-native-reels", "destination": "/react-native-reels/index.html" },
-    { "source": "/react-native-reels/", "destination": "/react-native-reels/index.html" }
+    { "source": "/react-native-reels/", "destination": "/react-native-reels/index.html" },
+    { "source": "/shorts", "destination": "/shorts/index.html" },
+    { "source": "/shorts/", "destination": "/shorts/index.html" }
   ]
 }

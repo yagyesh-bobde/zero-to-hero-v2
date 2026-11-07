@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { Bookmark, CheckCircle2, Circle, Play, Star, X } from 'lucide-react';
-import { feed, seriesList } from './data';
+import { collection, feed, seriesList } from './data';
 import type { ReelsPrefs } from './storage';
 import { estimateManifest, formatDuration } from './timeline';
 import type { AudioManifest, ReelsProgress } from './types';
@@ -49,17 +49,17 @@ export function CourseMap({ progress, manifests, activeId, prefs, continueAt, on
         ref={panel}
         tabIndex={-1}
         role="dialog"
-        aria-label="Course map"
+        aria-label={collection.mapTitle}
         onClick={(event) => event.stopPropagation()}
       >
         <header className="map-head">
           <div>
-            <h2>Course map</h2>
+            <h2>{collection.mapTitle}</h2>
             <p>
               {done}/{feed.length} watched
             </p>
           </div>
-          <button type="button" className="map-close" aria-label="Close course map" onClick={onClose}>
+          <button type="button" className="map-close" aria-label={`Close ${collection.mapTitle.toLowerCase()}`} onClick={onClose}>
             <X />
           </button>
         </header>

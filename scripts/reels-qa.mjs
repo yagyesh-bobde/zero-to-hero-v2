@@ -1,4 +1,4 @@
-// Visual QA for React Native Reels: renders every beat of every reel at phone and
+// Visual QA for React Native Reels and /shorts: renders every beat of every reel at phone and
 // laptop sizes, at several frozen moments per beat, and checks the DOM for
 // overflow, collisions with the caption / rail / progress safe zones, clipped or
 // tiny text and overlapping blocks. Screenshots, a JSON report and an HTML
@@ -64,14 +64,20 @@ const fail = (message) => {
 };
 
 // ── Load reels, timings and the engine's timeline helpers from the root under test ──
-const seriesDir = path.join(root, 'src/reels/series');
+// Each folder renders on its own page: course series on /react-native-reels, sampler shorts on /shorts.
+const collections = [
+  { dir: 'src/reels/series', route: '/react-native-reels' },
+  { dir: 'src/reels/shorts', route: '/shorts' },
+];
 const audioDir = path.join(root, 'public/react-native-reels/audio');
 const timeline = await import(pathToFileURL(path.join(root, 'src/reels/timeline.ts')).href);
-const files = (await readdir(seriesDir)).filter((f) => f.endsWith('.ts')).sort();
 const reels = [];
-for (const file of files) {
-  const mod = await import(pathToFileURL(path.join(seriesDir, file)).href);
-  for (const reel of mod.series?.reels ?? []) reels.push({ ...reel, file, seriesTitle: mod.series.title });
+for (const { dir, route } of collections) {
+  const files = (await readdir(path.join(root, dir))).filter((f) => f.endsWith('.ts')).sort();
+  for (const file of files) {
+    const mod = await import(pathToFileURL(path.join(root, dir, file)).href);
+    for (const reel of mod.series?.reels ?? []) reels.push({ ...reel, file, route, seriesTitle: mod.series.title });
+  }
 }
 const selected = reels.filter((r) => !onlyReel || onlyReel.split(',').includes(r.id));
 if (!selected.length) fail(`no reel matches "${onlyReel}"`);
@@ -550,7 +556,7 @@ async function runJob({ reel, viewport }) {
   // (Re)loads the player at a beat and waits for the QA API: used once up front and again
   // if a frame ever finds the API gone (a navigation or reload under the test).
   const open = async (beat, t) => {
-    await page.goto(`${base}/react-native-reels?qa&beat=${beat}&t=${t}#/reel/${reel.id}`, { waitUntil: 'load' });
+    await page.goto(`${base}${reel.route}?qa&beat=${beat}&t=${t}#/reel/${reel.id}`, { waitUntil: 'load' });
     await page.waitForFunction(() => window.__reelsQA?.ready === true, null, { timeout: 30000 });
   };
   const seek = (beat, t) =>

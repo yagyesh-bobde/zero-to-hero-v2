@@ -1,37 +1,25 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+
+const courses = ['react-native-ota', 'react-native-networking', 'react-native-reels', 'shorts'];
+
+/** Serves `/<course>` from `/<course>/index.html` (vercel.json does the same in production). */
+function rewriteCourseEntry(request: { url?: string }, _response: unknown, next: () => void) {
+  const pathname = request.url?.split('?')[0] ?? '';
+  if (courses.includes(pathname.slice(1))) request.url = request.url?.replace(pathname, `${pathname}/index.html`);
+  next();
+}
+
 export default defineConfig({
   plugins: [
     react(),
     {
       name: 'independent-course-entries',
       configureServer(server) {
-        server.middlewares.use((request, _response, next) => {
-          if (request.url?.split('?')[0] === '/react-native-ota') {
-            request.url = request.url.replace('/react-native-ota', '/react-native-ota/index.html');
-          }
-          if (request.url?.split('?')[0] === '/react-native-networking') {
-            request.url = request.url.replace(
-              '/react-native-networking',
-              '/react-native-networking/index.html',
-            );
-          }
-          if (request.url?.split('?')[0] === '/react-native-reels') {
-            request.url = request.url.replace('/react-native-reels', '/react-native-reels/index.html');
-          }
-          next();
-        });
+        server.middlewares.use(rewriteCourseEntry);
       },
       configurePreviewServer(server) {
-        server.middlewares.use((request, _response, next) => {
-          for (const course of ['react-native-ota', 'react-native-networking', 'react-native-reels']) {
-            if (request.url?.split('?')[0] === `/${course}`) {
-              request.url = request.url.replace(`/${course}`, `/${course}/index.html`);
-              break;
-            }
-          }
-          next();
-        });
+        server.middlewares.use(rewriteCourseEntry);
       },
     },
   ],
@@ -43,6 +31,7 @@ export default defineConfig({
         ota: 'react-native-ota/index.html',
         networking: 'react-native-networking/index.html',
         reels: 'react-native-reels/index.html',
+        shorts: 'shorts/index.html',
       },
       output: {
         manualChunks(id) {

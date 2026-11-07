@@ -26,12 +26,18 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { runStart, Stage } from '../src/reels/Stage';
 import { textFitProblems } from '../src/reels/limits';
 
-const seriesDir = path.resolve(__dirname, '../src/reels/series');
+// Course series (/react-native-reels) and sampler shorts (/shorts) share one engine and one id space.
+const seriesDirs = ['../src/reels/series', '../src/reels/shorts'].map((dir) => path.resolve(__dirname, dir));
 const audioDir = path.resolve(__dirname, '../public/react-native-reels/audio');
-const seriesFiles = readdirSync(seriesDir).filter((f) => f.endsWith('.ts')).sort();
+const seriesFiles = seriesDirs.flatMap((dir) =>
+  readdirSync(dir)
+    .filter((f) => f.endsWith('.ts'))
+    .sort()
+    .map((f) => path.join(dir, f)),
+);
 const allSeries: Series[] = await Promise.all(
   seriesFiles.map(async (file) => {
-    const mod: { series?: Series } = await import(path.join(seriesDir, file));
+    const mod: { series?: Series } = await import(file);
     if (!mod.series) throw new Error(`${file} must export const series`);
     return mod.series;
   }),

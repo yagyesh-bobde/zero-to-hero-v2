@@ -13,7 +13,7 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react';
-import { feed, loadManifests } from './data';
+import { collection, feed, loadManifests } from './data';
 import type { FeedReel } from './data';
 import { CourseMap } from './CourseMap';
 import { Player } from './Player';
@@ -341,12 +341,12 @@ function StartOverlay({
     <div className="start-overlay" onClick={onStart}>
       <div className="start-card">
         <span className="start-logo" aria-hidden="true">
-          ⚛️
+          {collection.logo}
         </span>
         <h1>
-          React Native <em>Reels</em>
+          {collection.name} <em>{collection.accent}</em>
         </h1>
-        <p>Bite-size animated explainers on React, React Native, Android and iOS. Swipe up for the next one.</p>
+        <p>{collection.tagline}</p>
         <button type="button" className="start-btn" autoFocus onClick={(event) => (event.stopPropagation(), onStart())}>
           <Play /> {resuming && reel ? `Continue: ${reel.title}` : 'Tap to start'}
         </button>

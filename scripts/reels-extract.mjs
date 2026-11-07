@@ -1,4 +1,4 @@
-// Extracts narration text from every src/reels/series/*.ts into
+// Extracts narration text from every src/reels/series/*.ts and src/reels/shorts/*.ts into
 // .reels-cache/narration.json (consumed by scripts/reels-voice.py).
 //
 // Usage: node scripts/reels-extract.mjs [reelId]
@@ -9,7 +9,8 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const seriesDir = path.join(root, 'src/reels/series');
+// /react-native-reels course series, then /shorts sampler series. Reel ids are unique across both.
+const seriesDirs = ['src/reels/series', 'src/reels/shorts'].map((dir) => path.join(root, dir));
 const outFile = path.join(root, '.reels-cache/narration.json');
 const onlyReel = process.argv[2];
 
@@ -18,14 +19,16 @@ const fail = (msg) => {
   process.exit(1);
 };
 
-const files = (await readdir(seriesDir)).filter((f) => f.endsWith('.ts')).sort();
-if (files.length === 0) fail(`no series files in ${seriesDir}`);
+const files = [];
+for (const dir of seriesDirs)
+  for (const f of (await readdir(dir)).filter((f) => f.endsWith('.ts')).sort()) files.push(path.relative(root, path.join(dir, f)));
+if (files.length === 0) fail(`no series files in ${seriesDirs.join(', ')}`);
 
 const seen = new Map();
 const reels = [];
 
 for (const file of files) {
-  const mod = await import(pathToFileURL(path.join(seriesDir, file)).href);
+  const mod = await import(pathToFileURL(path.join(root, file)).href);
   const series = mod.series;
   if (!series || !Array.isArray(series.reels)) fail(`${file} must export \`series\` with a reels array`);
 
@@ -40,7 +43,12 @@ for (const file of files) {
       if (!speak.trim()) fail(`reel "${reel.id}" beat ${i} has empty \`speak\``);
       return { say: beat.say, speak };
     });
-    reels.push({ id: reel.id, seriesId: series.id, beats });
+    if (reel.voice !== undefined && (typeof reel.voice !== 'string' || !reel.voice.trim()))
+      fail(`reel "${reel.id}" has an invalid \`voice\``);
+    if (reel.speed !== undefined && !(typeof reel.speed === 'number' && reel.speed > 0))
+      fail(`reel "${reel.id}" has an invalid \`speed\``);
+    // voice/speed are optional per-reel overrides; undefined fields are dropped from the JSON.
+    reels.push({ id: reel.id, seriesId: series.id, voice: reel.voice, speed: reel.speed, beats });
   }
 }
 

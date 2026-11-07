@@ -1,11 +1,36 @@
 import type { AudioManifest, Reel, Series } from './types';
 
-const modules = import.meta.glob<{ series?: Series }>('./series/*.ts', { eager: true });
+/** One feed of reels with its own page, branding and saved progress. */
+export interface Collection {
+  /** Start-card heading: `name` then `accent` in the accent style. */
+  name: string;
+  accent: string;
+  logo: string;
+  tagline: string;
+  mapTitle: string;
+  /** localStorage key for watched/saved/last reel. */
+  progressKey: string;
+}
 
-export const seriesList: Series[] = Object.values(modules)
-  .map((m) => m.series)
-  .filter((s): s is Series => !!s && Array.isArray(s.reels))
-  .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
+/** `/react-native-reels`: the course series in `./series/*.ts`. */
+export const RN_REELS: Collection = {
+  name: 'React Native',
+  accent: 'Reels',
+  logo: '⚛️',
+  tagline: 'Bite-size animated explainers on React, React Native, Android and iOS. Swipe up for the next one.',
+  mapTitle: 'Course map',
+  progressKey: 'rn-reels-progress-v1',
+};
+
+/** `/shorts`: short-form sampler reels in `./shorts/*.ts`. */
+export const SHORTS: Collection = {
+  name: 'Zero to Hero',
+  accent: 'Shorts',
+  logo: '⚡',
+  tagline: 'Quick animated shorts: code, stories, money, mind, body and the world. Swipe up for the next one.',
+  mapTitle: 'All shorts',
+  progressKey: 'shorts-progress-v1',
+};
 
 export interface FeedReel extends Reel {
   series: Series;
@@ -13,10 +38,23 @@ export interface FeedReel extends Reel {
   index: number;
 }
 
-export const feed: FeedReel[] = seriesList
-  .flatMap((series) => series.reels.map((reel) => ({ ...reel, series })))
-  .map((reel, index) => ({ ...reel, index }));
+// Set once by the page entry (see boot.tsx) before the app renders.
+export let collection: Collection = RN_REELS;
+export let seriesList: Series[] = [];
+export let feed: FeedReel[] = [];
 
+export function setCollection(next: Collection, modules: { series?: Series }[]) {
+  collection = next;
+  seriesList = modules
+    .map((m) => m.series)
+    .filter((s): s is Series => !!s && Array.isArray(s.reels))
+    .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
+  feed = seriesList
+    .flatMap((series) => series.reels.map((reel) => ({ ...reel, series })))
+    .map((reel, index) => ({ ...reel, index }));
+}
+
+/** Audio for both collections (reel ids are unique across both). */
 export const AUDIO_BASE = '/react-native-reels/audio';
 
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);

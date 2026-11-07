@@ -1,5 +1,5 @@
 // Deterministic QA mode, used only by scripts/reels-qa.mjs:
-//   /react-native-reels?qa&beat=2&t=1200#/reel/<id>
+//   /react-native-reels?qa&beat=2&t=1200#/reel/<id>   (or /shorts?qa… for src/reels/shorts)
 // Jumps straight to a beat, freezes the clock and every animation `t` ms into
 // it, mutes audio and exposes `window.__reelsQA`. Never active for normal users.
 

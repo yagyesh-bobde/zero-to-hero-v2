@@ -1,14 +1,52 @@
 {
   "rewrites": [
-    { "source": "/react-native-ota", "destination": "/react-native-ota/index.html" },
-    { "source": "/react-native-ota/", "destination": "/react-native-ota/index.html" },
-    { "source": "/react-native-networking", "destination": "/react-native-networking/index.html" },
-    { "source": "/react-native-networking/", "destination": "/react-native-networking/index.html" },
-    { "source": "/react-native-reels", "destination": "/react-native-reels/index.html" },
-    { "source": "/react-native-reels/", "destination": "/react-native-reels/index.html" },
-    { "source": "/shorts", "destination": "/shorts/index.html" },
-    { "source": "/shorts/", "destination": "/shorts/index.html" },
-    { "source": "/engineering", "destination": "/engineering/index.html" },
-    { "source": "/engineering/", "destination": "/engineering/index.html" }
+    {
+      "source": "/react-native-ota",
+      "destination": "/react-native-ota/index.html"
+    },
+    {
+      "source": "/react-native-ota/",
+      "destination": "/react-native-ota/index.html"
+    },
+    {
+      "source": "/react-native-networking",
+      "destination": "/react-native-networking/index.html"
+    },
+    {
+      "source": "/react-native-networking/",
+      "destination": "/react-native-networking/index.html"
+    },
+    {
+      "source": "/react-native-reels",
+      "destination": "/react-native-reels/index.html"
+    },
+    {
+      "source": "/react-native-reels/",
+      "destination": "/react-native-reels/index.html"
+    },
+    {
+      "source": "/shorts",
+      "destination": "/shorts/index.html"
+    },
+    {
+      "source": "/shorts/",
+      "destination": "/shorts/index.html"
+    },
+    {
+      "source": "/engineering",
+      "destination": "/engineering/index.html"
+    },
+    {
+      "source": "/engineering/",
+      "destination": "/engineering/index.html"
+    },
+    {
+      "source": "/dsa",
+      "destination": "/dsa/index.html"
+    },
+    {
+      "source": "/dsa/",
+      "destination": "/dsa/index.html"
+    }
   ]
 }

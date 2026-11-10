@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUpRight,
+  Binary,
   BookOpen,
   Check,
   CheckCircle2,
@@ -60,6 +61,7 @@ const siteLinks = [
   { href: '/react-native-reels', label: 'React Native Reels', icon: Clapperboard },
   { href: '/shorts', label: 'Shorts', icon: Zap },
   { href: '/engineering', label: 'Engineering Reels', icon: Code2 },
+  { href: '/dsa', label: 'DSA', icon: Binary },
 ];
 const labNames: Record<LabKind, string> = {
   gradient: 'Gradient descent',

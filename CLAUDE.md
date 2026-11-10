@@ -2,12 +2,12 @@
 
 Vite + React 19 + TypeScript. Use **npm** (package-lock.json). Checks: `npx tsc -b`, `npx vitest run`.
 
-## React Native Reels (`/react-native-reels` + `/shorts`, `src/reels/`)
+## React Native Reels (`/react-native-reels` + `/shorts` + `/engineering`, `src/reels/`)
 
 Every reel must look 10/10 at phone (390×844) and laptop (1440×900) size. Whenever you add or edit a reel or touch the reels engine:
 
 1. Read `src/reels/AUTHORING.md` first and follow it. It covers the layout system, text budgets (§6), composition and caption rules (§7), and the ship checklist (§9).
-2. Write data, not components. Reels live in `src/reels/series/*.ts` (course, `/react-native-reels`) or `src/reels/shorts/*.ts` (short-form, `/shorts`). Never hand-place content into the caption, rail or progress-bar zones, and never bypass the layout tokens in `reels.css`.
+2. Write data, not components. Reels live in `src/reels/series/*.ts` (course, `/react-native-reels`) `src/reels/shorts/*.ts` (short-form, `/shorts`) or `src/reels/engineering/*.ts` (mid-to-senior engineering, `/engineering`, shuffled feed). Never hand-place content into the caption, rail or progress-bar zones, and never bypass the layout tokens in `reels.css`.
 3. Stay inside the text budgets in `src/reels/limits.ts`. Never loosen a budget, QA threshold or rule just to make a reel pass; fix the content instead. Change the engine only to make every reel better, and keep `limits.ts`, the QA rules and AUTHORING.md in sync.
 4. Before calling a reel done, all of these must pass:
    - `npx tsc -b`

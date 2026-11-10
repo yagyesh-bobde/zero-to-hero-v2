@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-const courses = ['react-native-ota', 'react-native-networking', 'react-native-reels', 'shorts'];
+const courses = ['react-native-ota', 'react-native-networking', 'react-native-reels', 'shorts', 'engineering'];
 
 /** Serves `/<course>` from `/<course>/index.html` (vercel.json does the same in production). */
 function rewriteCourseEntry(request: { url?: string }, _response: unknown, next: () => void) {
@@ -32,6 +32,7 @@ export default defineConfig({
         networking: 'react-native-networking/index.html',
         reels: 'react-native-reels/index.html',
         shorts: 'shorts/index.html',
+        engineering: 'engineering/index.html',
       },
       output: {
         manualChunks(id) {

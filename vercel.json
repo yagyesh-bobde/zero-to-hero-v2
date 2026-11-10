@@ -7,6 +7,8 @@
     { "source": "/react-native-reels", "destination": "/react-native-reels/index.html" },
     { "source": "/react-native-reels/", "destination": "/react-native-reels/index.html" },
     { "source": "/shorts", "destination": "/shorts/index.html" },
-    { "source": "/shorts/", "destination": "/shorts/index.html" }
+    { "source": "/shorts/", "destination": "/shorts/index.html" },
+    { "source": "/engineering", "destination": "/engineering/index.html" },
+    { "source": "/engineering/", "destination": "/engineering/index.html" }
   ]
 }

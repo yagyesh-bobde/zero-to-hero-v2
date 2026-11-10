@@ -10,6 +10,8 @@ export interface Collection {
   mapTitle: string;
   /** localStorage key for watched/saved/last reel. */
   progressKey: string;
+  /** Random order on every visit (unwatched reels first) instead of series order. */
+  shuffle?: boolean;
 }
 
 /** `/react-native-reels`: the course series in `./series/*.ts`. */
@@ -32,6 +34,17 @@ export const SHORTS: Collection = {
   progressKey: 'shorts-progress-v1',
 };
 
+/** `/engineering`: mid-to-senior frontend, networking, system design and case studies in `./engineering/*.ts`, shuffled. */
+export const ENGINEERING: Collection = {
+  name: 'Engineering',
+  accent: 'Reels',
+  logo: '🛠️',
+  tagline: 'Senior-level frontend, networking, system design and real company case studies. A fresh shuffle every visit.',
+  mapTitle: 'All topics',
+  progressKey: 'engineering-progress-v1',
+  shuffle: true,
+};
+
 export interface FeedReel extends Reel {
   series: Series;
   /** Position in the whole feed. */
@@ -52,6 +65,20 @@ export function setCollection(next: Collection, modules: { series?: Series }[]) 
   feed = seriesList
     .flatMap((series) => series.reels.map((reel) => ({ ...reel, series })))
     .map((reel, index) => ({ ...reel, index }));
+}
+
+/** Random order (Fisher–Yates), unwatched reels first. Series grouping is kept for the map. */
+export function shuffleFeed(watched: Set<string>, random: () => number = Math.random) {
+  const mix = <T>(list: T[]) => {
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = Math.floor(random() * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
+    }
+    return list;
+  };
+  const fresh = mix(feed.filter((reel) => !watched.has(reel.id)));
+  const seen = mix(feed.filter((reel) => watched.has(reel.id)));
+  feed = [...fresh, ...seen].map((reel, index) => ({ ...reel, index }));
 }
 
 /** Audio for both collections (reel ids are unique across both). */

@@ -2,7 +2,8 @@ import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 import './reels.css';
-import { setCollection } from './data';
+import { setCollection, shuffleFeed } from './data';
+import { readProgress } from './storage';
 import type { Collection } from './data';
 import type { Series } from './types';
 
@@ -22,6 +23,7 @@ export function boot(collection: Collection, modules: SeriesModules) {
       import('./App'),
     ]);
     setCollection(collection, loaded);
+    if (collection.shuffle) shuffleFeed(new Set(readProgress().watched));
     return app;
   });
   root ??= ReactDOM.createRoot(document.getElementById('root')!);

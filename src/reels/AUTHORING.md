@@ -8,6 +8,7 @@ The reels in `series/01-react-under-the-hood.ts` set the quality bar. Read two b
 
 - Every file in `src/reels/series/*.ts` is loaded automatically into the course feed at `/react-native-reels`. You don't need to register anything.
 - Short-form sampler reels (motivation, quick hits, stories, life topics: the 10–30s format) go in `src/reels/shorts/*.ts` instead. They play on `/shorts` with the same engine, rules and checks; only the feed, branding and saved progress differ. Moving a file between the two folders is all it takes to move it between pages.
+- Mid-to-senior engineering reels (frontend, networking, browser, security, frontend system design, company case studies) go in `src/reels/engineering/*.ts`, full 45–70s format. They play on `/engineering`, which **shuffles the feed on every visit** (unwatched first), so every reel must stand alone: no "last time we…", no assumed earlier reel, define each term the first time it appears. Case studies must stick to what the company has said publicly (engineering blog, talk); say so in the narration ("Swiggy's engineering blog describes…") and never invent numbers.
 - Each file exports **exactly** `export const series: Series = {...}`.
 - Use **type-only imports** (`import type { Series } from '../types';`). Don't import runtime code: the voice script and the QA script load these files directly with Node.
 - Name files `NN-kebab-name.ts`. `order` decides feed order. If a series file already exists, append to its `reels` array.
@@ -45,7 +46,7 @@ Beat = {
 }
 ```
 
-- `id` must be unique across **all** series in both folders, kebab-case, stable. It's the audio file name (audio for both pages lives in `public/react-native-reels/audio/`) and the share link: `/react-native-reels#/reel/<id>` or `/shorts#/reel/<id>`.
+- `id` must be unique across **all** series in both folders, kebab-case, stable. It's the audio file name (audio for both pages lives in `public/react-native-reels/audio/`) and the share link: `/react-native-reels#/reel/<id>`, `/shorts#/reel/<id>` or `/engineering#/reel/<id>`.
 - `speak` is for words TTS mispronounces: `setState` → `set state`, `JSI` → `J S I`, `.tsx` → `T S X`. Keep the same number of words in `speak` and `say` where you can so word-timed captions stay aligned.
 - `emphasis` words must appear in `say`. Pick 1–3 per beat.
 

@@ -26,8 +26,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { runStart, Stage } from '../src/reels/Stage';
 import { textFitProblems } from '../src/reels/limits';
 
-// Course series (/react-native-reels) and sampler shorts (/shorts) share one engine and one id space.
-const seriesDirs = ['../src/reels/series', '../src/reels/shorts'].map((dir) => path.resolve(__dirname, dir));
+// Course series (/react-native-reels), sampler shorts (/shorts) and /engineering share one engine and one id space.
+const seriesDirs = ['../src/reels/series', '../src/reels/shorts', '../src/reels/engineering'].map((dir) => path.resolve(__dirname, dir));
 const audioDir = path.resolve(__dirname, '../public/react-native-reels/audio');
 const seriesFiles = seriesDirs.flatMap((dir) =>
   readdirSync(dir)

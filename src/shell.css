@@ -190,6 +190,14 @@ html {
   padding: 0;
 }
 
+.sidebar-links {
+  margin: -6px -10px 12px;
+}
+
+.sidebar-links .sidebar-course-toggle {
+  margin-bottom: 0;
+}
+
 .sidebar-progress > div:first-child {
   align-items: center;
   margin-bottom: 10px;

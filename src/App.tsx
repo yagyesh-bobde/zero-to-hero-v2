@@ -9,7 +9,9 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
+  Clapperboard,
   Clock3,
+  CloudDownload,
   Code2,
   CornerDownLeft,
   FileText,
@@ -19,6 +21,7 @@ import {
   LayoutDashboard,
   ListTree,
   Moon,
+  Network,
   NotebookPen,
   PanelLeftClose,
   PanelLeftOpen,
@@ -27,6 +30,7 @@ import {
   Star,
   Sun,
   X,
+  Zap,
 } from 'lucide-react';
 import type { CourseModule, LabKind, Lesson, Progress, View } from './types';
 import { modules } from './data/course';
@@ -48,6 +52,14 @@ const navItems: { id: View; label: string; icon: typeof BookOpen }[] = [
   { id: 'playground', label: 'Playground', icon: FlaskConical },
   { id: 'notes', label: 'My notebook', icon: NotebookPen },
   { id: 'resources', label: 'Resources', icon: BookOpen },
+];
+/** Other pages on this site. Each is its own entry (see vite.config.ts and vercel.json). */
+const siteLinks = [
+  { href: '/react-native-ota', label: 'React Native OTA', icon: CloudDownload },
+  { href: '/react-native-networking', label: 'React Native Networking', icon: Network },
+  { href: '/react-native-reels', label: 'React Native Reels', icon: Clapperboard },
+  { href: '/shorts', label: 'Shorts', icon: Zap },
+  { href: '/engineering', label: 'Engineering Reels', icon: Code2 },
 ];
 const labNames: Record<LabKind, string> = {
   gradient: 'Gradient descent',
@@ -139,6 +151,9 @@ export default function App() {
   const [courseExpanded, setCourseExpanded] = useState(() =>
     readLayoutPreference('zero-to-hero-course-expanded', true),
   );
+  const [linksExpanded, setLinksExpanded] = useState(() =>
+    readLayoutPreference('zero-to-hero-links-expanded', false),
+  );
   const sidebarVisible = isCompact ? mobile : !sidebarCollapsed;
   const toggleSidebar = useCallback(() => {
     if (isCompact) setMobile((v) => !v);
@@ -166,10 +181,11 @@ export default function App() {
     try {
       localStorage.setItem('zero-to-hero-sidebar-collapsed', String(sidebarCollapsed));
       localStorage.setItem('zero-to-hero-course-expanded', String(courseExpanded));
+      localStorage.setItem('zero-to-hero-links-expanded', String(linksExpanded));
     } catch {
       // Layout controls also work without browser storage.
     }
-  }, [sidebarCollapsed, courseExpanded]);
+  }, [sidebarCollapsed, courseExpanded, linksExpanded]);
   const [searchOpen, setSearchOpen] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const [saveNoticeId, setSaveNoticeId] = useState(0);
@@ -376,6 +392,28 @@ export default function App() {
           </a>
         </div>
         <div className="sidebar-bottom">
+          <nav className="sidebar-links" aria-label="All pages">
+            <button
+              className="sidebar-course-toggle"
+              aria-expanded={linksExpanded}
+              aria-controls="sidebar-site-links"
+              onClick={() => setLinksExpanded((v) => !v)}
+            >
+              <span>ALL PAGES</span>
+              <span className="sidebar-course-count">{String(siteLinks.length).padStart(2, '0')}</span>
+              <ChevronDown size={14} className={linksExpanded ? '' : 'is-collapsed'} />
+            </button>
+            <div id="sidebar-site-links" hidden={!linksExpanded}>
+              {siteLinks.map(({ href, label, icon: Icon }) => (
+                <a className="chapter-shortcut" href={href} key={href}>
+                  <span className="chapter-dot">
+                    <Icon size={14} strokeWidth={1.75} />
+                  </span>
+                  <span>{label}</span>
+                </a>
+              ))}
+            </div>
+          </nav>
           <div className="sidebar-progress">
             <div>
               <span>Your progress</span>

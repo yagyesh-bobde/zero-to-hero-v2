@@ -2190,6 +2190,8 @@ kbd {
 .dsa-editor {
   display: flex;
   font-family: var(--dsa-mono);
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
   font-size: 13.5px;
   line-height: 1.65;
 }
@@ -2216,6 +2218,8 @@ kbd {
   background: transparent;
   color: var(--dsa-code-text);
   font: inherit;
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
   white-space: pre;
   overflow-x: auto;
   overflow-y: hidden;

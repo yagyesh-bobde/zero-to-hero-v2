@@ -316,11 +316,21 @@ export interface Beat {
   emphasis?: string[];
 }
 
+/** A call to action next to a reel, e.g. "Solve it" → the lesson's editor. */
+export interface ReelLink {
+  /** Short button text, e.g. "Solve it". */
+  label: string;
+  /** Same-site path (`/dsa#/m/…`) or an https URL. */
+  href: string;
+}
+
 export interface Reel {
   /** Globally unique kebab-case id. Also the audio file name. */
   id: string;
   title: string;
   beats: Beat[];
+  /** Optional call to action: a rail button during the reel and the primary button on the end card. */
+  link?: ReelLink;
   /** Kokoro voice for this reel's narration, e.g. `am_onyx`. Default: `af_heart`. */
   voice?: string;
   /** Kokoro speaking speed for this reel. Default: 1.1. */

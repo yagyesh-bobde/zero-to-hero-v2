@@ -1,6 +1,6 @@
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { Play, RotateCcw, SkipForward } from 'lucide-react';
+import { CodeXml, Play, RotateCcw, SkipForward } from 'lucide-react';
 import { audioUrl } from './data';
 import type { FeedReel } from './data';
 import { sound, voiceElement } from './sfx';
@@ -17,7 +17,7 @@ import {
   wordIndexAt,
   wordTimes,
 } from './timeline';
-import type { AudioManifest, Beat, Sfx } from './types';
+import type { AudioManifest, Beat, ReelLink, Sfx } from './types';
 import { QA, freezeAnimations, qaApi, qaInitial } from './qa';
 
 export interface PlayerProps {
@@ -260,7 +260,7 @@ export function Player(props: PlayerProps) {
           <Play />
         </span>
       )}
-      {ended && <EndCard hasNext={props.hasNext} onReplay={replay} onNext={props.onNext} />}
+      {ended && <EndCard link={reel.link} hasNext={props.hasNext} onReplay={replay} onNext={props.onNext} />}
     </div>
   );
 }
@@ -305,22 +305,31 @@ function CaptionLine({ words, said, now, emphasis }: { words: string[]; said: bo
   );
 }
 
-function EndCard({ hasNext, onReplay, onNext }: { hasNext: boolean; onReplay: () => void; onNext: () => void }) {
+/** After the reel: replay / next. A reel with a `link` makes it the primary action and doesn't auto-advance. */
+function EndCard({ link, hasNext, onReplay, onNext }: { link?: ReelLink; hasNext: boolean; onReplay: () => void; onNext: () => void }) {
+  const autoNext = hasNext && !link;
   useEffect(() => {
-    if (!hasNext) return;
+    if (!autoNext) return;
     const timer = window.setTimeout(onNext, 4000);
     return () => window.clearTimeout(timer);
-  }, [hasNext, onNext]);
+  }, [autoNext, onNext]);
   return (
     <div className="end-card" onClick={(event) => event.stopPropagation()}>
-      <button type="button" className="end-btn" onClick={onReplay}>
-        <RotateCcw /> Replay
-      </button>
-      {hasNext && (
-        <button type="button" className="end-btn end-next" onClick={onNext}>
-          <SkipForward /> Next reel
-        </button>
+      {link && (
+        <a className="end-btn end-link" href={link.href}>
+          <CodeXml /> {link.label}
+        </a>
       )}
+      <div className="end-row">
+        <button type="button" className="end-btn" onClick={onReplay}>
+          <RotateCcw /> Replay
+        </button>
+        {hasNext && (
+          <button type="button" className={`end-btn ${link ? '' : 'end-next'}`} onClick={onNext}>
+            <SkipForward /> Next reel
+          </button>
+        )}
+      </div>
     </div>
   );
 }

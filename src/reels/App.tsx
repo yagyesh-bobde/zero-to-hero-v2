@@ -7,6 +7,7 @@ import {
   CaptionsOff,
   CheckCircle2,
   Circle,
+  CodeXml,
   ListVideo,
   Play,
   Share2,
@@ -226,6 +227,14 @@ export default function App() {
                   <Poster reel={item} near={near} />
                 )}
                 <nav className="rail" aria-label="Reel actions">
+                  {item.link && (
+                    <a className="rail-btn rail-link" href={item.link.href} aria-label={item.link.label} onClick={(event) => event.stopPropagation()}>
+                      <span className="rail-icon">
+                        <CodeXml />
+                      </span>
+                      <span className="rail-label">{item.link.label}</span>
+                    </a>
+                  )}
                   <RailButton label={saved.has(item.id) ? 'Saved' : 'Save'} on={saved.has(item.id)} onClick={() => toggleIn('saved', item.id)}>
                     {saved.has(item.id) ? <BookmarkCheck /> : <Bookmark />}
                   </RailButton>

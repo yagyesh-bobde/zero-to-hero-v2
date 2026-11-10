@@ -24,10 +24,10 @@ import {
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { runStart, Stage } from '../src/reels/Stage';
-import { textFitProblems } from '../src/reels/limits';
+import { LIMITS, textFitProblems } from '../src/reels/limits';
 
 // Course series (/react-native-reels), sampler shorts (/shorts) and /engineering share one engine and one id space.
-const seriesDirs = ['../src/reels/series', '../src/reels/shorts', '../src/reels/engineering'].map((dir) => path.resolve(__dirname, dir));
+const seriesDirs = ['../src/reels/series', '../src/reels/shorts', '../src/reels/engineering', '../src/reels/dsa'].map((dir) => path.resolve(__dirname, dir));
 const audioDir = path.resolve(__dirname, '../public/react-native-reels/audio');
 const seriesFiles = seriesDirs.flatMap((dir) =>
   readdirSync(dir)
@@ -200,6 +200,13 @@ describe('reel content integrity', () => {
       expect(beat.say.trim()).not.toBe('');
       expect(sceneProblems(beat)).toEqual([]);
     }
+  });
+
+  it.each(reels.filter((r) => r.link).map((r) => [r.id, r] as const))('%s has a valid link', (_id, reel) => {
+    const link = reel.link!;
+    expect(link.label.trim()).not.toBe('');
+    expect(link.label.length).toBeLessThanOrEqual(LIMITS.link.label);
+    expect(link.href).toMatch(/^(\/(?!\/)|https:\/\/)\S+$/);
   });
 
   it.each(reels.map((r) => [r.id, r] as const))('%s keeps scene text within the layout budgets', (_id, reel) => {

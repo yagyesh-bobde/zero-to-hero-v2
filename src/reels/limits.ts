@@ -68,6 +68,8 @@ export const LIMITS = {
   outro: { points: 4, point: 46, pointWord: 18.8, tagline: 30, taglineWord: 16.7, title: 24 },
   /** Every scene heading (a wider word makes Fit zoom the scene a little less). */
   sceneTitleWord: 19.2,
+  /** `Reel.link`: the label sits on the end-card button and under the rail icon (laptop). */
+  link: { label: 14 },
 } as const;
 
 /* Advance widths (em) of Inter 700 glyphs, measured in the browser; unknown characters fall back by class. */

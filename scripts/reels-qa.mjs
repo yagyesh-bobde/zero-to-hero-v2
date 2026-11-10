@@ -69,6 +69,7 @@ const collections = [
   { dir: 'src/reels/series', route: '/react-native-reels' },
   { dir: 'src/reels/shorts', route: '/shorts' },
   { dir: 'src/reels/engineering', route: '/engineering' },
+  { dir: 'src/reels/dsa', route: '/dsa/reels' },
 ];
 const audioDir = path.join(root, 'public/react-native-reels/audio');
 const timeline = await import(pathToFileURL(path.join(root, 'src/reels/timeline.ts')).href);

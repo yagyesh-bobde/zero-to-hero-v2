@@ -1,4 +1,4 @@
-// Extracts narration text from every src/reels/{series,shorts,engineering}/*.ts into
+// Extracts narration text from every src/reels/{series,shorts,engineering,dsa}/*.ts into
 // .reels-cache/narration.json (consumed by scripts/reels-voice.py).
 //
 // Usage: node scripts/reels-extract.mjs [reelId]
@@ -10,7 +10,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // /react-native-reels course series, /shorts sampler series, /engineering reels. Reel ids are unique across all.
-const seriesDirs = ['src/reels/series', 'src/reels/shorts', 'src/reels/engineering'].map((dir) => path.join(root, dir));
+const seriesDirs = ['src/reels/series', 'src/reels/shorts', 'src/reels/engineering', 'src/reels/dsa'].map((dir) => path.join(root, dir));
 const outFile = path.join(root, '.reels-cache/narration.json');
 const onlyReel = process.argv[2];
 

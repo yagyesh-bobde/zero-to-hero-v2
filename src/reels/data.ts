@@ -45,6 +45,16 @@ export const ENGINEERING: Collection = {
   shuffle: true,
 };
 
+/** `/dsa/reels`: one reel per /dsa lesson in `./dsa/*.ts`, one series per module, in course order. */
+export const DSA: Collection = {
+  name: 'DSA',
+  accent: 'Reels',
+  logo: '🧩',
+  tagline: 'Data structures and algorithms, one short reel per lesson. Watch the idea run, then solve it in the editor.',
+  mapTitle: 'All modules',
+  progressKey: 'dsa-reels-progress-v1',
+};
+
 export interface FeedReel extends Reel {
   series: Series;
   /** Position in the whole feed. */

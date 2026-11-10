@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/dsa/reels",
+      "destination": "/dsa/reels/index.html"
+    },
+    {
+      "source": "/dsa/reels/",
+      "destination": "/dsa/reels/index.html"
+    },
+    {
       "source": "/react-native-ota",
       "destination": "/react-native-ota/index.html"
     },

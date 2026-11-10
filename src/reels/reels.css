@@ -1116,19 +1116,19 @@ button {
   box-shadow: 0 0 3cqw color-mix(in oklab, var(--tone, var(--accent)) 35%, transparent);
   animation: pop-in 0.45s 0.25s var(--spring) both;
 }
-/* A chip pushed to a lower row hangs from its caret on a thin stem (behind the chips above it). */
-.arr-ptr::before {
-  content: '';
+/* A chip pushed to a lower row hangs from its caret on a thin stem. Stems render before every chip
+   (Dsa.tsx), so a stem passing a chip stacked above it on the same cell goes behind that chip. */
+.arr-stem {
   position: absolute;
-  z-index: -1;
-  bottom: 100%;
-  left: calc(50% + var(--cx) - var(--x) - 1px);
+  top: calc(100% + 3.1cqw);
+  left: calc((var(--at) + 0.5) * var(--pitch) - 1px);
   width: 2px;
   height: calc(0.3cqw + var(--row) * var(--ptr-step));
   background: color-mix(in oklab, var(--tone, var(--accent)) 70%, transparent);
-  transition: height 0.45s var(--smooth), left 0.55s var(--smooth);
+  transition: height 0.45s var(--smooth), left 0.55s var(--smooth), opacity 0.3s;
 }
 .arr-caret.is-hidden,
+.arr-stem.is-hidden,
 .arr-ptr.is-hidden {
   opacity: 0;
 }

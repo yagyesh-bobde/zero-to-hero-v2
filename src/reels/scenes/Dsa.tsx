@@ -79,21 +79,22 @@ export function ArrayView({ scene }: { scene: ArrayScene }) {
             <Cell value={value} state={stateClass({ active: active.has(i), reads: reads.has(i), done: done.has(i), found: found.has(i) })} />
           </div>
         ))}
-        {Object.entries(pointers).map(([name, at], order) => {
-          const shown = Number.isInteger(at) && at >= 0 && at < n;
-          // A hidden pointer slides just past the nearer end while it fades.
-          const pos = shown ? at : at < 0 ? -1 : n;
-          const tone = `tone-${POINTER_TONES[order % POINTER_TONES.length]}`;
-          const style = { '--at': pos, '--row': rows[name] ?? 0, '--len': [...name].length } as CSSProperties;
-          return (
-            <Fragment key={name}>
-              <span className={`arr-caret ${tone} ${shown ? '' : 'is-hidden'}`} style={style} />
-              <span className={`arr-ptr ${tone} ${shown ? '' : 'is-hidden'}`} style={style}>
-                {name}
+        {/* Carets and stems first, chips after: every chip paints over any stem passing behind it
+            (each chip's pop-in makes it its own stacking context, so a ::before stem can't sit behind earlier chips). */}
+        {(['arr-caret', 'arr-stem', 'arr-ptr'] as const).map((part) =>
+          Object.entries(pointers).map(([name, at], order) => {
+            const shown = Number.isInteger(at) && at >= 0 && at < n;
+            // A hidden pointer slides just past the nearer end while it fades.
+            const pos = shown ? at : at < 0 ? -1 : n;
+            const tone = `tone-${POINTER_TONES[order % POINTER_TONES.length]}`;
+            const style = { '--at': pos, '--row': rows[name] ?? 0, '--len': [...name].length } as CSSProperties;
+            return (
+              <span key={`${part}:${name}`} className={`${part} ${tone} ${shown ? '' : 'is-hidden'}`} style={style}>
+                {part === 'arr-ptr' ? name : null}
               </span>
-            </Fragment>
-          );
-        })}
+            );
+          }),
+        )}
       </div>
       <Vars vars={scene.vars} />
       {scene.caption && (

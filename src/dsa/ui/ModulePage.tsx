@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, ArrowUpRight, CheckCircle2, Clock } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, CheckCircle2, CirclePlay, Clock } from 'lucide-react';
 import type { Module, PatternCard } from '../types';
 import { CodeBlock } from './Blocks';
 import { findProblem, lessonKey, liveModules, moduleStats, partOf } from './data';
@@ -6,6 +6,7 @@ import { DifficultyBadge } from './ProblemCard';
 import { Rich } from './Rich';
 import { leetcodeHref, lessonHref, moduleHref, SAMPLE_ID } from './route';
 import { useProgress } from './progress';
+import { reelId, useModuleReels } from './reels';
 
 const duration = (min: number) => (min < 90 ? `about ${min} min` : `about ${Math.round(min / 30) / 2} hours`);
 
@@ -69,6 +70,7 @@ export default function ModulePage({ module }: { module: Module }) {
   const i = liveModules.indexOf(module);
   const prev = i > 0 ? liveModules[i - 1] : undefined;
   const next = i >= 0 ? liveModules[i + 1] : undefined;
+  const reelIds = useModuleReels(module.id);
   return (
     <div className="dsa-page">
       <header className="dsa-page-head">
@@ -118,6 +120,11 @@ export default function ModulePage({ module }: { module: Module }) {
                     <span className="dsa-lesson-meta">
                       {l.minutes} min · {l.problems.length} {l.problems.length === 1 ? 'problem' : 'problems'}
                       {solved > 0 && ` · ${solved} solved`}
+                      {reelIds?.has(reelId(module.id, l.id)) && (
+                        <span className="dsa-lesson-reel">
+                          <CirclePlay size={12} /> Reel
+                        </span>
+                      )}
                     </span>
                   </div>
                   <ArrowRight size={16} className="dsa-row-arrow" />

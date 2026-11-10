@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { ArrowLeft, ArrowRight, Check, CheckCircle2, Clock } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, CheckCircle2, CirclePlay, Clock } from 'lucide-react';
 import type { Lesson, Module } from '../types';
 import { BlockView } from './Blocks';
 import { lessonKey, neighbours } from './data';
@@ -8,6 +8,7 @@ import Quiz from './Quiz';
 import { Rich } from './Rich';
 import { lessonHref, moduleHref, SAMPLE_ID } from './route';
 import { setLessonDone, useProgress } from './progress';
+import { reelUrl, useLessonReel } from './reels';
 
 export default function LessonPage({ module, lesson, problem }: { module: Module; lesson: Lesson; problem?: string }) {
   const { progress, update } = useProgress();
@@ -17,6 +18,7 @@ export default function LessonPage({ module, lesson, problem }: { module: Module
   const { prev, next } = neighbours(module.id, lesson.id);
   const solved = lesson.problems.filter((p) => progress.solved.includes(p.id)).length;
   const isSample = module.id === SAMPLE_ID;
+  const reel = useLessonReel(module.id, lesson.id);
 
   useEffect(() => {
     if (!problem) return;
@@ -27,9 +29,16 @@ export default function LessonPage({ module, lesson, problem }: { module: Module
   return (
     <article className="dsa-page dsa-lesson">
       <header className="dsa-page-head">
-        <a className="dsa-eyebrow dsa-eyebrow-link" href={moduleHref(module.id)}>
-          {isSample ? 'Dev sample' : `Module ${module.number}`} · Lesson {index} of {module.lessons.length}
-        </a>
+        <div className="dsa-lesson-top">
+          <a className="dsa-eyebrow dsa-eyebrow-link" href={moduleHref(module.id)}>
+            {isSample ? 'Dev sample' : `Module ${module.number}`} · Lesson {index} of {module.lessons.length}
+          </a>
+          {reel && (
+            <a className="dsa-btn is-quiet dsa-reel-btn" href={reelUrl(reel)}>
+              <CirclePlay size={15} /> Watch the reel
+            </a>
+          )}
+        </div>
         <h1>{lesson.title}</h1>
         <p className="dsa-lede">{lesson.summary}</p>
         <div className="dsa-meta-row">

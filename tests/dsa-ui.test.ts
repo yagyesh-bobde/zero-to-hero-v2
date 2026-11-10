@@ -5,6 +5,8 @@ import { parseInline, plainText } from '../src/dsa/ui/inline';
 import { tokenize } from '../src/dsa/ui/highlight';
 import { runTests } from '../src/dsa/runner';
 import sample from '../src/dsa/ui/sample';
+import { findModule } from '../src/dsa/ui/data';
+import { createReelRegistry, moduleIdFromPath, reelId, reelUrl, reels } from '../src/dsa/ui/reels';
 
 describe('parseProgress', () => {
   it('returns empty progress for missing or broken data', () => {
@@ -150,5 +152,65 @@ describe('matchPatterns', async () => {
     expect(r[0].card.name).toBe('Two pointers');
     expect(matchPatterns(list, 'subarray')).toEqual([list[1]]);
     expect(matchPatterns(list, 'graph')).toEqual([]);
+  });
+});
+
+describe('reels registry', () => {
+  const file = (...ids: string[]) => ({ series: { reels: ids.map((id) => ({ id })) } });
+
+  it('builds ids and links', () => {
+    expect(reelId('thinking', 'big-o')).toBe('dsa-thinking-big-o');
+    expect(reelUrl()).toBe('/dsa/reels');
+    expect(reelUrl('dsa-thinking-big-o')).toBe('/dsa/reels#/reel/dsa-thinking-big-o');
+  });
+  it('reads the module id from a file path', () => {
+    expect(moduleIdFromPath('../../reels/dsa/01-thinking.ts')).toBe('thinking');
+    expect(moduleIdFromPath('../../reels/dsa/12-two-pointers.ts')).toBe('two-pointers');
+    expect(moduleIdFromPath('../../reels/dsa/notes.ts')).toBeNull();
+  });
+  it('knows which modules have reels without loading them', () => {
+    let loads = 0;
+    const r = createReelRegistry({
+      '../../reels/dsa/01-thinking.ts': async () => (loads++, file()),
+      '../../reels/dsa/03-hashing.ts': async () => (loads++, file()),
+    });
+    expect(r.modules).toEqual(['thinking', 'hashing']);
+    expect(r.hasModuleReels('hashing')).toBe(true);
+    expect(r.hasModuleReels('graphs')).toBe(false);
+    expect(loads).toBe(0);
+  });
+  it('loads one module file once to check a lesson', async () => {
+    let loads = 0;
+    const r = createReelRegistry({
+      '../../reels/dsa/01-thinking.ts': async () => (loads++, file('dsa-thinking-big-o')),
+      '../../reels/dsa/03-hashing.ts': async () => {
+        throw new Error('should not load');
+      },
+    });
+    expect(r.loadedReels('thinking')).toBeUndefined();
+    const [a, b] = await Promise.all([r.hasReel('thinking', 'big-o'), r.hasReel('thinking', 'space')]);
+    expect([a, b]).toEqual([true, false]);
+    expect(await r.hasReel('graphs', 'bfs')).toBe(false);
+    expect(loads).toBe(1);
+    expect(r.loadedReels('thinking')).toEqual(new Set(['dsa-thinking-big-o']));
+  });
+  it('treats a failed load as no reels and retries later', async () => {
+    let calls = 0;
+    const r = createReelRegistry({
+      '../../reels/dsa/01-thinking.ts': async () => {
+        if (calls++ === 0) throw new Error('offline');
+        return file('dsa-thinking-big-o');
+      },
+    });
+    expect(await r.hasReel('thinking', 'big-o')).toBe(false);
+    expect(await r.hasReel('thinking', 'big-o')).toBe(true);
+  });
+  it('every real reels file is named after a module and every reel id after one of its lessons', async () => {
+    for (const id of reels.modules) {
+      const module = findModule(id);
+      expect(module, `src/reels/dsa/NN-${id}.ts has no /dsa module "${id}"`).toBeDefined();
+      const lessonReels = new Set(module?.lessons.map((l) => reelId(id, l.id)));
+      for (const r of await reels.moduleReels(id)) expect(lessonReels.has(r), `reel "${r}" matches no lesson in module "${id}"`).toBe(true);
+    }
   });
 });

@@ -1,8 +1,9 @@
-import { ArrowRight, Check, Lock } from 'lucide-react';
+import { ArrowRight, Check, CirclePlay, Lock } from 'lucide-react';
 import type { Module } from '../types';
 import { courseLessons, courseProblems, courseStats, liveModules, moduleStats, modules, parts, resumePoint } from './data';
 import { lessonHref, moduleHref } from './route';
 import { useProgress } from './progress';
+import { reels, reelUrl } from './reels';
 
 const loop = [
   { title: 'Meet the problem', text: 'A real situation with small numbers. No theory up front.' },
@@ -114,6 +115,24 @@ export default function Home() {
           </div>
         )}
       </header>
+
+      {reels.modules.length > 0 && (
+        <a className="dsa-reels-card" href={reelUrl()}>
+          <span className="dsa-reels-card-icon" aria-hidden="true">
+            <CirclePlay size={22} />
+          </span>
+          <span className="dsa-reels-card-body">
+            <strong>Learn in reels</strong>
+            <span>Swipe through short animated reels, one per lesson. Watch the idea run, then solve it in the editor here.</span>
+            {reels.modules.length < liveModules.length && (
+              <span className="dsa-reels-card-meta">
+                {reels.modules.length} of {liveModules.length} modules so far
+              </span>
+            )}
+          </span>
+          <ArrowRight size={16} className="dsa-row-arrow" />
+        </a>
+      )}
 
       <section className="dsa-section dsa-loop" aria-labelledby="loop-title">
         <h2 id="loop-title" className="dsa-h2">

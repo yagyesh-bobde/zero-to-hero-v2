@@ -85,7 +85,7 @@ export default function Home() {
             </a>
             <div className="dsa-resume-where">
               <span>
-                Module {resume.module.number} · Lesson {resume.index}
+                Up next · Module {resume.module.number} · Lesson {resume.index}
               </span>
               <strong>{resume.lesson.title}</strong>
             </div>

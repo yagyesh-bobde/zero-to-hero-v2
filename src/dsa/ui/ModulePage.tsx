@@ -9,7 +9,7 @@ import { useProgress } from './progress';
 
 const duration = (min: number) => (min < 90 ? `about ${min} min` : `about ${Math.round(min / 30) / 2} hours`);
 
-export function PatternCardView({ card, module }: { card: PatternCard; module?: Module }) {
+export function PatternCardView({ card, module, collapsible }: { card: PatternCard; module?: Module; collapsible?: boolean }) {
   const { progress } = useProgress();
   return (
     <article className="dsa-pattern">
@@ -31,7 +31,14 @@ export function PatternCardView({ card, module }: { card: PatternCard; module?: 
           ))}
         </ul>
       </div>
-      <CodeBlock code={card.template} lang="pseudo" title="Template" />
+      {collapsible ? (
+        <details className="dsa-pattern-template">
+          <summary>Pseudocode template</summary>
+          <CodeBlock code={card.template} lang="pseudo" title="Template" />
+        </details>
+      ) : (
+        <CodeBlock code={card.template} lang="pseudo" title="Template" />
+      )}
       {card.examples.length > 0 && (
         <div className="dsa-pattern-examples">
           <span className="dsa-label">Used in</span>

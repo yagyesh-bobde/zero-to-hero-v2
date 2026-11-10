@@ -139,3 +139,16 @@ describe('sample module', () => {
     }
   });
 });
+
+describe('matchPatterns', async () => {
+  const { matchPatterns } = await import('../src/dsa/ui/PatternsPage');
+  const card = (name: string, signals: string[]) => ({ card: { name, signals, template: '' } });
+  const list = [card('Two pointers', ['input is **sorted**', 'pair with a target']), card('Sliding window', ['longest subarray']), card('Heap', ['k largest'])];
+  it('returns everything for an empty query', () => expect(matchPatterns(list, '  ')).toHaveLength(3));
+  it('stems words and ranks full matches first', () => {
+    const r = matchPatterns(list, 'sorting pairs');
+    expect(r[0].card.name).toBe('Two pointers');
+    expect(matchPatterns(list, 'subarray')).toEqual([list[1]]);
+    expect(matchPatterns(list, 'graph')).toEqual([]);
+  });
+});

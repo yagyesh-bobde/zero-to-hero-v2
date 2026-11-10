@@ -148,6 +148,13 @@ svg {
 }
 code,
 pre,
+kbd,
+textarea {
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
+}
+code,
+pre,
 kbd {
   font-family: var(--dsa-mono);
 }
@@ -176,7 +183,7 @@ kbd {
 .dsa-skip {
   position: fixed;
   left: 12px;
-  top: -60px;
+  top: 12px;
   z-index: 100;
   padding: 8px 14px;
   border-radius: 8px;
@@ -184,8 +191,13 @@ kbd {
   color: var(--dsa-on-accent);
   font-weight: 600;
 }
-.dsa-skip:focus-visible {
-  top: 12px;
+.dsa-skip:not(:focus-visible) {
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 .dsa-faint {
   color: var(--dsa-faint);
@@ -1648,8 +1660,14 @@ ol.dsa-list li::marker {
   overflow-x: auto;
   border: 1px solid var(--dsa-line-soft);
   border-radius: 12px;
-  background: var(--dsa-surface);
   scrollbar-width: thin;
+  /* edge shadows appear only while there is more table to scroll to */
+  background:
+    linear-gradient(to right, var(--dsa-surface) 40%, transparent) left / 36px 100% no-repeat local,
+    linear-gradient(to left, var(--dsa-surface) 40%, transparent) right / 36px 100% no-repeat local,
+    linear-gradient(to right, rgba(0, 0, 0, 0.28), transparent) left / 14px 100% no-repeat scroll,
+    linear-gradient(to left, rgba(0, 0, 0, 0.28), transparent) right / 14px 100% no-repeat scroll,
+    var(--dsa-surface);
 }
 .dsa-table-wrap:focus-visible {
   outline-offset: 2px;
@@ -1674,7 +1692,8 @@ ol.dsa-list li::marker {
   padding: 10px 14px;
   border-bottom: 1px solid var(--dsa-line-soft);
   vertical-align: top;
-  min-width: 90px;
+  min-width: 7.5em;
+  max-width: 22em;
 }
 .dsa-table tr:last-child td {
   border-bottom: 0;
@@ -1805,7 +1824,9 @@ ol.dsa-list li::marker {
 }
 .dsa-cells {
   display: grid;
-  grid-template-columns: repeat(var(--n), minmax(0, 56px));
+  --cell-max: max(56px, calc(var(--len) * 10.5px + 12px));
+  --cell: min(var(--cell-max), 100cqi / var(--n));
+  grid-template-columns: repeat(var(--n), minmax(0, var(--cell-max)));
   justify-content: center;
   gap: 6px;
 }
@@ -1834,7 +1855,7 @@ ol.dsa-list li::marker {
   border: 1px solid var(--dsa-line);
   background: var(--dsa-raised);
   font-family: var(--dsa-mono);
-  font-size: clamp(11px, calc(100cqi / var(--n) * 0.36), 17px);
+  font-size: clamp(9px, min(var(--cell) * 0.55, (var(--cell) - 6px) / (var(--len) * 0.62)), 17px);
   font-weight: 500;
   letter-spacing: -0.02em;
   overflow: hidden;
@@ -2347,6 +2368,7 @@ kbd {
   line-height: 1.5;
 }
 .dsa-approaches {
+  outline: none;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -2716,6 +2738,38 @@ kbd {
   font-size: 13.5px;
   color: var(--dsa-faint);
 }
+.dsa-pt-group + .dsa-pt-group {
+  margin-top: 36px;
+}
+.dsa-pt-group-head {
+  position: sticky;
+  top: 56px;
+  z-index: 2;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 12px 0 10px;
+  background: var(--dsa-bg);
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.dsa-pt-group-n {
+  font-family: var(--dsa-mono);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--dsa-accent-ink);
+}
+.dsa-pt-group-title {
+  flex: 1;
+  min-width: 0;
+}
+.dsa-pt-group-count {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--dsa-faint);
+  font-variant-numeric: tabular-nums;
+}
 .dsa-problem-table {
   list-style: none;
   margin: 0;
@@ -2970,6 +3024,11 @@ kbd {
   }
   .dsa-table {
     font-size: 14px;
+    width: max-content;
+    min-width: 100%;
+  }
+  .dsa-table td {
+    max-width: 15em;
   }
   .dsa-table th,
   .dsa-table td {
@@ -3072,6 +3131,14 @@ kbd {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
   }
+  .dsa-filter-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .dsa-filter-row .dsa-select:first-child {
+    grid-column: 1 / -1;
+  }
   .dsa-problem-table a {
     flex-wrap: wrap;
     align-items: flex-start;
@@ -3102,4 +3169,41 @@ kbd {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* pattern finder: template folds away so 50+ cards stay scannable */
+.dsa-pattern-template {
+  margin-top: 16px;
+}
+.dsa-pattern-template summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 13.5px;
+  font-weight: 550;
+  color: var(--dsa-muted);
+  padding: 6px 0;
+}
+.dsa-pattern-template summary::-webkit-details-marker {
+  display: none;
+}
+.dsa-pattern-template summary::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dsa-pattern-template[open] summary::before {
+  transform: rotate(45deg);
+}
+.dsa-pattern-template summary:hover {
+  color: var(--dsa-text);
+}
+.dsa-pattern-template .dsa-code {
+  margin-top: 8px !important;
 }

@@ -104,6 +104,10 @@ function Hints({ hints }: { hints: string[] }) {
 function Approaches({ problem }: { problem: Problem }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState(problem.approaches.length - 1);
+  const section = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (open) section.current?.focus({ preventScroll: true });
+  }, [open]);
   const a = problem.approaches[tab];
   if (!open)
     return (
@@ -119,7 +123,7 @@ function Approaches({ problem }: { problem: Problem }) {
       </div>
     );
   return (
-    <section className="dsa-approaches" aria-label="Approaches">
+    <section className="dsa-approaches" aria-label="Approaches" ref={section} tabIndex={-1}>
       {problem.approaches.length > 1 && (
         <div className="dsa-tabs" role="tablist" aria-label="Approaches, naive to best">
           {problem.approaches.map((ap, i) => (

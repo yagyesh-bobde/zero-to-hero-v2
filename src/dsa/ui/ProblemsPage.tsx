@@ -40,6 +40,12 @@ export default function ProblemsPage() {
       (!q || problem.title.toLowerCase().includes(q) || String(problem.leetcode ?? '') === q)
     );
   });
+  const groups: { module: (typeof list)[number]['module']; items: typeof list }[] = [];
+  for (const e of list) {
+    const g = groups[groups.length - 1];
+    if (g && g.module === e.module) g.items.push(e);
+    else groups.push({ module: e.module, items: [e] });
+  }
   const solvedCount = courseProblems.filter((e) => progress.solved.includes(e.problem.id)).length;
   const filtered = q || mod !== 'all' || level !== 'all' || pattern !== 'all' || status !== 'all';
   const clear = () => {
@@ -108,31 +114,40 @@ export default function ProblemsPage() {
             )}
           </p>
           {list.length > 0 ? (
-            <ul className="dsa-problem-table">
-              {list.map(({ problem, lesson, module }) => {
-                const solved = progress.solved.includes(problem.id);
-                return (
-                  <li key={problem.id}>
-                    <a href={lessonHref(module.id, lesson.id, problem.id)} className={solved ? 'is-solved' : ''}>
-                      <span className="dsa-pt-status" aria-label={solved ? 'Solved' : 'Not solved'}>
-                        {solved ? <CheckCircle2 size={17} /> : <span className="dsa-pt-dot" />}
-                      </span>
-                      <span className="dsa-pt-main">
-                        <strong>{problem.title}</strong>
-                        <span className="dsa-pt-sub">
-                          Module {module.number} · {lesson.title}
-                        </span>
-                      </span>
-                      <span className="dsa-pt-tags">
-                        <span className="dsa-tag">{problem.pattern}</span>
-                        <DifficultyBadge level={problem.difficulty} />
-                        {problem.leetcode !== undefined && <span className="dsa-pt-lc">#{problem.leetcode}</span>}
-                      </span>
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
+            groups.map(({ module, items }) => (
+              <section key={module.id} className="dsa-pt-group" aria-labelledby={`pt-${module.id}`}>
+                <h2 id={`pt-${module.id}`} className="dsa-pt-group-head">
+                  <span className="dsa-pt-group-n">{String(module.number).padStart(2, '0')}</span>
+                  <span className="dsa-pt-group-title">{module.title}</span>
+                  <span className="dsa-pt-group-count">
+                    {items.filter((e) => progress.solved.includes(e.problem.id)).length}/{items.length}
+                  </span>
+                </h2>
+                <ul className="dsa-problem-table">
+                  {items.map(({ problem, lesson }) => {
+                    const solved = progress.solved.includes(problem.id);
+                    return (
+                      <li key={problem.id}>
+                        <a href={lessonHref(module.id, lesson.id, problem.id)} className={solved ? 'is-solved' : ''}>
+                          <span className="dsa-pt-status" aria-label={solved ? 'Solved' : 'Not solved'}>
+                            {solved ? <CheckCircle2 size={17} /> : <span className="dsa-pt-dot" />}
+                          </span>
+                          <span className="dsa-pt-main">
+                            <strong>{problem.title}</strong>
+                            <span className="dsa-pt-sub">{lesson.title}</span>
+                          </span>
+                          <span className="dsa-pt-tags">
+                            <span className="dsa-tag">{problem.pattern}</span>
+                            <DifficultyBadge level={problem.difficulty} />
+                            {problem.leetcode !== undefined && <span className="dsa-pt-lc">#{problem.leetcode}</span>}
+                          </span>
+                        </a>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            ))
           ) : (
             <div className="dsa-empty">
               <strong>No problems match.</strong>

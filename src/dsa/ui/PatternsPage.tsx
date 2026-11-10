@@ -6,11 +6,17 @@ import { PatternCardView } from './ModulePage';
 
 const examples = ['sorted array', 'subarray sum', 'k most frequent', 'shortest path', 'all combinations', 'next greater'];
 
-/** Splits a query into lowercase words and keeps the cards whose text contains every word. */
+const stem = (w: string) => (w.length > 4 ? w.replace(/(ing|ed|es|s)$/, '') : w);
+
+/**
+ * Ranks pattern cards by how many query words appear in their name, signals or template.
+ * Words are loosely stemmed ("sorted" matches "sort"). With 2+ words, a card may miss one.
+ */
 export function matchPatterns<T extends { card: { name: string; signals: string[]; template: string } }>(list: T[], query: string): T[] {
-  const words = query.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 1);
+  const words = [...new Set(query.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 1).map(stem))];
   if (words.length === 0) return list;
-  const scored = list
+  const need = words.length === 1 ? 1 : words.length - 1;
+  return list
     .map((entry) => {
       const name = entry.card.name.toLowerCase();
       const signals = entry.card.signals.map(plainText).join(' ').toLowerCase();
@@ -19,8 +25,9 @@ export function matchPatterns<T extends { card: { name: string; signals: string[
       const score = hits * 10 + words.filter((w) => name.includes(w)).length * 3 + words.filter((w) => signals.includes(w)).length * 2;
       return { entry, hits, score };
     })
-    .filter((s) => s.hits === words.length || (words.length > 2 && s.hits >= words.length - 1));
-  return scored.sort((a, b) => b.score - a.score).map((s) => s.entry);
+    .filter((s) => s.hits >= need)
+    .sort((a, b) => b.score - a.score)
+    .map((s) => s.entry);
 }
 
 export default function PatternsPage() {
@@ -39,7 +46,7 @@ export default function PatternsPage() {
             <label className="dsa-search is-lg">
               <Search size={18} aria-hidden="true" />
               <span className="dsa-sr">Describe the problem</span>
-              <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="e.g. sorted array, pair with target sum" />
+              <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="e.g. sorted array, target sum" />
             </label>
             <div className="dsa-finder-examples">
               <span>Try</span>
@@ -56,7 +63,7 @@ export default function PatternsPage() {
           {list.length > 0 ? (
             <div className="dsa-pattern-list is-grid">
               {list.map(({ card, module }) => (
-                <PatternCardView key={`${module.id}-${card.name}`} card={card} module={module} />
+                <PatternCardView key={`${module.id}-${card.name}`} card={card} module={module} collapsible />
               ))}
             </div>
           ) : (

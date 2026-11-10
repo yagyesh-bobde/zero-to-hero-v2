@@ -104,6 +104,7 @@ export function StepsPlayer({ title, frames }: { title: string; frames: ArrayFra
     }
   };
   const n = frame.cells.length;
+  const len = Math.max(2, ...frames.flatMap((f) => f.cells.map((c) => [...String(c)].length)));
   const pointersAt = (i: number) =>
     Object.entries(frame.pointers ?? {})
       .filter(([, p]) => p === i)
@@ -118,7 +119,7 @@ export function StepsPlayer({ title, frames }: { title: string; frames: ArrayFra
         <span className="dsa-eyebrow">Walkthrough</span>
         <strong>{title}</strong>
       </figcaption>
-      <div className="dsa-steps-stage" style={{ '--n': n } as CSSProperties}>
+      <div className="dsa-steps-stage" style={{ '--n': n, '--len': len } as CSSProperties}>
         <div className={`dsa-cells${n > 10 ? ' is-dense' : ''}`} role="list">
           {frame.cells.map((cell, i) => {
             const ptrs = pointersAt(i);

@@ -37,10 +37,10 @@ const RULES = {
   'caption-gap': 'scene content closer than minGap (3.5% of stage width) to the caption text, or overlapping it',
   'rail-clear': 'scene content or the caption closer than railClearance (12px) to the right-side action rail icons it shares rows with (phone)',
   'top-overlap': 'scene content overlapping the progress bar / title chrome',
-  'sibling-overlap': 'two sibling content blocks overlapping by more than 2px',
+  'sibling-overlap': 'two sibling content blocks (or two array pointer chips) overlapping by more than 2px',
   'overlay-covers-text': 'an overlay (VS badge, packet) painted over scene text',
   'clipped': 'text cut off by an overflow:hidden ancestor, or ellipsised',
-  'font-min': 'font size below the minimum for its role (caption 20, title 18, body 13, diagram label 13, small labels/mono 11, phone-mock 8, chrome 11)',
+  'font-min': 'font size below the minimum for its role (caption 18, title 18, body 13, diagram label / array + grid cell 15, small labels/mono/pointers 11, phone-mock 8, chrome 11)',
   'caption-lines': 'a caption chunk wrapping to more than 2 lines or leaving its box',
   'caption-words': 'two caption words on one line closer than captionWordGap em (the spoken-word chip would eat the gap)',
   'caption-orphan-line': 'a caption chunk whose second line holds a single word (rendered, or by the phone-width estimate of every chunk)',
@@ -316,7 +316,8 @@ function checkFrame(cfg) {
   const byParent = new Map();
   for (const el of candidates) {
     const cs = getComputedStyle(el);
-    const isDia = el.matches('.dia-node, .dia-edge-label');
+    // Absolutely placed pieces that must still never collide: diagram nodes/labels, array pointer chips.
+    const isDia = el.matches('.dia-node, .dia-edge-label, .arr-ptr');
     if (!isDia && cs.position !== 'static' && cs.position !== 'relative') continue;
     const key = el.parentElement;
     if (!byParent.has(key)) byParent.set(key, []);
@@ -345,8 +346,8 @@ function checkFrame(cfg) {
   const roles = [
     ['.caption-line, .cw', 'caption'],
     ['.phone-screen *', 'phone'],
-    ['.dia-label', 'label'],
-    ['.code-text, .code-gutter, .term-body *, .cmp-code, .dia-label, .dia-sub, .dia-edge-label, .tl-text small, .list-text small, .scene-caption, .code-file, .code-lang, .code-note, .quiz-explain, .dia-packet, .title-kicker, .quiz-badge, .outro-check', 'small'],
+    ['.dia-label, .cell-val', 'label'],
+    ['.arr-ptr, .arr-index, .var-key, .grid-head, .iv-label, .iv-tick, .code-text, .code-gutter, .term-body *, .cmp-code, .dia-label, .dia-sub, .dia-edge-label, .tl-text small, .list-text small, .scene-caption, .code-file, .code-lang, .code-note, .quiz-explain, .dia-packet, .title-kicker, .quiz-badge, .outro-check', 'small'],
     ['.title-text, .scene-title, .quiz-q, .outro-title, .stat-value, .stat-label', 'title'],
   ];
   // One finding per role + size per frame (a code block has dozens of spans at the same size).
@@ -495,7 +496,7 @@ const CFG = {
   /** Opacity some scene ink must have reached at every sampled moment. */
   minInk: 0.25,
   /** Scene types whose design centres the content column (left-aligned editorial layouts are exempt). */
-  centredTypes: ['code', 'terminal', 'diagram', 'tree', 'phone', 'compare', 'list', 'stat', 'quiz'],
+  centredTypes: ['code', 'terminal', 'diagram', 'tree', 'phone', 'compare', 'list', 'stat', 'quiz', 'array', 'grid', 'intervals'],
   /** Captions are 24.6px on a phone; 18 allows a single very long word (apple-app-site-association) to shrink to fit. */
   minFont: { caption: 18, title: 18, body: 13, label: 15, small: 11, phone: 8, chrome: 11 },
 };

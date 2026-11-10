@@ -1,5 +1,6 @@
 import { Fragment } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
+import { displayCode } from '../limits';
 import { lineSet } from '../timeline';
 import type { CodeLang, CodeScene, TerminalScene } from '../types';
 import { toneClass, useTyping } from './shared';
@@ -17,8 +18,42 @@ const KEYWORDS = new Set(
 const TOKEN =
   /(\/\/.*$|#(?![\w-]*\()(?=\s|$).*$|\/\*.*?\*\/)|('(?:[^'\\]|\\.)*'?|"(?:[^"\\]|\\.)*"?|`(?:[^`\\]|\\.)*`?)|(\b\d[\d_.]*\b)|(<\/?[A-Za-z][\w.-]*|\/?>)|(@?[A-Za-z_$][\w$]*)(?=\s*\()|(@?[A-Za-z_$][\w$]*)/gm;
 
+/** Course pseudocode: words, not syntax. Keywords go bold, `←` takes the accent, nothing else is coloured loudly. */
+const PSEUDO_KEYWORDS = new Set(
+  `function for each from to in while if else return and or not break continue do then true false empty null is`.split(' '),
+);
+const PSEUDO_TOKEN = /(\/\/.*$)|(←)|('(?:[^'\\]|\\.)*'?|"(?:[^"\\]|\\.)*"?)|(\b\d[\d_.]*\b)|([A-Za-z_][\w]*)(?=\()|([A-Za-z_][\w]*)/gm;
+
+function highlightPseudo(line: string): ReactNode[] {
+  const out: ReactNode[] = [];
+  let last = 0;
+  for (const m of line.matchAll(PSEUDO_TOKEN)) {
+    const i = m.index ?? 0;
+    if (i > last) out.push(line.slice(last, i));
+    const [text, comment, arrow, str, num, call, word] = m;
+    const cls = comment
+      ? 'tk-comment'
+      : arrow
+        ? 'tk-assign'
+        : str
+          ? 'tk-string'
+          : num
+            ? 'tk-number'
+            : call
+              ? 'tk-call'
+              : word && PSEUDO_KEYWORDS.has(word)
+                ? 'tk-keyword'
+                : '';
+    out.push(cls ? <span key={i} className={cls}>{text}</span> : text);
+    last = i + text.length;
+  }
+  if (last < line.length) out.push(line.slice(last));
+  return out;
+}
+
 function highlightLine(line: string, lang: CodeLang): ReactNode[] {
   if (lang === 'text') return [line];
+  if (lang === 'pseudo') return highlightPseudo(line);
   const out: ReactNode[] = [];
   let last = 0;
   const hashComments = lang === 'bash' || lang === 'ruby';
@@ -51,7 +86,7 @@ function highlightLine(line: string, lang: CodeLang): ReactNode[] {
 
 export function Code({ scene, playing }: { scene: CodeScene; playing: boolean }) {
   const lang = scene.lang ?? 'tsx';
-  const code = scene.code.replace(/\n+$/, '');
+  const code = displayCode(scene.code, lang);
   const typed = useTyping(code, playing, Math.max(70, code.length / 1.4));
   const visible = code.slice(0, typed);
   const lines = code.split('\n');
@@ -65,7 +100,7 @@ export function Code({ scene, playing }: { scene: CodeScene; playing: boolean })
   const longest = Math.max(...lines.map((line) => line.length), 1);
   let offset = 0;
   return (
-    <div className="scene-code">
+    <div className={`scene-code lang-${lang}`}>
       <div className="code-window">
         <div className="code-chrome">
           <span className="dot" />

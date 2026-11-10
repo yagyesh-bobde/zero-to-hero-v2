@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { Beat, Scene } from './types';
 import { Code, Terminal } from './scenes/Code';
 import { Diagram, Tree } from './scenes/Diagram';
+import { ArrayView, GridView, IntervalsView } from './scenes/Dsa';
 import { Phone } from './scenes/Phone';
 import { Compare, List, Outro, Quiz, Stat, Timeline, Title } from './scenes/Cards';
 import { SceneTitle } from './scenes/shared';
@@ -34,12 +35,18 @@ function SceneView({ scene, playing }: { scene: Scene; playing: boolean }) {
       return <Quiz scene={scene} />;
     case 'outro':
       return <Outro scene={scene} />;
+    case 'array':
+      return <ArrayView scene={scene} />;
+    case 'grid':
+      return <GridView scene={scene} />;
+    case 'intervals':
+      return <IntervalsView scene={scene} />;
   }
 }
 
 /** The heading a scene pins to the top of the zone (the body is centred under it). */
 const headingOf = (scene: Scene) =>
-  scene.type === 'diagram' || scene.type === 'tree' || scene.type === 'list' || scene.type === 'timeline' || scene.type === 'compare' || scene.type === 'terminal'
+  scene.type === 'diagram' || scene.type === 'tree' || scene.type === 'list' || scene.type === 'timeline' || scene.type === 'compare' || scene.type === 'terminal' || scene.type === 'array' || scene.type === 'grid' || scene.type === 'intervals'
     ? scene.title
     : undefined;
 

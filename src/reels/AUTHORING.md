@@ -35,6 +35,7 @@ Good accents: React `#61dafb`, Android `#3ddc84`, iOS `#0a84ff`, perf `#facc15`,
 Reel = { id: string; title: string; beats: Beat[];
   voice?: string;       // Kokoro voice for this reel (default `af_heart`), e.g. `am_onyx` for a deep male read
   speed?: number;       // Kokoro speed for this reel (default 1.1); ~0.9 reads heavier
+  link?: { label: string; href: string };  // call to action, e.g. { label: 'Solve it', href: '/dsa#/m/hashing/two-sum' }
 }
 
 Beat = {
@@ -49,8 +50,9 @@ Beat = {
 - `id` must be unique across **all** series in both folders, kebab-case, stable. It's the audio file name (audio for both pages lives in `public/react-native-reels/audio/`) and the share link: `/react-native-reels#/reel/<id>`, `/shorts#/reel/<id>` or `/engineering#/reel/<id>`.
 - `speak` is for words TTS mispronounces: `setState` → `set state`, `JSI` → `J S I`, `.tsx` → `T S X`. Keep the same number of words in `speak` and `say` where you can so word-timed captions stay aligned.
 - `emphasis` words must appear in `say`. Pick 1–3 per beat.
+- `link` shows an accent rail button for the whole reel and becomes the primary button on the end card (a reel with a link doesn't auto-advance). `label` ≤ 14 characters; `href` is a same-site path (`/…`) or an `https://` URL (tested).
 
-**Scene continuity:** consecutive beats with the **same scene type** keep the scene mounted and animate the change (highlights move, nodes slide, list rows glide, only new code characters type). A **different** type plays a transition. Use it on purpose: same code with a new `highlight`/`note`; a diagram with the same node ids and new positions/`active`; quiz → quiz with `reveal: true`; phone `app` → `app` with the same item `id`s in a new order (rows FLIP).
+**Scene continuity:** consecutive beats with the **same scene type** keep the scene mounted and animate the change (highlights move, nodes slide, list rows glide, only new code characters type). A **different** type plays a transition. Use it on purpose: same code with a new `highlight`/`note`; a diagram with the same node ids and new positions/`active`; quiz → quiz with `reveal: true`; phone `app` → `app` with the same item `id`s in a new order (rows FLIP); an `array`/`grid`/`intervals` dry run (pointers, the window and bars slide, cell states cross-fade, changed values and new cells pop, `vars` update in place; a grid with a new shape pops in fresh).
 
 ## 3. The layout system (what the engine guarantees)
 
@@ -58,9 +60,9 @@ Everything is sized in `cqw` (1% of the stage width), so a phone (390px) and the
 
 **Safe zones.** A scene draws only inside `.stage-scenes`: below the progress bar + title chrome (`--zone-top`), above the two-line caption home (`--zone-bottom` = caption box + a guaranteed `--caption-gap`), inside side insets (`--zone-left/right`; 13cqw on phones, symmetric, so content and captions keep ≥ 12px clear of the compact action rail while staying centred on the screen axis). Captions are centred in their own box and never move.
 
-**Fit** (`Stage.tsx`). Each scene is laid out in a copy of the zone shrunk by a zoom factor and scaled back up, so type and boxes grow up to `--zoom-max` (1.2×) while the footprint stays the zone. The zoom backs off until the content's height and its widest element fit; content still too tall at 1× is scaled down (QA fails below 85%). Phone, diagram, tree and outro scenes lay out at 1×. Code, terminal, stat and outro text shrink to fit their longest line; compare cards shrink their type (to 13px) to fit the longest word; a diagram shrinks all its labels a little (to a 15px floor) to fit its widest word.
+**Fit** (`Stage.tsx`). Each scene is laid out in a copy of the zone shrunk by a zoom factor and scaled back up, so type and boxes grow up to `--zoom-max` (1.2×) while the footprint stays the zone. The zoom backs off until the content's height and its widest element fit; content still too tall at 1× is scaled down (QA fails below 85%). Phone, diagram, tree, array, grid, intervals and outro scenes lay out at 1×. Code, terminal, stat and outro text shrink to fit their longest line; compare cards shrink their type (to 13px) to fit the longest word; a diagram shrinks all its labels a little (to a 15px floor) to fit its widest word.
 
-**Headings are pinned.** A scene `title` (diagram, tree, list, timeline, compare, terminal) is rendered by Fit as a separate heading at the top of the zone, at the same y on every beat; only the body is centred in the space under it. Scenes without a heading (title, code, phone, stat, quiz, outro) are centred as a block.
+**Headings are pinned.** A scene `title` (diagram, tree, list, timeline, compare, terminal, array, grid, intervals) is rendered by Fit as a separate heading at the top of the zone, at the same y on every beat; only the body is centred in the space under it. Scenes without a heading (title, code, phone, stat, quiz, outro) are centred as a block.
 
 **Words never break mid-word.** Text wraps at spaces. If you must show an identifier longer than one line (`NSUserTrackingUsageDescription`), put a zero-width space (`​`) at a sensible boundary; that is the only place a word may break and both the test and QA treat each part as its own word. Hyphens and slashes are also allowed break points (except in captions, which shrink a long word to fit instead).
 
@@ -87,7 +89,9 @@ console.log(count);`,
   note: { line: 3, text: 'logs 0 😱', tone: 'bad' },  // callout bubble under that line
   focus: true }            // dim unmarked lines (default: true when anything is marked)
 ```
-`lang`: `tsx ts js json bash kotlin java swift objc xml gradle ruby cpp text`. The longest line sets the font size: at 38 columns it is at the minimum. The file name and the language badge share the chrome bar.
+`lang`: `tsx ts js json bash kotlin java swift objc xml gradle ruby cpp text pseudo`. The longest line sets the font size: at 38 columns it is at the minimum. The file name and the language badge share the chrome bar.
+
+`lang: 'pseudo'` is course pseudocode (`src/dsa/AUTHORING.md` §4) in a calm look: keywords (`function for each from to in while if else return and or not`…) bold, `←` in the accent, function names soft blue, no `file` needed. Paste it with its 4-space indents; each level is shown as 2 spaces, and the 38-column budget counts the shown text. Trim a long line rather than wrapping it (`if s[right] is a vowel:` beats a 45-column condition).
 
 ### terminal: commands type out, output appears
 ```ts
@@ -118,6 +122,58 @@ The widest `out` row sets the font size; a long `cmd` wraps once at a space with
     { id: 'footer', label: 'Footer', dim: true } ] } }
 ```
 Layout is automatic; each leaf is a column. `active` = glowing, `dirty` = dashed + dot, `dim` = skipped.
+
+### array: a dry run that animates (DSA)
+```ts
+{ type: 'array', title: 'Window of size 3',
+  cells: [2, 1, 5, 1, 3, 2, 9, 4],       // '' = empty slot
+  pointers: { L: 0, R: 2 },              // under a cell; out of range = hidden; colours by key order: accent, warn, info, good
+  window: [0, 2],                        // inclusive band (sliding window, binary-search range); to < from = empty
+  active: [2],                           // accent glow: what the step looks at
+  reads: [],                             // dashed blue: what the step reads (dp[i-1], dp[i-2])
+  done: [],                              // faded: finished / ruled out
+  found: [],                             // green: the answer
+  vars: { sum: 8, best: 8 },             // state cards under the array (≤ 4)
+  indices: true,                         // index numbers above the cells (default)
+  caption: 'add 5, drop nothing yet' }
+```
+A dry run is several consecutive `array` beats over the **same `cells`**; change only what the step changes and the engine animates it as one motion:
+```ts
+{ say: 'Start with the first three numbers, which add up to eight.',
+  scene: { type: 'array', title: 'Window of size 3', cells: [2, 1, 5, 1, 3, 2, 9, 4],
+    pointers: { L: 0, R: 2 }, window: [0, 2], active: [0, 1, 2], vars: { sum: 8, best: 8 } } },
+{ say: 'Slide right by one, add the new number and drop the old one.',
+  scene: { type: 'array', title: 'Window of size 3', cells: [2, 1, 5, 1, 3, 2, 9, 4],
+    pointers: { L: 1, R: 3 }, window: [1, 3], active: [3], done: [0], vars: { sum: 7, best: 8 } } },
+{ say: 'Two, nine and four make fifteen, the best window.',
+  scene: { type: 'array', title: 'Window of size 3', cells: [2, 1, 5, 1, 3, 2, 9, 4],
+    pointers: { L: 5, R: 7 }, window: [5, 7], found: [5, 6, 7], done: [0, 1, 2, 3, 4], vars: { sum: 15, best: 15 } } },
+```
+Pointers slide between cells, the window band glides, states cross-fade, a changed cell value or var value pops (flashing the accent), a new cell pops in at the end (a stack push). Pointers on one cell stack under it; wide names on neighbouring cells step down a row and hang from their caret on a stem (`pointerRows` in `limits.ts`). Cells are square and share one font sized to the widest cell, never below 15px, so the cell count sets the text budget (§6): **8 cells or fewer reads best**, 10 is the maximum. A stack or queue is an array (`indices: false`, a `top` pointer); two arrays at once (nums + prefix) are a `grid` with `rowLabels`.
+
+### grid: DP tables, matrices, BFS grids (DSA)
+```ts
+{ type: 'grid', title: 'Unique paths, 4 by 5',
+  colLabels: ['0', '1', '2', '3', '4'],  // optional, one per column (≤ 4 chars)
+  rowLabels: ['0', '1', '2', '3'],       // optional, one per row (≤ 6 chars)
+  cells: [[1, 1, 1, 1, 1], [1, 2, 3, '', ''], [1, '', '', '', ''], [1, '', '', '', '']],  // '' = not filled yet
+  active: [[1, 2]], reads: [[0, 2], [1, 1]],   // [row, col] pairs; also done, found
+  vars: { 'dp[1][2]': '1 + 2' }, caption: 'above + left' }
+```
+Fill a DP table over consecutive beats with the same shape (unfilled cells `''`): values pop as they land, `active`/`reads` move. All rows have the same length (tested). Square cells fit both the width and 52% of the stage height; 8 × 8 is the maximum. A grid with no labels is a plain matrix (islands, BFS: `found` for a visited region, `active` for the cell being expanded, `vars: { queue: '(0,5)' }`).
+
+### intervals: bars on a number line (DSA)
+```ts
+{ type: 'intervals', title: 'Merge intervals', axis: [0, 12],   // whole numbers, span ≤ 12; every integer gets a tick
+  bars: [
+    { id: 'a', from: 1, to: 6, tone: 'good', label: '[1,6]' },  // label defaults to "[from,to]" (≤ 7 chars, left column)
+    { id: 'c', from: 8, to: 10, active: true },
+    { id: 'd', from: 11, to: 12, dim: true },
+  ],
+  marker: 6,                        // optional dashed sweep line (and its tick lights up)
+  vars: { end: 6 }, caption: 'start ≤ end means overlap' }
+```
+One bar per row, top to bottom. Give bars an `id` and keep it across beats: reorder the array to sort (rows glide), widen a bar to merge (it grows) and drop the swallowed one. Ticks past a span of 8 are numbered every other one. Use it for merge / insert / sort-by-end / meeting rooms; anything that is "ranges on a line".
 
 ### phone: device mockup
 ```ts
@@ -171,6 +227,9 @@ Scenes never scroll, so every field has a budget in `src/reels/limits.ts`; `test
 | stat | value 8 · unit 6 · label 36 · sub 40 | label 17.6 · sub 25.5 |
 | quiz | question 70 · 4 options · option 32 · explain 72 | question 17.8 · option 18.8 · explain (mono) 29.8 |
 | outro | 4 points · point 46 · tagline 30 · title 24 | point 18.8 · tagline 16.7 |
+| array | 10 cells · 4 pointers · pointer name 5 (mono) · 4 vars · var key 8 · var value 14 · vars ≤ 2 phone lines · caption 40 · title 30 | cell text by cell count 1–4 / 5 / 6 / 7 / 8 / 9 / 10: 6.6 / 5.1 / 4.2 / 3.5 / 2.9 / 2.5 / 2.1 (a digit ≈ 1.15: 10 cells fit 0–19, 9 cells any two digits, 7 cells three) · caption 34.6 |
+| intervals | 6 bars · axis span 12 · label 7 (mono) · 4 vars · var key 8 · var value 14 · vars ≤ 2 phone lines · caption 40 · title 30 | caption 34.6 |
+| grid | 8 rows × 8 cols · row label 6 (mono) · column label 4 (and ≤ its column) · 4 vars · var key 8 · var value 14 · vars ≤ 2 phone lines · caption 40 · title 30 | cell text by pitch (`cellEmMax`): 6 cols 4.4, 7 cols 3.6, 8 cols 3.1 (less with row labels or > 8 rows) · caption 34.6 |
 | any scene title | 30 | 19.2 |
 
 Captions are built from `say` in chunks of ≤ 5 words / 24 characters, never cross a sentence end, prefer to break after commas, never dangle a function word ("the") at the end of a chunk and never leave a sentence's last short word alone. A chunk also either fits one phone caption line (10.7em; one or two words shrink to fit) or wraps into two lines of ≥ 2 words each, so a second line never holds a lone word. Keep sentences short and you'll never see a 3-line caption.
@@ -196,6 +255,7 @@ Captions are built from `say` in chunks of ≤ 5 words / 24 characters, never cr
 - **Fill the zone**: a scene whose settled ink covers less than 22% of the zone height fails QA, and a diagram/tree whose nodes span less than half the zone width fails too. Add a `caption`, a `sub`, or a second node rather than leaving dead space; a vertical chain uses `cols: 1`.
 - **Diagrams on phones are tall**: prefer more rows than columns; `cols: 3` fits ~10-char labels, `cols: 4` only ~7. Labels never go below 15px and subs below 11px; a longer identifier gets a `​` break (`UIText​View`) or a shorter label.
 - **Leave packets room**: in a vertical chain, spread the nodes over the rows (`y: 0, 4/3, 8/3, 4` of `rows: 5`) so a packet has an edge to travel on; a packet on an edge too short to travel is not drawn.
+- **Arrays and grids are the hero**: one `active` (or one `found`) per beat, `reads` only for the cells that feed it. Keep the same `cells` (and key order of `pointers`/`vars`) across a dry run so it reads as one animation; give every array beat `vars` or a `caption` so the strip doesn't float in dead space (QA `fill`).
 - **Empty phone screens** (an `app` with no items, button, toast or spinner) render as a calm grey canvas, not a white slab; give the beat real rows when the point isn't "nothing is drawn".
 
 **Captions**: `emphasis` 1–3 words. Prefer a comma over a long clause; it becomes a caption break. A word longer than ~15 characters in `say` forces a short chunk; reword if it reads oddly.
@@ -228,10 +288,10 @@ It renders every beat at phone (390×844) and laptop (1440×900) at five frozen 
 | `zone-overflow` | settled content leaves the content zone (tolerance 1px, 3px for glyph boxes) |
 | `caption-gap` | content overlaps the caption or sits closer than 3.5% of the stage width above it |
 | `rail-clear` / `top-overlap` | content or the caption is < 12px from the phone action rail icons it shares rows with / content touches the progress-bar chrome |
-| `sibling-overlap` | two sibling blocks overlap by more than 2px |
+| `sibling-overlap` | two sibling blocks (or two array pointer chips) overlap by more than 2px |
 | `overlay-covers-text` | the VS badge or a packet is painted over scene text |
 | `clipped` | text cut by an `overflow: hidden` ancestor, or ellipsised |
-| `font-min` | rendered size below caption 18 (24.6 normally; a lone long word may shrink) / title 18 / body 13 / diagram label 15 / small labels, subs & mono 11 / phone mock 8 / chrome 11 px |
+| `font-min` | rendered size below caption 18 (24.6 normally; a lone long word may shrink) / title 18 / body 13 / diagram label, array & grid cell 15 / small labels, subs, mono, pointers, indices & ticks 11 / phone mock 8 / chrome 11 px |
 | `caption-lines` / `caption-words` / `caption-orphan-line` | a caption chunk needs more than 2 lines or leaves its box / two words on a line are < 0.26em apart / line 2 holds a lone word (rendered, or by the phone-width estimate of every chunk) |
 | `heading-jump` | a scene heading sits > 2.5% of the stage height from the reel's median heading position (checked on `end` frames) |
 | `title-lines` | a title wraps to more than 4 lines |

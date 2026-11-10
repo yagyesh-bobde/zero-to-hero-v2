@@ -645,6 +645,13 @@ button {
 .tk-tag { color: #ff7a93; }
 .tk-call { color: #82aaff; }
 .tk-type { color: #ffcb6b; }
+/* Course pseudocode: calm. Plain words in soft white, keywords bold, `←` in the accent, a muted badge. */
+.lang-pseudo .code-text { color: #e4e2ec; }
+.lang-pseudo .tk-keyword { color: #c4b5fd; font-weight: 700; }
+.lang-pseudo .tk-call { color: #93c5fd; }
+.lang-pseudo .tk-number { color: #fdba74; }
+.tk-assign { color: var(--accent); font-weight: 700; }
+.lang-pseudo .code-lang { color: var(--muted); text-transform: none; }
 .code-note-row {
   display: grid;
   grid-template-rows: 0fr;
@@ -940,6 +947,377 @@ button {
   background: var(--warn);
   box-shadow: 0 0 3cqw var(--warn);
   animation: pop-in 0.4s 0.5s var(--spring) both;
+}
+
+/* ───────────── Array + grid (DSA dry runs) ───────────── */
+/*
+ * Width-bound like diagrams, so laid out at zoom 1: limits.ts (cellPitchPx, cellEmMax, pointerRows,
+ * varRows) mirrors these sizes. A cell is a square slot of --pitch; its box is the slot minus --gap.
+ * All cells share one font sized to the widest cell text (--cell-em, set in Dsa.tsx), never below
+ * 15px. Slots, carets and pointer chips are positioned from --pitch, so consecutive beats glide.
+ */
+.type-array .scene-fit,
+.type-grid .scene-fit,
+.type-intervals .scene-fit {
+  --zoom-max: 1;
+}
+.scene-array,
+.scene-grid {
+  --gap: max(3px, calc(var(--pitch) * 0.08));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.scene-array {
+  /* 3cqw stays free for the window band's overhang. */
+  --pitch: min(18cqw, calc((var(--col-w) - 3cqw) / var(--n)));
+  --ptr-fs: 3.8cqw;
+  --ptr-h: calc(var(--ptr-fs) * 1.7);
+  --ptr-step: calc(var(--ptr-h) + 1cqw);
+}
+.arr-track {
+  position: relative;
+  width: calc(var(--n) * var(--pitch));
+  height: var(--pitch);
+  /* Carets + one row of chips per pointerRows() row. */
+  margin-bottom: calc(min(1, var(--ptr-rows)) * 3.4cqw + var(--ptr-rows) * var(--ptr-step));
+  transition: width 0.55s var(--smooth), height 0.55s var(--smooth), margin 0.45s var(--smooth);
+}
+.has-indices .arr-track {
+  margin-top: calc(var(--fs-small) + 1.6cqw);
+}
+.arr-track > .cell-slot {
+  position: absolute;
+  top: 0;
+  left: calc(var(--i) * var(--pitch));
+  z-index: 1;
+  width: var(--pitch);
+  height: var(--pitch);
+  transition: left 0.55s var(--smooth), width 0.55s var(--smooth), height 0.55s var(--smooth);
+}
+.cell-slot {
+  padding: calc(var(--gap) / 2);
+}
+.cell-box {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  border-radius: min(var(--r-sm), calc(var(--pitch) * 0.22));
+  background: #181822;
+  border: 2px solid rgb(255 255 255 / 0.13);
+  color: var(--ink);
+  /* Fills ~85% of the box for the widest text; 15px floor (limits.ts budgets the text at the floor). */
+  font-size: clamp(15px, calc((var(--pitch) - var(--gap) - 4px) * 0.85 / var(--cell-em)), min(calc(var(--pitch) * 0.46), 9cqw));
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  animation: pop-in 0.45s calc(var(--i, 0) * 0.035s) var(--spring) both;
+  transition: background-color 0.4s, border-color 0.4s, color 0.4s, opacity 0.4s, box-shadow 0.4s, scale 0.4s var(--spring), filter 0.4s;
+}
+.cell-val {
+  display: inline-block;
+  animation: val-pop 0.45s var(--spring) both;
+}
+@keyframes val-pop {
+  0% { opacity: 0; transform: translateY(-0.45em) scale(0.6); color: var(--accent); }
+  60% { opacity: 1; transform: scale(1.1); color: var(--accent); }
+  100% { transform: none; }
+}
+.cell-box.is-empty {
+  background: rgb(255 255 255 / 0.02);
+  border-style: dashed;
+  border-color: rgb(255 255 255 / 0.1);
+}
+.cell-box.is-active {
+  background: color-mix(in oklab, var(--accent) 26%, #181822);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 0.7cqw color-mix(in oklab, var(--accent) 20%, transparent), 0 0 6cqw color-mix(in oklab, var(--accent) 45%, transparent);
+  scale: 1.06;
+}
+.cell-box.is-reads {
+  background: color-mix(in oklab, var(--info) 14%, #181822);
+  border-color: var(--info);
+  border-style: dashed;
+}
+.cell-box.is-found {
+  background: color-mix(in oklab, var(--good) 26%, #181822);
+  border-color: var(--good);
+  border-style: solid;
+  color: color-mix(in oklab, var(--good) 55%, #fff);
+  box-shadow: 0 0 0 0.7cqw color-mix(in oklab, var(--good) 20%, transparent), 0 0 6cqw color-mix(in oklab, var(--good) 40%, transparent);
+}
+.cell-box.is-done {
+  opacity: 0.32;
+  filter: grayscale(0.8);
+}
+.arr-index {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 0.6cqw);
+  text-align: center;
+  font: 600 var(--fs-small) / 1 var(--mono);
+  color: var(--faint);
+  transition: color 0.4s;
+  animation: fade-in 0.4s 0.2s both;
+}
+.arr-index.is-active {
+  color: var(--accent);
+}
+/* The window: a band around an inclusive range of cells (sliding window, binary-search range). */
+.arr-window {
+  position: absolute;
+  z-index: 0;
+  top: -1.2cqw;
+  bottom: -1.2cqw;
+  left: calc(var(--from) * var(--pitch) + var(--gap) / 2 - 1.3cqw);
+  width: calc(var(--span) * var(--pitch) - var(--gap) + 2.6cqw);
+  border: 2px solid color-mix(in oklab, var(--accent) 80%, transparent);
+  border-radius: calc(min(var(--r-sm), var(--pitch) * 0.22) + 1.3cqw);
+  background: color-mix(in oklab, var(--accent) 11%, transparent);
+  opacity: 0;
+  transition: left 0.55s var(--smooth), width 0.55s var(--smooth), opacity 0.35s;
+}
+.arr-window.is-on {
+  opacity: 1;
+}
+.arr-caret,
+.arr-ptr {
+  position: absolute;
+  translate: -50% 0;
+  transition: left 0.55s var(--smooth), top 0.45s var(--smooth), opacity 0.3s;
+}
+.arr-caret {
+  top: calc(100% + 1.5cqw);
+  left: calc((var(--at) + 0.5) * var(--pitch));
+  width: 0;
+  height: 0;
+  border: 1.3cqw solid transparent;
+  border-top: 0;
+  border-bottom: 1.6cqw solid var(--tone, var(--accent));
+}
+/* A chip under its cell; chips near an end are clamped inward (limits.ts pointerRows estimates the same). */
+.arr-ptr {
+  --w: calc(var(--len) * 0.62em + 1.2em);
+  --cx: calc((var(--at) + 0.5) * var(--pitch));
+  --x: clamp(calc(var(--w) / 2), var(--cx), calc(var(--n) * var(--pitch) - var(--w) / 2));
+  top: calc(100% + 3.4cqw + var(--row) * var(--ptr-step));
+  left: var(--x);
+  width: var(--w);
+  height: var(--ptr-h);
+  display: grid;
+  place-items: center;
+  border-radius: 99px;
+  background: var(--tone, var(--accent));
+  color: #0b0b10;
+  font: 800 var(--ptr-fs) / 1 var(--mono);
+  white-space: nowrap;
+  box-shadow: 0 0 3cqw color-mix(in oklab, var(--tone, var(--accent)) 35%, transparent);
+  animation: pop-in 0.45s 0.25s var(--spring) both;
+}
+/* A chip pushed to a lower row hangs from its caret on a thin stem (behind the chips above it). */
+.arr-ptr::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  bottom: 100%;
+  left: calc(50% + var(--cx) - var(--x) - 1px);
+  width: 2px;
+  height: calc(0.3cqw + var(--row) * var(--ptr-step));
+  background: color-mix(in oklab, var(--tone, var(--accent)) 70%, transparent);
+  transition: height 0.45s var(--smooth), left 0.55s var(--smooth);
+}
+.arr-caret.is-hidden,
+.arr-ptr.is-hidden {
+  opacity: 0;
+}
+/* State cards: a fixed key over a big value that pops (and flashes the accent) when it changes. */
+.cell-vars {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2cqw;
+  max-width: 100%;
+  margin-top: var(--s-8);
+}
+.var-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8cqw;
+  min-width: 17cqw;
+  padding: 1.8cqw 4cqw 2cqw;
+  border-radius: var(--r-md);
+  background: #15151d;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  white-space: nowrap;
+  animation: rise-in 0.45s calc(0.2s + var(--i, 0) * 0.06s) var(--smooth) both;
+}
+.var-key {
+  font: 600 var(--fs-micro) / 1 var(--mono);
+  color: var(--muted);
+}
+.var-val {
+  display: inline-block;
+  font-size: var(--fs-h1);
+  font-weight: 800;
+  line-height: 1.05;
+  color: var(--ink);
+  animation: val-pop 0.5s var(--spring) both;
+}
+.scene-grid {
+  /* Rows share 52cqh so a tall table never pushes the vars/caption out (limits.ts cellPitchPx). */
+  --pitch: min(18cqw, calc((var(--col-w) - var(--label-w)) / var(--cols)), calc(52cqh / var(--rows)));
+}
+.grid-table {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), var(--pitch));
+  grid-auto-rows: var(--pitch);
+}
+.grid-table.has-row-labels {
+  grid-template-columns: var(--label-w) repeat(var(--cols), var(--pitch));
+}
+.grid-table.has-col-labels {
+  grid-template-rows: auto;
+}
+.grid-head {
+  display: grid;
+  place-items: center;
+  font: 700 var(--fs-small) / 1 var(--mono);
+  color: var(--muted);
+  white-space: nowrap;
+  animation: fade-in 0.4s 0.15s both;
+}
+.grid-head.is-col {
+  padding-bottom: 1.4cqw;
+}
+.grid-head.is-row {
+  justify-items: end;
+  padding-right: 1.8cqw;
+}
+
+/*
+ * Intervals: one row per bar, labels in a left column (--label-w, from limits.ts gridLabelCqw),
+ * bars and ticks placed at --f (0–1 along the axis) inside a track padded by --pad, so the end
+ * ticks' numbers stay in the column. Rows are absolutely placed, so a re-sort glides.
+ */
+.scene-intervals {
+  --row-h: 11cqw;
+  --pad: 2.5cqw;
+  --track: calc(100% - var(--label-w) - 2 * var(--pad));
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.iv-plot {
+  position: relative;
+  width: 100%;
+  height: calc(var(--rows) * var(--row-h));
+  transition: height 0.45s var(--smooth);
+}
+.iv-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--row) * var(--row-h));
+  height: var(--row-h);
+  transition: top 0.55s var(--smooth), opacity 0.4s;
+  animation: rise-in 0.45s calc(var(--i, 0) * 0.07s) var(--smooth) both;
+}
+.iv-row::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--label-w) + var(--pad));
+  right: var(--pad);
+  top: 50%;
+  border-top: 1px dashed rgb(255 255 255 / 0.1);
+}
+.iv-label {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--label-w);
+  display: grid;
+  align-items: center;
+  justify-items: end;
+  padding-right: 1.8cqw;
+  font: 700 var(--fs-small) / 1 var(--mono);
+  color: var(--muted);
+  white-space: nowrap;
+  transition: color 0.4s;
+}
+.iv-bar {
+  --track: calc(100% - var(--label-w) - 2 * var(--pad));
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  left: calc(var(--label-w) + var(--pad) + var(--track) * var(--f));
+  width: max(2.6cqw, calc(var(--track) * var(--w)));
+  height: 6.2cqw;
+  border-radius: 99px;
+  background: color-mix(in oklab, var(--tone) 32%, #181822);
+  border: 2px solid var(--tone);
+  transition: left 0.55s var(--smooth), width 0.55s var(--smooth), background-color 0.4s, border-color 0.4s, box-shadow 0.4s;
+}
+.iv-row.is-active .iv-bar {
+  background: color-mix(in oklab, var(--tone) 60%, #181822);
+  box-shadow: 0 0 0 0.7cqw color-mix(in oklab, var(--tone) 20%, transparent), 0 0 6cqw color-mix(in oklab, var(--tone) 45%, transparent);
+}
+.iv-row.is-active .iv-label {
+  color: var(--tone);
+}
+.iv-row.is-dim {
+  opacity: 0.32;
+}
+.iv-marker {
+  --track: calc(100% - var(--label-w) - 2 * var(--pad));
+  position: absolute;
+  top: -1.5cqw;
+  bottom: -1.5cqw;
+  left: calc(var(--label-w) + var(--pad) + var(--track) * var(--f) - 1px);
+  border-left: 2px dashed var(--warn);
+  opacity: 0;
+  transition: left 0.55s var(--smooth), opacity 0.3s;
+}
+.iv-marker.is-on {
+  opacity: 1;
+}
+.iv-axis {
+  --track: calc(100% - var(--label-w) - 2 * var(--pad));
+  position: relative;
+  width: 100%;
+  height: calc(var(--fs-small) + 3cqw);
+  margin-top: 1.5cqw;
+}
+.iv-axis::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--label-w) + var(--pad));
+  right: var(--pad);
+  top: 0;
+  border-top: 2px solid rgb(255 255 255 / 0.16);
+}
+.iv-tick {
+  position: absolute;
+  top: 1.6cqw;
+  left: calc(var(--label-w) + var(--pad) + var(--track) * var(--f));
+  translate: -50% 0;
+  font: 600 var(--fs-small) / 1 var(--mono);
+  color: var(--faint);
+  transition: color 0.4s;
+}
+.iv-tick::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -1.6cqw;
+  height: 1cqw;
+  border-left: 2px solid rgb(255 255 255 / 0.16);
+}
+.iv-tick.is-marked {
+  color: var(--warn);
+  font-weight: 800;
 }
 
 /* ───────────── Phone ───────────── */

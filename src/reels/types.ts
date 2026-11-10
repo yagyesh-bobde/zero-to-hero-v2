@@ -34,7 +34,9 @@ export type CodeLang =
   | 'gradle'
   | 'ruby'
   | 'cpp'
-  | 'text';
+  | 'text'
+  /** Course pseudocode (`←`, `for i from a to b:`): calm colours, keywords bold, 4-space indents shown as 2. */
+  | 'pseudo';
 
 export interface TitleScene {
   type: 'title';
@@ -289,8 +291,92 @@ export interface OutroScene {
   tagline?: string;
 }
 
+/** A short cell value (a number, a letter, '' for an empty slot). */
+export type CellValue = string | number;
+
+/**
+ * An array dry run (DSA). Consecutive `array` beats keep the scene mounted: pointers slide,
+ * cell states cross-fade, changed values and new cells pop, vars update in place.
+ */
+export interface ArrayScene {
+  type: 'array';
+  /** Pinned heading. */
+  title?: string;
+  /** Left to right. '' = empty slot. */
+  cells: CellValue[];
+  /** Named pointers under a cell, e.g. { L: 0, R: 5 }. Out of range = hidden. Colours follow key order: accent, warn, info, good. */
+  pointers?: Record<string, number>;
+  /** Cells being looked at right now (accent glow). */
+  active?: number[];
+  /** Cells the current step reads, e.g. dp[i-1] and dp[i-2] (dashed blue outline). */
+  reads?: number[];
+  /** Finished / ruled-out cells (faded). */
+  done?: number[];
+  /** The answer / a match (success colour). */
+  found?: number[];
+  /** Inclusive [from, to] band over a range: a sliding window, a binary-search range. to < from = empty. */
+  window?: [number, number];
+  /** Small state chips under the array: { sum: 9, best: 12 }. Keep keys across beats; values update in place. */
+  vars?: Record<string, CellValue>;
+  /** Index numbers above the cells (default true). */
+  indices?: boolean;
+  caption?: string;
+}
+
+/** [row, col], 0-based. */
+export type GridPos = [number, number];
+
+/** A 2D table (DP table, matrix, BFS grid). Same morphing as `array`. */
+export interface GridScene {
+  type: 'grid';
+  /** Pinned heading. */
+  title?: string;
+  /** Rows of cells, all the same length. '' = empty (not yet filled). */
+  cells: CellValue[][];
+  /** One label per row, drawn left of the grid (e.g. string chars, item weights). */
+  rowLabels?: string[];
+  /** One label per column, drawn above the grid. */
+  colLabels?: string[];
+  active?: GridPos[];
+  /** Cells the current step reads (dashed blue outline). */
+  reads?: GridPos[];
+  done?: GridPos[];
+  found?: GridPos[];
+  vars?: Record<string, CellValue>;
+  caption?: string;
+}
+
+export interface IntervalBar {
+  from: number;
+  to: number;
+  /** Row label left of the axis. Default "[from,to]". */
+  label?: string;
+  /** Stable id so a bar morphs across beats (a merge grows it, a sort moves its row). Default: its index. */
+  id?: string;
+  tone?: Tone;
+  active?: boolean;
+  dim?: boolean;
+}
+
+/** Intervals as bars on a number line, one per row (merge, insert, sort by end, meeting rooms). */
+export interface IntervalsScene {
+  type: 'intervals';
+  /** Pinned heading. */
+  title?: string;
+  /** Integer [min, max] of the axis; every integer gets a tick. */
+  axis: [number, number];
+  bars: IntervalBar[];
+  /** A vertical sweep line at this value (e.g. the current end). */
+  marker?: number;
+  vars?: Record<string, CellValue>;
+  caption?: string;
+}
+
 export type Scene =
   | TitleScene
+  | ArrayScene
+  | GridScene
+  | IntervalsScene
   | CodeScene
   | DiagramScene
   | PhoneScene

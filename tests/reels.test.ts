@@ -24,7 +24,7 @@ import {
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { runStart, Stage } from '../src/reels/Stage';
-import { LIMITS, textFitProblems } from '../src/reels/limits';
+import { displayCode, LIMITS, pointerRows, textFitProblems, varRows } from '../src/reels/limits';
 
 // Course series (/react-native-reels), sampler shorts (/shorts) and /engineering share one engine and one id space.
 const seriesDirs = ['../src/reels/series', '../src/reels/shorts', '../src/reels/engineering', '../src/reels/dsa'].map((dir) => path.resolve(__dirname, dir));
@@ -161,6 +161,29 @@ describe('reel timeline', () => {
   });
 });
 
+describe('dsa scenes', () => {
+  it('stacks pointers that share a cell or would collide, and hides out-of-range ones', () => {
+    expect(pointerRows(8, { L: 0, R: 7 })).toEqual({ rows: { L: 0, R: 0 }, count: 1 });
+    expect(pointerRows(8, { L: 3, R: 3 }).rows).toEqual({ L: 0, R: 1 });
+    // Wide names on neighbouring cells of a dense array step down a row.
+    expect(pointerRows(10, { slow: 4, fast: 5 }).rows).toEqual({ slow: 0, fast: 1 });
+    expect(pointerRows(5, { i: 5, j: -1 })).toEqual({ rows: {}, count: 0 });
+  });
+
+  it('budgets cell text by cell count, vars by phone lines, and collapses pseudocode indents', () => {
+    const array = (cells: (string | number)[]) => textFitProblems({ type: 'array', cells });
+    expect(array([1, 22, 3, 4, 5, 6, 7, 8])).toEqual([]);
+    expect(array([100, 2, 3, 4, 5, 6, 7, 8, 9, 10]).join()).toMatch(/cell “100”/);
+    expect(array(Array.from({ length: 11 }, () => 1)).join()).toMatch(/cells: 11/);
+    expect(varRows({ sum: 9, best: 12 })).toBe(1);
+    expect(textFitProblems({ type: 'array', cells: [1], vars: { a: 'abcdefghijk', b: 'abcdefghijk', c: 'abcdefghijk' } }).join()).toMatch(/vars lines/);
+    expect(textFitProblems({ type: 'grid', cells: [[1, 2], [3, 4]], colLabels: ['abcd', 'b'], rowLabels: ['x', 'y'] })).toEqual([]);
+    expect(textFitProblems({ type: 'intervals', axis: [0, 14], bars: [{ from: 1, to: 3, label: 'meeting 1' }] }).join()).toMatch(/axis span: 14.*label/);
+    expect(displayCode('if x:\n    y ← 1\n        z\n', 'pseudo')).toBe('if x:\n  y ← 1\n    z');
+    expect(displayCode('a\n    b', 'js')).toBe('a\n    b');
+  });
+});
+
 const sceneProblems = (beat: Beat): string[] => {
   const s = beat.scene;
   const problems: string[] = [];
@@ -181,6 +204,36 @@ const sceneProblems = (beat: Beat): string[] => {
     problems.push('timeline active out of range');
   if (s.type === 'list' && s.active !== undefined && (s.active < 0 || s.active >= s.items.length))
     problems.push('list active out of range');
+  if (s.type === 'array') {
+    const n = s.cells.length;
+    const inRange = (i: number) => Number.isInteger(i) && i >= 0 && i < n;
+    for (const [field, list] of Object.entries({ active: s.active, reads: s.reads, done: s.done, found: s.found }))
+      for (const i of list ?? []) if (!inRange(i)) problems.push(`array ${field} index ${i} out of range`);
+    // Pointers may sit out of range (hidden), but always on a whole index.
+    for (const [name, at] of Object.entries(s.pointers ?? {})) if (!Number.isInteger(at)) problems.push(`pointer ${name} is not a whole index`);
+    if (s.window) {
+      const [from, to] = s.window;
+      if (!inRange(from) || to < from - 1 || to >= n || !Number.isInteger(to)) problems.push(`array window [${from}, ${to}] out of range`);
+    }
+  }
+  if (s.type === 'intervals') {
+    const [min, max] = s.axis;
+    if (!Number.isInteger(min) || !Number.isInteger(max) || max <= min) problems.push(`intervals axis [${min}, ${max}] must be whole numbers, min < max`);
+    for (const bar of s.bars) if (bar.from > bar.to || bar.from < min || bar.to > max) problems.push(`interval [${bar.from}, ${bar.to}] is outside the axis or reversed`);
+    const ids = s.bars.map((bar, i) => bar.id ?? String(i));
+    if (new Set(ids).size !== ids.length) problems.push('duplicate interval id');
+    if (s.marker !== undefined && (s.marker < min || s.marker > max)) problems.push('intervals marker outside the axis');
+  }
+  if (s.type === 'grid') {
+    const cols = s.cells[0]?.length ?? 0;
+    if (!s.cells.length || s.cells.some((row) => row.length !== cols)) problems.push('grid rows must all have the same length');
+    if (s.rowLabels && s.rowLabels.length !== s.cells.length) problems.push('grid rowLabels must match the row count');
+    if (s.colLabels && s.colLabels.length !== cols) problems.push('grid colLabels must match the column count');
+    for (const [field, list] of Object.entries({ active: s.active, reads: s.reads, done: s.done, found: s.found }))
+      for (const [r, c] of list ?? [])
+        if (!Number.isInteger(r) || !Number.isInteger(c) || r < 0 || r >= s.cells.length || c < 0 || c >= cols)
+          problems.push(`grid ${field} [${r}, ${c}] out of range`);
+  }
   return problems;
 };
 

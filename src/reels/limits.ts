@@ -66,11 +66,93 @@ export const LIMITS = {
   stat: { value: 8, unit: 6, label: 36, labelWord: 17.6, sub: 40, subWord: 25.5 },
   quiz: { question: 70, questionWord: 17.8, options: 4, option: 32, optionWord: 18.8, explain: 72, explainWord: 29.8 },
   outro: { points: 4, point: 46, pointWord: 18.8, tagline: 30, taglineWord: 16.7, title: 24 },
+  /**
+   * Array dry run. The cell text budget depends on the cell count (see `cellEmMax`); pointer names
+   * are mono; vars chips must fit `varRows` phone lines.
+   */
+  array: { cells: 10, pointers: 4, pointerName: 5, vars: 4, varKey: 8, varValue: 14, varRows: 2, caption: 40, captionWord: 34.6, title: 30 },
+  /** 2D grid. `cols` counts data columns (row labels get their own column); headers are mono. */
+  grid: { rows: 8, cols: 8, rowLabel: 6, colLabel: 4, vars: 4, varKey: 8, varValue: 14, varRows: 2, caption: 40, captionWord: 34.6, title: 30 },
+  /** Bars on a number line: the axis spans `axisSpan` integers at most; labels are mono in a left column. */
+  intervals: { bars: 6, axisSpan: 12, label: 7, vars: 4, varKey: 8, varValue: 14, varRows: 2, caption: 40, captionWord: 34.6, title: 30 },
   /** Every scene heading (a wider word makes Fit zoom the scene a little less). */
   sceneTitleWord: 19.2,
   /** `Reel.link`: the label sits on the end-card button and under the rail icon (laptop). */
   link: { label: 14 },
 } as const;
+
+/*
+ * Array / grid geometry, mirrored by reels.css (.scene-array, .scene-grid). Both scenes lay out at
+ * Fit zoom 1, so a phone column is 74cqw = 288px of a 390px stage. A cell is a square slot of
+ * `pitch` (≤ 18cqw); its box is the slot minus a max(3px, 8%) gap. All cells share one font that
+ * fits the widest cell text, never below 15px: that floor sets the text budget per pitch.
+ */
+const PHONE_CQW = 3.9;
+const PHONE_COL_CQW = 74;
+/** An array keeps 3cqw of its column free for the window band's overhang (pass it as `labelCqw`). */
+export const ARRAY_INSET_CQW = 3;
+/** Cell pitch on a phone (px) for `count` columns, an optional row-label column (cqw) and, for grids, the row count. */
+export function cellPitchPx(count: number, labelCqw = 0, rows = 0) {
+  const byWidth = ((PHONE_COL_CQW - labelCqw) * PHONE_CQW) / Math.max(1, count);
+  // Grids also fit their height: all rows share 52cqh (844px phone stage).
+  const byHeight = rows ? (0.52 * 844) / rows : Infinity;
+  return Math.min(18 * PHONE_CQW, byWidth, byHeight);
+}
+/** Widest cell text (em at the 15px floor) that fits a cell box at that pitch (inside its 2px borders, 1px of air each side). */
+export const cellEmMax = (pitch: number) => (pitch - Math.max(3, pitch * 0.08) - 6) / 15;
+/** Width (em) the cell font is sized for: the widest cell text, Inter 700 widths × 1.04 for the 800 weight. */
+export const cellEm = (cells: (string | number)[]) => Math.max(0.9, ...cells.map((c) => wordEm(String(c)) * 1.04));
+/** Grid row-label column width (cqw): mono at --fs-small (3.2cqw) plus padding. */
+export const gridLabelCqw = (labels: string[] | undefined) =>
+  labels?.length ? Math.max(...labels.map((l) => [...l].length), 1) * 0.6 * 3.2 + 3 : 0;
+/** An interval bar's row label: its own, or "[from,to]". */
+export const intervalLabel = (bar: { from: number; to: number; label?: string }) => bar.label ?? `[${bar.from},${bar.to}]`;
+/** Pointer chip width (cqw): mono name at 3.8cqw, 0.62em per char + 1.2em padding (reels.css .arr-ptr). */
+export const pointerChipCqw = (name: string) => 3.8 * (0.62 * [...name].length + 1.2);
+
+/**
+ * Pointer chip rows under an array: each pointer takes the lowest row where its chip clears every
+ * chip already there (pointers on one cell stack; wide names on neighbouring cells step down).
+ * Estimated on the phone column (the narrowest), so both sizes share one layout. Out-of-range
+ * pointers are hidden and take no row.
+ */
+export function pointerRows(cells: number, pointers: Record<string, number>) {
+  const pitch = Math.min(18, (PHONE_COL_CQW - ARRAY_INSET_CQW) / Math.max(1, cells));
+  const track = pitch * cells;
+  const placed: { x: number; w: number; row: number }[] = [];
+  const rows: Record<string, number> = {};
+  const list = Object.entries(pointers)
+    .map(([name, at], order) => ({ name, at, order }))
+    .filter((p) => p.at >= 0 && p.at < cells)
+    .sort((a, b) => a.at - b.at || a.order - b.order);
+  for (const p of list) {
+    const w = pointerChipCqw(p.name);
+    // Chips near an end are pushed inward so they stay inside the column (reels.css clamps the same way).
+    const x = Math.min(Math.max((p.at + 0.5) * pitch, w / 2), Math.max(w / 2, track - w / 2));
+    let row = 0;
+    while (placed.some((q) => q.row === row && Math.abs(q.x - x) < (q.w + w) / 2 + 1)) row++;
+    placed.push({ x, w, row });
+    rows[p.name] = row;
+  }
+  return { rows, count: placed.length ? Math.max(...placed.map((p) => p.row)) + 1 : 0 };
+}
+
+/** Phone lines the vars cards wrap to (key mono 2.8cqw over a value in Inter 800 at 6cqw, 8cqw padding, ≥ 17cqw, 2cqw gaps). */
+export function varRows(vars: Record<string, string | number> | undefined) {
+  let lines = 0;
+  let cur = 0;
+  for (const [key, value] of Object.entries(vars ?? {})) {
+    // A value may hold spaces ("a3 b4"): Inter's space is ≈ 0.28em.
+    const parts = String(value).split(' ');
+    const valueEm = parts.reduce((n, part) => n + wordEm(part), 0) + (parts.length - 1) * 0.28;
+    const w = Math.max(17, Math.max(1.68 * [...key].length, valueEm * 1.04 * 6) + 8.2);
+    if (!lines || cur + 2 + w > PHONE_COL_CQW) {
+      lines++;
+      cur = w;
+    } else cur += 2 + w;
+  }
+  return lines;
+}
 
 /* Advance widths (em) of Inter 700 glyphs, measured in the browser; unknown characters fall back by class. */
 const EM: Record<string, number> = {
@@ -136,6 +218,11 @@ const overWord = (field: string, text: string | undefined, max: number, out: str
     if (chars > max + 0.05) out.push(`${field}: word “${word}” is ≈${chars.toFixed(1)} ${mono ? '' : 'average '}chars, one line fits ${max}`);
   }
 };
+/** The code a code scene shows: trailing newlines dropped; pseudocode's 4-space indents shown as 2 (Code.tsx). */
+export const displayCode = (code: string, lang?: string) => {
+  const trimmed = code.replace(/\n+$/, '');
+  return lang === 'pseudo' ? trimmed.replace(/^(?: {4})+/gm, (indent) => ' '.repeat(indent.length / 2)) : trimmed;
+};
 /** Lines a mono text wraps to (greedy, at spaces) with `cols` characters per line. */
 const monoLines = (text: string | undefined, cols: number) => {
   let lines = 0;
@@ -172,7 +259,7 @@ export function textFitProblems(scene: Scene): string[] {
     }
     case 'code': {
       const L = LIMITS.code;
-      const code = scene.code.replace(/\n+$/, '');
+      const code = displayCode(scene.code, scene.lang);
       count('code lines', code.split('\n').length, L.lines, out);
       count('code columns', widest(code), L.cols, out);
       over('note', scene.note?.text, L.note, out);
@@ -340,6 +427,54 @@ export function textFitProblems(scene: Scene): string[] {
       }
       over('explain', scene.explain, L.explain, out);
       overWord('explain', scene.explain, L.explainWord, out, true);
+      break;
+    }
+    case 'array':
+    case 'grid':
+    case 'intervals': {
+      const L = LIMITS[scene.type];
+      const vars = scene.vars ?? {};
+      count('vars', Object.keys(vars).length, L.vars, out);
+      for (const [key, value] of Object.entries(vars)) {
+        over(`var "${key}" key`, key, L.varKey, out);
+        over(`var "${key}" value`, String(value), L.varValue, out);
+      }
+      count('vars lines (phone)', varRows(vars), L.varRows, out);
+      over('caption', scene.caption, L.caption, out);
+      overWord('caption', scene.caption, L.captionWord, out, true);
+      sceneTitle(scene.title, L.title);
+      const cellText = (cells: (string | number)[], pitch: number, where: string) => {
+        const max = cellEmMax(pitch);
+        for (const cell of cells) {
+          const em = wordEm(String(cell)) * 1.04;
+          if (em > max + 0.005) out.push(`${where}: cell “${cell}” is ${em.toFixed(2)}em wide, a ${pitch.toFixed(0)}px cell fits ${max.toFixed(2)}em at 15px`);
+        }
+      };
+      if (scene.type === 'intervals') {
+        const I = LIMITS.intervals;
+        count('bars', scene.bars.length, I.bars, out);
+        count('axis span', scene.axis[1] - scene.axis[0], I.axisSpan, out);
+        for (const bar of scene.bars) over(`bar "${intervalLabel(bar)}" label`, intervalLabel(bar), I.label, out);
+      } else if (scene.type === 'array') {
+        const A = LIMITS.array;
+        count('cells', scene.cells.length, A.cells, out);
+        cellText(scene.cells, cellPitchPx(scene.cells.length, ARRAY_INSET_CQW), `${scene.cells.length} cells`);
+        const pointers = Object.keys(scene.pointers ?? {});
+        count('pointers', pointers.length, A.pointers, out);
+        for (const name of pointers) over(`pointer "${name}"`, name, A.pointerName, out);
+      } else {
+        const G = LIMITS.grid;
+        const cols = Math.max(0, ...scene.cells.map((row) => row.length));
+        count('grid rows', scene.cells.length, G.rows, out);
+        count('grid columns', cols, G.cols, out);
+        for (const label of scene.rowLabels ?? []) over(`row label "${label}"`, label, G.rowLabel, out);
+        for (const label of scene.colLabels ?? []) over(`column label "${label}"`, label, G.colLabel, out);
+        const pitch = cellPitchPx(cols, gridLabelCqw(scene.rowLabels), scene.cells.length + (scene.colLabels ? 1 : 0));
+        cellText(scene.cells.flat(), pitch, `${scene.cells.length}×${cols} grid`);
+        // A column label sits over one cell (mono at 3.2cqw ≈ 12.5px on a phone).
+        for (const label of scene.colLabels ?? [])
+          if ([...label].length * 0.6 * 12.5 > pitch - 2) out.push(`column label "${label}" is wider than a ${pitch.toFixed(0)}px column`);
+      }
       break;
     }
     case 'outro': {

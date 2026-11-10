@@ -119,7 +119,7 @@ const lesson: Lesson = {
     },
     {
       kind: 'text',
-      text: '**The pattern.** When a design needs a fast question about "everything currently in the stack" (min, max, sum), store the answer **inside each slot** at push time. When you need to **reverse** the order of service, or move back and forth like a browser, use **two stacks**: one for each direction.',
+      text: '**The pattern.** When a design needs a fast question about "everything currently in the stack" (min, max, sum), store the answer **inside each slot** at push time. When you need to **reverse** the order of service, use **two stacks** back to back. And when one update hits many items but items only leave from the top, write the update down once and settle it at pop time.',
     },
     {
       kind: 'code',
@@ -430,149 +430,165 @@ function runMyQueue(ops) {
       takeaway: 'Two stacks back to back make a queue: pour only when the outbox is empty.',
     },
     {
-      id: 'stacks-queues-browser-history',
-      title: 'Back and Forward Buttons',
+      id: 'stacks-queues-increment-stack',
+      title: 'Pallet Stack With a Bonus Button',
       difficulty: 'medium',
-      leetcode: 1472,
-      pattern: 'Two stacks (or array + pointer)',
+      leetcode: 1381,
+      pattern: 'Stack design (lazy updates)',
       statement:
-        'Build the history for a one-tab browser. It starts on `homepage`. `visit(url)` opens a new page and **wipes all forward history**. `back(steps)` goes back up to `steps` pages (stop at the first page) and returns the page you land on. `forward(steps)` goes forward up to `steps` pages (stop at the newest) and returns the page you land on. **Testing:** the runner `runBrowserHistory(homepage, ops)` is already written. It runs a list like `[["visit", "a.com"], ["back", 1]]` and returns one output per operation, `null` for `visit`.',
+        'A warehouse robot stacks boxes on one pallet, and the pallet holds at most `maxSize` boxes. Each box has a number on it. Build `CustomStack(maxSize)` with three moves. `push(x)` puts a box on top, but only if the pallet is not full (otherwise do nothing). `pop()` takes the top box off and returns its number, or `-1` if the pallet is empty. `increment(k, val)` adds `val` to the **bottom** `k` boxes (or to every box, if there are fewer than `k`). **Testing:** the runner `runCustomStack(maxSize, ops)` is already written. It runs a list like `[["push", 1], ["increment", 2, 100], ["pop"]]` and returns one output per operation, `null` for `push` and `increment`.',
       examples: [
         {
-          input: 'homepage = "home", ops = [["visit","a"],["visit","b"],["back",1],["visit","c"],["forward",1],["back",5]]',
-          output: '[null,null,"a",null,"c","home"]',
-          explain: 'Visiting `c` from `a` wipes `b`, so forward has nowhere to go. `back(5)` stops at `home`.',
+          input: 'maxSize = 3, ops = [["push",1],["push",2],["pop"],["push",2],["push",3],["push",4],["increment",5,100],["increment",2,100],["pop"],["pop"],["pop"],["pop"]]',
+          output: '[null,null,2,null,null,null,null,null,103,202,201,-1]',
+          explain: '`push(4)` is ignored because the pallet is full. After both increments the boxes are `[201, 202, 103]`, so the pops give 103, 202, 201, then `-1`.',
         },
       ],
-      constraints: ['1 ≤ steps ≤ 100', 'up to 5000 operations'],
+      constraints: ['1 ≤ maxSize, k ≤ 1000', 'up to 1000 calls of each operation'],
       hints: [
-        'Going back and then forward is like undo and redo. What holds undo history?',
-        'Two stacks work: pages behind you, and pages ahead of you. A visit empties the "ahead" stack.',
-        'Even simpler: one array, an index `cur` for where you are, and `last` for the newest valid page. `visit` writes at `cur + 1` and sets `last = cur`.',
+        'The simple way loops over the bottom `k` boxes on every `increment`. Can you avoid touching them until they are popped?',
+        'A box only ever leaves through the top. So you only need to know its real value at the moment it is popped.',
+        'Keep a second array `inc`. `increment(k, val)` adds `val` to `inc[k - 1]` only. When you pop index `i`, add `inc[i]` to the value and pass `inc[i]` down to `inc[i - 1]`.',
       ],
       approaches: [
         {
-          name: 'Two stacks',
-          idea: 'The `back` stack holds the pages behind you with the current page on top. `forward` holds pages ahead. Going back moves pages from one stack to the other, one by one. A visit clears `forward`.',
-          time: 'O(steps) per back/forward',
-          space: 'O(n)',
+          name: 'Loop over the bottom k',
+          idea: 'Store the boxes in an array. For `increment`, walk indexes `0` to `min(k, size) - 1` and add `val` to each. It is correct and easy, but one call can cost `k` steps.',
+          time: 'O(1) push/pop, O(k) increment',
+          space: 'O(maxSize)',
         },
         {
-          name: 'Array + pointer',
-          idea: 'Keep every page in one array. `cur` is where you are, `last` is the newest page that still counts. Back and forward just move `cur` and clamp it; a visit overwrites the slot after `cur` and cuts off everything after it by moving `last`.',
-          pseudo: `init(homepage):
-    pages ← [homepage]; cur ← 0; last ← 0
-visit(url):
-    cur ← cur + 1
-    pages[cur] ← url
-    last ← cur                       // forward history is gone
-back(steps):
-    cur ← max(0, cur - steps)
-    return pages[cur]
-forward(steps):
-    cur ← min(last, cur + steps)
-    return pages[cur]`,
-          code: `class BrowserHistory {
-  constructor(homepage) {
-    this.pages = [homepage];
-    this.cur = 0;
-    this.last = 0;
+          name: 'Lazy increments (pass the bonus down)',
+          idea: 'Write the bonus once, at the highest box it reaches: `inc[min(k, size) - 1] += val`. That note means "this box and every box below it get `val`". When that box is popped, it takes its bonus and hands the note down to the box below, which is now the highest one still owed. Nothing is lost and every move is O(1).',
+          pseudo: `init(maxSize):
+    stack ← empty list; inc ← empty list
+push(x):
+    if size of stack < maxSize:
+        append x to stack; append 0 to inc
+pop():
+    if stack is empty: return -1
+    i ← size of stack - 1
+    result ← stack[i] + inc[i]
+    if i > 0:
+        inc[i - 1] ← inc[i - 1] + inc[i]  // hand the bonus down
+    remove the last item of stack and of inc
+    return result
+increment(k, val):
+    j ← min(k, size of stack) - 1
+    if j ≥ 0:
+        inc[j] ← inc[j] + val             // one note, not k edits`,
+          code: `class CustomStack {
+  constructor(maxSize) {
+    this.max = maxSize;
+    this.stack = [];
+    this.inc = [];
   }
-  visit(url) {
-    this.cur++;
-    this.pages[this.cur] = url;
-    this.last = this.cur;
+  push(x) {
+    if (this.stack.length < this.max) {
+      this.stack.push(x);
+      this.inc.push(0);
+    }
   }
-  back(steps) {
-    this.cur = Math.max(0, this.cur - steps);
-    return this.pages[this.cur];
+  pop() {
+    const i = this.stack.length - 1;
+    if (i < 0) return -1;
+    const bonus = this.inc.pop();
+    if (i > 0) this.inc[i - 1] += bonus;
+    return this.stack.pop() + bonus;
   }
-  forward(steps) {
-    this.cur = Math.min(this.last, this.cur + steps);
-    return this.pages[this.cur];
+  increment(k, val) {
+    const j = Math.min(k, this.stack.length) - 1;
+    if (j >= 0) this.inc[j] += val;
   }
 }`,
           time: 'O(1) every operation',
-          space: 'O(n)',
+          space: 'O(maxSize)',
         },
       ],
-      fn: 'runBrowserHistory',
-      starter: `class BrowserHistory {
-  constructor(homepage) {
+      fn: 'runCustomStack',
+      starter: `class CustomStack {
+  constructor(maxSize) {
     // your state here
   }
-  visit(url) {}
-  back(steps) {}
-  forward(steps) {}
+  push(x) {}
+  pop() {
+    return -1;
+  }
+  increment(k, val) {}
 }
 
 // Already written: runs the test operations. Leave it as is.
-function runBrowserHistory(homepage, ops) {
-  const b = new BrowserHistory(homepage);
-  return ops.map(([op, arg]) => {
-    const out = b[op](arg);
+function runCustomStack(maxSize, ops) {
+  const s = new CustomStack(maxSize);
+  return ops.map(([op, ...args]) => {
+    const out = s[op](...args);
     return out === undefined ? null : out;
   });
 }`,
-      solution: `class BrowserHistory {
-  constructor(homepage) {
-    this.pages = [homepage];
-    this.cur = 0;
-    this.last = 0;
+      solution: `class CustomStack {
+  constructor(maxSize) {
+    this.max = maxSize;
+    this.stack = [];
+    this.inc = [];
   }
-  visit(url) {
-    this.cur++;
-    this.pages[this.cur] = url;
-    this.last = this.cur;
+  push(x) {
+    if (this.stack.length < this.max) {
+      this.stack.push(x);
+      this.inc.push(0);
+    }
   }
-  back(steps) {
-    this.cur = Math.max(0, this.cur - steps);
-    return this.pages[this.cur];
+  pop() {
+    const i = this.stack.length - 1;
+    if (i < 0) return -1;
+    const bonus = this.inc.pop();
+    if (i > 0) this.inc[i - 1] += bonus;
+    return this.stack.pop() + bonus;
   }
-  forward(steps) {
-    this.cur = Math.min(this.last, this.cur + steps);
-    return this.pages[this.cur];
+  increment(k, val) {
+    const j = Math.min(k, this.stack.length) - 1;
+    if (j >= 0) this.inc[j] += val;
   }
 }
 
-function runBrowserHistory(homepage, ops) {
-  const b = new BrowserHistory(homepage);
-  return ops.map(([op, arg]) => {
-    const out = b[op](arg);
+function runCustomStack(maxSize, ops) {
+  const s = new CustomStack(maxSize);
+  return ops.map(([op, ...args]) => {
+    const out = s[op](...args);
     return out === undefined ? null : out;
   });
 }`,
       tests: [
         {
           name: 'example',
-          args: ['home', [['visit', 'a'], ['visit', 'b'], ['back', 1], ['visit', 'c'], ['forward', 1], ['back', 5]]],
-          expected: [null, null, 'a', null, 'c', 'home'],
-        },
-        { name: 'back on first page', args: ['home', [['back', 1]]], expected: ['home'] },
-        { name: 'forward with nothing ahead', args: ['home', [['visit', 'a'], ['forward', 3]]], expected: [null, 'a'] },
-        {
-          name: 'back then forward',
-          args: ['h', [['visit', 'a'], ['visit', 'b'], ['visit', 'c'], ['back', 2], ['forward', 1], ['forward', 9]]],
-          expected: [null, null, null, 'a', 'b', 'c'],
-        },
-        {
-          name: 'visit wipes forward',
-          args: ['h', [['visit', 'a'], ['visit', 'b'], ['back', 2], ['visit', 'x'], ['forward', 1], ['back', 1]]],
-          expected: [null, null, 'h', null, 'x', 'h'],
-        },
-        {
-          name: 'leetcode-style run',
           args: [
-            'leetcode.com',
+            3,
             [
-              ['visit', 'google.com'], ['visit', 'facebook.com'], ['visit', 'youtube.com'], ['back', 1], ['back', 1],
-              ['forward', 1], ['visit', 'linkedin.com'], ['forward', 2], ['back', 2], ['back', 7],
+              ['push', 1], ['push', 2], ['pop'], ['push', 2], ['push', 3], ['push', 4],
+              ['increment', 5, 100], ['increment', 2, 100], ['pop'], ['pop'], ['pop'], ['pop'],
             ],
           ],
-          expected: [null, null, null, 'facebook.com', 'google.com', 'facebook.com', null, 'linkedin.com', 'google.com', 'leetcode.com'],
+          expected: [null, null, 2, null, null, null, null, null, 103, 202, 201, -1],
+        },
+        { name: 'pop from empty', args: [2, [['pop']]], expected: [-1] },
+        { name: 'full pallet ignores push', args: [1, [['push', 5], ['push', 6], ['pop'], ['pop']]], expected: [null, null, 5, -1] },
+        {
+          name: 'k bigger than the stack',
+          args: [5, [['push', 1], ['push', 2], ['increment', 10, 3], ['pop'], ['pop']]],
+          expected: [null, null, null, 5, 4],
+        },
+        {
+          name: 'bonus does not leak to a new box',
+          args: [3, [['push', 1], ['push', 2], ['increment', 2, 10], ['pop'], ['push', 5], ['pop'], ['pop']]],
+          expected: [null, null, null, 12, null, 5, 11],
+        },
+        { name: 'increment on empty', args: [2, [['increment', 3, 5], ['push', 1], ['pop']]], expected: [null, null, 1] },
+        {
+          name: 'negative bonus on the bottom box',
+          args: [3, [['push', 4], ['push', 4], ['push', 4], ['increment', 1, -4], ['pop'], ['pop'], ['pop']]],
+          expected: [null, null, null, null, 4, 4, 0],
         },
       ],
-      takeaway: 'Back/forward is undo/redo: two stacks, or one array with a cursor and an end marker.',
+      takeaway: 'If items only leave from the top, you can delay an update and settle it at pop time.',
     },
   ],
   quiz: [

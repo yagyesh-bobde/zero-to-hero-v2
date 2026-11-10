@@ -99,7 +99,7 @@ for i from 0 to n - 1:
   practice: [
     { title: 'Removing Stars From a String', leetcode: 2390, difficulty: 'medium', hint: 'Each `*` is a backspace: it cancels the most recent letter.' },
     { title: 'Minimum Remove to Make Valid Parentheses', leetcode: 1249, difficulty: 'medium', hint: 'Push the **index** of each `(` so you know which ones to delete at the end.' },
-    { title: 'Remove All Adjacent Duplicates in String II', leetcode: 1209, difficulty: 'medium', hint: 'Store `[letter, count]` on the stack instead of single letters.' },
+    { title: 'Check If Word Is Valid After Substitutions', leetcode: 1003, difficulty: 'medium', hint: 'Push letters; whenever the top three spell `abc`, pop them. Valid means the stack ends empty.' },
     { title: 'Validate Stack Sequences', leetcode: 946, difficulty: 'medium', hint: 'Simulate it: push in order, and pop greedily whenever the top matches the next pop.' },
     { title: 'Implement Stack using Queues', leetcode: 225, difficulty: 'easy', hint: 'After each push, rotate the older items behind the new one.' },
     { title: 'Design Circular Deque', leetcode: 641, difficulty: 'medium', hint: 'Same ring buffer as the circular queue; moving the front back is `(head - 1 + k) % k`.' },

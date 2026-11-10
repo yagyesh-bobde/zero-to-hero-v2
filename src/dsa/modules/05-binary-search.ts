@@ -156,10 +156,10 @@ return lo`,
       hint: 'Every ride but the last waits for the next whole hour, so round those up. The last ride is not rounded.',
     },
     {
-      title: 'Successful Pairs of Spells and Potions',
-      leetcode: 2300,
+      title: 'Maximum Candies Allocated to K Children',
+      leetcode: 2226,
       difficulty: 'medium',
-      hint: 'Sort the potions once. For each spell, a lower bound finds the weakest potion that is strong enough.',
+      hint: 'Guess a pile size. Can you cut at least k piles that big? Bigger guesses only get harder.',
     },
     {
       title: 'Snapshot Array',

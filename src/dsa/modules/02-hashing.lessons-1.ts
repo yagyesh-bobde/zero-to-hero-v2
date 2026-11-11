@@ -63,16 +63,16 @@ export const lookupLesson: Lesson = {
       title: 'JavaScript gives you Map',
       head: ['Code', 'Meaning'],
       rows: [
-        ['`const seen = new Map()`', 'Make an empty map.'],
-        ['`seen.set(9, 1)`', 'Save value 1 under key 9.'],
-        ['`seen.has(9)`', 'Ask whether key 9 is present: true or false.'],
+        ['`const map = new Map()`', 'Make an empty map.'],
+        ['`map.set(9, 1)`', 'Save value 1 under key 9.'],
+        ['`map.has(9)`', 'Ask whether key 9 is present: true or false.'],
         [
-          '`seen.get(9)`',
+          '`map.get(9)`',
           'Read its saved value: 1. A missing key gives undefined (no saved value).',
         ],
-        ['`seen.set(4, 0)`', 'Save index 0 under price 4.'],
+        ['`map.set(4, 0)`', 'Save index 0 under price 4.'],
         [
-          '`seen.has(4)`',
+          '`map.has(4)`',
           'True even though its saved index is 0. JavaScript treats 0 as false in an if condition, so use has to test presence.',
         ],
       ],
@@ -82,97 +82,172 @@ export const lookupLesson: Lesson = {
       text: 'Think of the map as choosing a storage spot from the key, rather than checking every entry. **O(1) on average** means a lookup usually needs about the same amount of work as the map grows. It does not promise exactly one machine step. Saving a key has the same average cost.',
     },
     {
+      kind: 'diagram',
+      title: 'Ask about earlier prices before saving',
+      art: [
+        'Take the next price',
+        '        |',
+        '        v',
+        'Find partner = target - price',
+        '        |',
+        '        v',
+        'Is partner in the map?',
+        '  | yes                 | no',
+        '  v                     v',
+        'Return both indexes   Save price -> index',
+        '                        |',
+        '                        v',
+        '                      Try the next price',
+      ].join('\n'),
+      caption: 'The map holds earlier prices, so one item cannot match itself.',
+    },
+    {
+      kind: 'text',
+      text: 'Use `[4, 9, 1, 6, 5]` with target 14; watch each missing partner and the map after each save.',
+    },
+    {
       kind: 'steps',
-      title: 'Two Sum with a map, target = 14',
+      title: 'Find 9 and 5 in [4, 9, 1, 6, 5]',
       frames: [
         {
           cells: [4, 9, 1, 6, 5],
           pointers: {
-            i: 0,
+            index: 0,
           },
           active: [0],
           vars: {
-            need: '14 - 4 = 10',
-            seen: '{}',
+            partner: '14 - 4 = 10',
+            map: '4 -> 0',
           },
-          note: 'At 4 we need 10. The map is empty, so no. Store 4 → 0.',
+          note: '10 is missing from the empty map, so save price 4 at index 0.',
         },
         {
           cells: [4, 9, 1, 6, 5],
           pointers: {
-            i: 1,
+            index: 1,
           },
           active: [1],
           done: [0],
           vars: {
-            need: '14 - 9 = 5',
-            seen: '{4:0}',
+            partner: '14 - 9 = 5',
+            map: '4 -> 0, 9 -> 1',
           },
-          note: 'At 9 we need 5. Not in the map. Store 9 → 1.',
+          note: '5 has not appeared yet, so save price 9 at index 1.',
         },
         {
           cells: [4, 9, 1, 6, 5],
           pointers: {
-            i: 2,
+            index: 2,
           },
           active: [2],
           done: [0, 1],
           vars: {
-            need: '14 - 1 = 13',
-            seen: '{4:0, 9:1}',
+            partner: '14 - 1 = 13',
+            map: '4 -> 0, 9 -> 1, 1 -> 2',
           },
-          note: 'At 1 we need 13. No. Store 1 → 2.',
+          note: '13 has not appeared yet, so save price 1 at index 2.',
         },
         {
           cells: [4, 9, 1, 6, 5],
           pointers: {
-            i: 3,
+            index: 3,
           },
           active: [3],
           done: [0, 1, 2],
           vars: {
-            need: '14 - 6 = 8',
-            seen: '{4:0, 9:1, 1:2}',
+            partner: '14 - 6 = 8',
+            map: '4 -> 0, 9 -> 1, 1 -> 2, 6 -> 3',
           },
-          note: 'At 6 we need 8. No. Store 6 → 3.',
+          note: '8 has not appeared yet, so save price 6 at index 3.',
         },
         {
           cells: [4, 9, 1, 6, 5],
           pointers: {
-            i: 4,
+            index: 4,
           },
           active: [4],
+          done: [0, 2, 3],
           found: [1, 4],
           vars: {
-            need: '14 - 5 = 9',
-            seen: '{4:0, 9:1, 1:2, 6:3}',
+            partner: '14 - 5 = 9',
+            map: '4 -> 0, 9 -> 1, 1 -> 2, 6 -> 3',
+            answer: '[1, 4]: 9 + 5 = 14',
           },
-          note: 'At 5 we need 9, and the map says 9 lives at index 1. Answer `[1, 4]`. One pass, one lookup per item.',
+          note: '9 is saved at index 1, so return [1, 4] without saving 5.',
         },
       ],
+    },
+    {
+      kind: 'text',
+      text: 'Remembering earlier prices found the missing partner without trying all earlier pairs again.',
+    },
+    {
+      kind: 'text',
+      text: 'Use `[7, 2, 7]` with target 14; watch why the first 7 must wait for a different item with price 7.',
+    },
+    {
+      kind: 'steps',
+      title: 'Two copies of 7 are two different items',
+      frames: [
+        {
+          cells: [7, 2, 7],
+          pointers: { index: 0 },
+          active: [0],
+          vars: { partner: '14 - 7 = 7', map: 'empty' },
+          note: 'The map is empty, so the first 7 has no earlier partner.',
+        },
+        {
+          cells: [7, 2, 7],
+          pointers: { index: 0 },
+          active: [0],
+          vars: { partner: 7, map: '7 -> 0' },
+          note: 'Save 7 at index 0 after checking, so it cannot pair with itself.',
+        },
+        {
+          cells: [7, 2, 7],
+          pointers: { index: 1 },
+          active: [1],
+          done: [0],
+          vars: { partner: '14 - 2 = 12', map: '7 -> 0, 2 -> 1' },
+          note: '12 is missing, so save price 2 at index 1.',
+        },
+        {
+          cells: [7, 2, 7],
+          pointers: { index: 2 },
+          active: [2],
+          done: [1],
+          found: [0, 2],
+          vars: { partner: '14 - 7 = 7', map: '7 -> 0, 2 -> 1', answer: '[0, 2]' },
+          note: 'The saved 7 belongs to index 0, so these two different items make 14.',
+        },
+      ],
+    },
+    {
+      kind: 'text',
+      text: 'Checking before saving allows equal prices at different indexes while preventing an item from matching itself.',
     },
     {
       kind: 'code',
       lang: 'pseudo',
       title: 'One pass with a map',
       code: `function twoSum(nums, target):
-    seen ← empty map                  // value → index
-    for i from 0 to n - 1:
-        need ← target - nums[i]
-        if need in seen:
-            return [seen[need], i]
-        seen[nums[i]] ← i             // store AFTER checking
+    map ← empty map                   // price → index
+    for index from 0 to n - 1:
+        partner ← target - nums[index]
+        if partner in map:
+            return [map[partner], index]
+        map[nums[index]] ← index      // save AFTER checking
     return []`,
     },
     {
       kind: 'code',
       lang: 'js',
       code: `function twoSum(nums, target) {
-  const seen = new Map(); // value -> index
-  for (let i = 0; i < nums.length; i++) {
-    const need = target - nums[i];
-    if (seen.has(need)) return [seen.get(need), i];
-    seen.set(nums[i], i);
+  const map = new Map(); // price -> index
+  for (let index = 0; index < nums.length; index++) {
+    const partner = target - nums[index];
+    if (map.has(partner)) return [map.get(partner), index];
+    map.set(nums[index], index);
   }
   return [];
 }`,
@@ -200,18 +275,18 @@ export const lookupLesson: Lesson = {
       kind: 'code',
       lang: 'pseudo',
       title: 'Template: find a partner',
-      code: `seen ← empty map                  // number → its index
-for i from 0 to n - 1:
-    partner ← target - items[i]
-    if partner in seen:
-        return [seen[partner], i]
-    seen[items[i]] ← i`,
+      code: `map ← empty map                   // number → its index
+for index from 0 to n - 1:
+    partner ← target - items[index]
+    if partner in map:
+        return [map[partner], index]
+    map[items[index]] ← index`,
     },
     {
       kind: 'callout',
       tone: 'trap',
-      title: 'Check before you save',
-      text: 'For `[7]` and target 14, saving 7 first would let it pair with itself. Ask about earlier prices first; save the current price only after that check.',
+      title: 'Index 0 still counts',
+      text: 'The second dry run uses a partner at index 0. Use `map.has(partner)` to check for it; `if (map.get(partner))` would treat that saved 0 as false and miss the pair.',
     },
     {
       kind: 'callout',
@@ -550,96 +625,167 @@ export const countingLesson: Lesson = {
       kind: 'callout',
       tone: 'insight',
       title: 'A map of letters to counts',
-      text: 'A **frequency map** saves how many times each item appears. For `tool`, it holds `t → 1`, `o → 2`, `l → 1`. Use one saved tile each time you read a letter of `loot`: subtract 1 from that letter’s count.',
+      text: 'A **frequency map** saves how many times each item appears. Here the **key** is a letter and the **value** is the number of its tiles still available. Start with an empty map called `count`. Count each letter of `s`, then use one saved tile for each letter of `t`. A missing letter starts at 0.',
+    },
+    {
+      kind: 'diagram',
+      title: 'Count the tiles, then use them',
+      art: [
+        'Count each letter of the first word',
+        '        |',
+        '        v',
+        'Take the next letter of the second word',
+        '        |',
+        '        v',
+        'Try one fewer saved copy of that letter',
+        '        |',
+        '        v',
+        'Would the count be below 0?',
+        '  | yes                 | no',
+        '  v                     v',
+        'Return false          Save the smaller count',
+        '                        |',
+        '                        v',
+        '                      Next letter, or true if finished',
+      ].join('\n'),
+      caption: 'Check equal word lengths first; then any shortage means the words do not match.',
+    },
+    {
+      kind: 'text',
+      text: "Use `s = 'tool'` and `t = 'loot'`; watch counts rise while the cells show s, then fall while they show t.",
     },
     {
       kind: 'steps',
-      title: "s = 'tool', t = 'loot'",
+      title: 'Count tool, then use its tiles for loot',
       frames: [
         {
-          cells: ['l', 'o', 'o', 't'],
-          vars: {
-            count: '{t:1, o:2, l:1}',
-          },
-          note: "First pass over `s = 'tool'` builds the counts. Now walk `t`.",
-        },
-        {
-          cells: ['l', 'o', 'o', 't'],
-          pointers: {
-            i: 0,
-          },
+          cells: ['t', 'o', 'o', 'l'],
           active: [0],
-          vars: {
-            count: '{t:1, o:2, l:0}',
-          },
-          note: '`l`: count goes 1 → 0. Still not negative, keep going.',
+          vars: { word: 's = tool', letter: 't', count: 't -> 1' },
+          note: 'Save one t because the first word provides a t tile.',
         },
         {
-          cells: ['l', 'o', 'o', 't'],
-          pointers: {
-            i: 1,
-          },
+          cells: ['t', 'o', 'o', 'l'],
           active: [1],
           done: [0],
-          vars: {
-            count: '{t:1, o:1, l:0}',
-          },
-          note: '`o`: 2 → 1.',
+          vars: { word: 's = tool', letter: 'o', count: 't -> 1, o -> 1' },
+          note: 'Add o with count 1 because this is its first tile.',
         },
         {
-          cells: ['l', 'o', 'o', 't'],
-          pointers: {
-            i: 2,
-          },
+          cells: ['t', 'o', 'o', 'l'],
           active: [2],
           done: [0, 1],
-          vars: {
-            count: '{t:1, o:0, l:0}',
-          },
-          note: '`o` again: 1 → 0.',
+          vars: { word: 's = tool', letter: 'o', count: 't -> 1, o -> 2' },
+          note: 'Raise o from 1 to 2 because this is a second o tile.',
+        },
+        {
+          cells: ['t', 'o', 'o', 'l'],
+          active: [3],
+          done: [0, 1, 2],
+          vars: { word: 's = tool', letter: 'l', count: 't -> 1, o -> 2, l -> 1' },
+          note: 'Add one l tile, completing the supply for the second word.',
         },
         {
           cells: ['l', 'o', 'o', 't'],
-          pointers: {
-            i: 3,
-          },
+          active: [0],
+          vars: { word: 't = loot', letter: 'l', left: '1 - 1 = 0', count: 't -> 1, o -> 2, l -> 0' },
+          note: 'Switch to loot and use its l, leaving 0 l tiles without a shortage.',
+        },
+        {
+          cells: ['l', 'o', 'o', 't'],
+          active: [1],
+          done: [0],
+          vars: { word: 't = loot', letter: 'o', left: '2 - 1 = 1', count: 't -> 1, o -> 1, l -> 0' },
+          note: 'Use one o tile, leaving another for the next o.',
+        },
+        {
+          cells: ['l', 'o', 'o', 't'],
+          active: [2],
+          done: [0, 1],
+          vars: { word: 't = loot', letter: 'o', left: '1 - 1 = 0', count: 't -> 1, o -> 0, l -> 0' },
+          note: 'Use the last o tile because this is the second o in loot.',
+        },
+        {
+          cells: ['l', 'o', 'o', 't'],
           active: [3],
           done: [0, 1, 2],
-          vars: {
-            count: '{t:0, o:0, l:0}',
-          },
-          note: '`t`: 1 → 0.',
+          vars: { word: 't = loot', letter: 't', left: '1 - 1 = 0', count: 't -> 0, o -> 0, l -> 0' },
+          note: 'Use the t tile, leaving every letter with count 0.',
         },
         {
           cells: ['l', 'o', 'o', 't'],
           found: [0, 1, 2, 3],
-          vars: {
-            count: '{t:0, o:0, l:0}',
-            answer: 'true',
-          },
-          note: 'Same length and no count went below 0, so every count is 0. Anagrams.',
+          vars: { word: 't = loot', count: 't -> 0, o -> 0, l -> 0', answer: 'true' },
+          note: 'Return true because the equal-length words used every tile without a shortage.',
         },
       ],
     },
     {
-      kind: 'callout',
-      tone: 'tip',
-      title: 'Why true at the end?',
-      text: 'First check that the words have the same length. A count below 0 means you used a tile you did not have. If you use the same number of tiles without running out of any letter, you used exactly the available tiles.',
+      kind: 'text',
+      text: 'Counting tiles let a different letter order use exactly the same supply: the words are anagrams.',
+    },
+    {
+      kind: 'text',
+      text: "Use `s = 'abb'` and `t = 'aab'`; watch the second a run out even though both words contain only a and b.",
+    },
+    {
+      kind: 'steps',
+      title: 'Same letters, different counts: abb and aab',
+      frames: [
+        {
+          cells: ['a', 'b', 'b'],
+          active: [0],
+          vars: { word: 's = abb', letter: 'a', count: 'a -> 1' },
+          note: 'Save one a tile because abb provides an a at its start.',
+        },
+        {
+          cells: ['a', 'b', 'b'],
+          active: [1],
+          done: [0],
+          vars: { word: 's = abb', letter: 'b', count: 'a -> 1, b -> 1' },
+          note: 'Add b with count 1 because this is its first tile.',
+        },
+        {
+          cells: ['a', 'b', 'b'],
+          active: [2],
+          done: [0, 1],
+          vars: { word: 's = abb', letter: 'b', count: 'a -> 1, b -> 2' },
+          note: 'Raise b to 2 because abb supplies a second b tile.',
+        },
+        {
+          cells: ['a', 'a', 'b'],
+          active: [0],
+          vars: { word: 't = aab', letter: 'a', left: '1 - 1 = 0', count: 'a -> 0, b -> 2' },
+          note: 'Switch to aab and use its first a, leaving no a tiles.',
+        },
+        {
+          cells: ['a', 'a', 'b'],
+          active: [1],
+          done: [0],
+          vars: { word: 't = aab', letter: 'a', left: '0 - 1 = -1', count: 'a -> 0, b -> 2', answer: 'false' },
+          note: 'The second a would need a missing tile, so return false before saving -1.',
+        },
+      ],
+    },
+    {
+      kind: 'text',
+      text: 'Matching letter names is not enough: the map must provide enough copies of every letter.',
     },
     {
       kind: 'code',
       lang: 'pseudo',
+      title: 'Count letters, then check for a shortage',
       code: `function isAnagram(s, t):
     if length of s ≠ length of t:
         return false
-    count ← empty map                   // letter → count
-    for each ch in s:
-        count[ch] ← (count[ch] or 0) + 1
-    for each ch in t:
-        count[ch] ← (count[ch] or 0) - 1
-        if count[ch] < 0:
-            return false                // t has an extra ch
+    count ← empty map                   // letter → available tiles
+    for each letter in s:
+        count[letter] ← (count[letter] or 0) + 1
+    for each letter in t:
+        left ← (count[letter] or 0) - 1
+        if left < 0:
+            return false                // not enough tiles
+        count[letter] ← left
     return true`,
     },
     {
@@ -648,11 +794,11 @@ export const countingLesson: Lesson = {
       code: `function isAnagram(s, t) {
   if (s.length !== t.length) return false;
   const count = new Map();
-  for (const ch of s) count.set(ch, (count.get(ch) ?? 0) + 1);
-  for (const ch of t) {
-    const left = (count.get(ch) ?? 0) - 1;
+  for (const letter of s) count.set(letter, (count.get(letter) ?? 0) + 1);
+  for (const letter of t) {
+    const left = (count.get(letter) ?? 0) - 1;
     if (left < 0) return false;
-    count.set(ch, left);
+    count.set(letter, left);
   }
   return true;
 }`,
@@ -703,7 +849,7 @@ for each x in items:
       kind: 'callout',
       tone: 'trap',
       title: 'Start missing counts at zero',
-      text: 'A new map does not know that a missing letter has count 0. `count.get(ch)` returns `undefined`, meaning no value is saved. Use `(count.get(ch) ?? 0) + 1`.',
+      text: 'A new map does not know that a missing letter has count 0. `count.get(letter)` returns `undefined`, meaning no value is saved. Use `(count.get(letter) ?? 0) + 1`.',
     },
     {
       kind: 'callout',

@@ -35,6 +35,21 @@ Each lesson follows this arc. Not every step needs its own block, but the order 
 Then `problems` (first one is usually the lesson's worked problem, fully explained in `approaches`;
 the rest are practice that escalate), a 2-4 question `quiz`, and 2-4 `takeaways`.
 
+### Basic-level bar (added after learner feedback)
+
+The learner can write basic code but knows **no DSA words**. So:
+
+- Define every term (array, index, `n`, Big-O, hash map, key/value, pointer...) in plain words the
+  first time it appears in the module. One new idea per block. Small numbers first, then the rule.
+- **Every lesson has at least two worked dry runs** on different inputs: one normal, one that shows
+  a trap or edge case. Say what to watch before it, and what just happened after it.
+- Prefer a `steps` animation: highlight the item being looked at, put the real items and the
+  structure's contents in `vars` with plain-words names, one short "what and why" note per frame.
+- A `trace` table has at most 4 columns, each named in plain words. Never a wide table of bare
+  numbers or code variable names alone.
+- **Every lesson has a simple flow diagram** (`diagram` block, plain ASCII, lines <= 56 chars,
+  3-8 steps, yes/no branch for each `if`, one-line caption) for its main idea or main loop.
+
 ## 3. Size targets (per module)
 
 - 4-6 lessons, each 10-25 minutes, 8-18 blocks.

@@ -8,54 +8,62 @@ const mod: Module = {
   number: 2,
   part: 'foundations',
   title: 'Hash maps, sets & prefix sums',
-  tagline: 'Trade memory for speed: counting, complements, grouping and running sums.',
+  tagline: 'Remember earlier items, count repeats, group similar items, and reuse saved totals.',
   draft: false,
   intro:
-    "Most slow solutions are slow because they search for something they already walked past. A hash map remembers it and finds it again in about one step, so O(n²) pair checks turn into one O(n) pass. You will learn to look up complements, count, group by a key, check existence with sets, and use running totals to answer range and subarray questions. After this module, Two Sum, Group Anagrams, Top K Frequent and Subarray Sum Equals K are routine.",
-  lessons: [lookupLesson, countingLesson, groupingLesson, setsLesson, prefixLesson, prefixHashLesson],
+    'You often search a list for something you have already passed. You can save that information and ask for it directly. Start with two prices that add to a gift-card total, then count letters, group words, spot repeats, and reuse totals for stretches of numbers. Each lesson shows what to save and why it helps.',
+  lessons: [
+    lookupLesson,
+    countingLesson,
+    groupingLesson,
+    setsLesson,
+    prefixLesson,
+    prefixHashLesson,
+  ],
   patterns: [
     {
-      name: 'Complement lookup',
+      name: 'Complement lookup: find the missing partner',
       signals: [
-        "Find or count **pairs** that add up to / differ by / combine to a target.",
-        "'Have I already seen the partner of this item?'",
-        "Brute force is a double loop over pairs.",
+        'Two items must add to a target.',
+        'You know the current value and can calculate its missing partner, called a complement.',
+        'Trying every pair repeats searches through earlier items.',
       ],
-      template: `seen ← empty map              // value → index or count
-for each x in items:
-    partner ← target - x          // or x - k, (60 - x % 60) % 60 ...
+      template: `seen ← empty map                  // number → its index
+for i from 0 to n - 1:
+    partner ← target - nums[i]
     if partner in seen:
-        use seen[partner]
-    record x in seen              // after the lookup`,
+        use [seen[partner], i]
+    seen[nums[i]] ← i               // check before saving`,
       examples: ['hashing-two-sum', 'hashing-song-pairs', 'hashing-pairs-diff-k'],
     },
     {
-      name: 'Frequency map',
+      name: 'Frequency map: count appearances',
       signals: [
-        "Anagram, same letters, rearrangement.",
-        "Most / least frequent, top k, appears once.",
-        "Order does not matter, only how many of each.",
+        'You need how many of each item, also called its frequency.',
+        'Words must use the same letters the same number of times.',
+        'You want items that appear once or appear most often.',
       ],
-      template: `count ← empty map
+      template: `count ← empty map                 // item → number of appearances
 for each x in items:
-    count[x] ← (count[x] or 0) + 1
-// answer from counts: compare, find count = 1,
-// or bucket[c] lists values seen c times (top k)`,
+    count[x] ← (count[x] or 0) + 1  // missing means 0
+// use the completed counts to answer
+// for top k: bucket c holds items with count c`,
       examples: ['hashing-valid-anagram', 'hashing-first-unique-char', 'hashing-top-k-frequent'],
     },
     {
-      name: 'Group by key / set for existence',
+      name: 'Shared keys for grouping; sets for yes or no',
       signals: [
-        "Group items that are 'the same' in some way (anagrams, equal rows, same size).",
-        "Duplicate, unique, already seen, visited, contains.",
-        "Fast 'is x + 1 / this neighbour here?' checks.",
+        'Items belong together when they produce the same label, or key.',
+        'You only need to know whether a value has appeared: use a set.',
+        'If you also need a group, count, or index, save it in a map.',
       ],
-      template: `groups ← empty map              // or a set if you only need yes / no
+      template: `groups ← empty map                // key → list of items
 for each item in items:
-    key ← signature(item)          // string or number, never an array
+    key ← shared label for item    // e.g. sorted letters joined
     if key not in groups:
         groups[key] ← empty list
-    append item to groups[key]`,
+    append item to groups[key]
+// for a yes-or-no check, a set saves just the labels`,
       examples: [
         'hashing-group-anagrams',
         'hashing-equal-row-column-pairs',
@@ -66,18 +74,21 @@ for each item in items:
       ],
     },
     {
-      name: 'Prefix sums (+ hash map)',
+      name: 'Prefix sums: reuse totals from the start',
       signals: [
-        "Sum of a range or subarray; many queries on an array that does not change.",
-        "Count subarrays / longest subarray with sum = k, balance = 0, or sum divisible by k.",
-        "Numbers can be negative, so a sliding window will not work.",
+        'Many questions ask for the sum from one index through another.',
+        'You need to count subarrays: non-empty stretches with no gaps.',
+        'You want the longest stretch with a target sum or equal counts.',
       ],
-      template: `seen ← map with {0: 1}          // {0: -1} when you want the longest
+      template: `seen ← map with {0: 1}            // total 0 occurred once before input
 prefix ← 0
-for i from 0 to n - 1:
-    prefix ← prefix + nums[i]
-    look up seen[prefix - target]  // add count, or i - first index
-    record prefix in seen          // count + 1, or first index only`,
+answer ← 0
+for each x in nums:
+    prefix ← prefix + x
+    answer ← answer + (seen[prefix - target] or 0)
+    seen[prefix] ← (seen[prefix] or 0) + 1
+// longest length: save first indexes, starting with 0 → -1
+// known range: pre[right + 1] - pre[left]`,
       examples: [
         'hashing-range-sum-query',
         'hashing-pivot-index',
@@ -89,16 +100,66 @@ for i from 0 to n - 1:
     },
   ],
   practice: [
-    { title: 'Ransom Note', leetcode: 383, difficulty: 'easy', hint: "Count the magazine's letters, then spend them on the note." },
-    { title: 'Contains Duplicate II', leetcode: 219, difficulty: 'easy', hint: 'Remember the last index where you saw each value.' },
-    { title: 'Number of Good Pairs', leetcode: 1512, difficulty: 'easy', hint: 'Each new copy of a value pairs with every earlier copy.' },
-    { title: 'Intersection of Two Arrays', leetcode: 349, difficulty: 'easy', hint: 'Put one array in a set and walk the other.' },
-    { title: 'Isomorphic Strings', leetcode: 205, difficulty: 'easy', hint: 'The letter mapping must work in both directions.' },
-    { title: 'Word Pattern', leetcode: 290, difficulty: 'easy', hint: 'Two maps: letter → word and word → letter.' },
-    { title: 'Brick Wall', leetcode: 554, difficulty: 'medium', hint: 'Count where brick edges fall using running widths per row.' },
-    { title: 'Range Sum Query 2D - Immutable', leetcode: 304, difficulty: 'medium', hint: 'Prefix sums in two directions; mind what gets subtracted twice.' },
-    { title: 'Binary Subarrays With Sum', leetcode: 930, difficulty: 'medium', hint: 'Same as Subarray Sum Equals K with 0s and 1s.' },
-    { title: 'Count Number of Nice Subarrays', leetcode: 1248, difficulty: 'medium', hint: 'Treat odd numbers as 1 and even numbers as 0.' },
+    {
+      title: 'Ransom Note',
+      leetcode: 383,
+      difficulty: 'easy',
+      hint: 'Count available copies of each letter, then use one for each letter in the note.',
+    },
+    {
+      title: 'Contains Duplicate II',
+      leetcode: 219,
+      difficulty: 'easy',
+      hint: 'Save each value’s latest index. Compare its new index with the saved one to check the distance.',
+    },
+    {
+      title: 'Number of Good Pairs',
+      leetcode: 1512,
+      difficulty: 'easy',
+      hint: 'A new copy pairs with every earlier copy of the same value. Save how many copies you have seen.',
+    },
+    {
+      title: 'Intersection of Two Arrays',
+      leetcode: 349,
+      difficulty: 'easy',
+      hint: 'Save the first array’s distinct values in a set. Which values from the second array are also there?',
+    },
+    {
+      title: 'Isomorphic Strings',
+      leetcode: 205,
+      difficulty: 'easy',
+      hint: 'Each letter in one string must consistently match one letter in the other, in both directions.',
+    },
+    {
+      title: 'Word Pattern',
+      leetcode: 290,
+      difficulty: 'easy',
+      hint: 'Save both letter → word and word → letter so two letters cannot claim the same word.',
+    },
+    {
+      title: 'Brick Wall',
+      leetcode: 554,
+      difficulty: 'medium',
+      hint: 'Add brick widths from the left of each row. Which inside-edge position occurs in the most rows?',
+    },
+    {
+      title: 'Range Sum Query 2D - Immutable',
+      leetcode: 304,
+      difficulty: 'medium',
+      hint: 'Save totals for rectangles that start at the top-left corner. Subtract the parts outside your requested rectangle.',
+    },
+    {
+      title: 'Binary Subarrays With Sum',
+      leetcode: 930,
+      difficulty: 'medium',
+      hint: 'Use counts of earlier running totals, just as for Subarray Sum Equals K.',
+    },
+    {
+      title: 'Count Number of Nice Subarrays',
+      leetcode: 1248,
+      difficulty: 'medium',
+      hint: 'Treat an odd number as 1 and an even number as 0. Now a stretch’s sum counts its odd numbers.',
+    },
   ],
 };
 

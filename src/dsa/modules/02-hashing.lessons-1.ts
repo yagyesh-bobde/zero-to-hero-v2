@@ -5,18 +5,24 @@ import type { Lesson } from '../types';
 export const lookupLesson: Lesson = {
   id: 'lookup-complements',
   title: 'Lookup and complements',
-  summary: 'Remember what you have seen, so "is the missing piece here?" costs one step.',
+  summary: 'Find a missing partner by remembering earlier numbers and their positions.',
   minutes: 20,
   blocks: [
     {
       kind: 'callout',
       tone: 'story',
-      title: 'The cashier and the gift card',
-      text: "A customer has a gift card worth exactly 14 and wants to spend it on exactly two items. The shelf prices are 4, 9, 1, 6, 5. A new cashier tries every pair. An old cashier looks at each item and asks one question: *is the item that costs the rest on the shelf?* That one question is this whole lesson.",
+      title: 'Spend the gift card',
+      text: 'You have 14 to spend on two items. Their prices are 4, 9, 1, 6, and 5. Which two prices use the whole gift card?',
     },
     {
       kind: 'text',
-      text: "**The problem (Two Sum).** You get an array `nums` and a number `target`. Exactly one pair of different positions adds up to `target`. Return those two indexes. For `nums = [4, 9, 1, 6, 5]` and `target = 14`, the answer is `[1, 4]`, because `9 + 5 = 14`.",
+      text: '**Two Sum.** Return the positions of the two items. A position is called an **index**; counting starts at 0. In `[4, 9, 1, 6, 5]`, 9 is at index 1 and 5 is at index 4. Since `9 + 5 = 14`, return `[1, 4]`.',
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Read the plan',
+      text: 'From module 1: pseudocode is a plain code plan. `←` stores, `=` means equal, `≠` means not equal, and loop endpoints are included. `n` is the input length. **Brute force** means trying every possible answer. Here, try each pair of different positions.',
     },
     {
       kind: 'code',
@@ -31,37 +37,49 @@ export const lookupLesson: Lesson = {
     },
     {
       kind: 'text',
-      text: "This works, and for 5 items it is instant. But it checks about n²/2 pairs. With 100,000 prices that is 5 billion checks. **Spot the waste:** when you stand on `9`, you only need to know one thing: *have I already seen a 5?* The brute force answers that by walking the whole array again. You walked past the 5 already and forgot it.",
+      text: 'With `[4, 9, 5]`, you try `4 + 9`, `4 + 5`, then `9 + 5`. It works. A longer list means many more pairs. From module 1: time counts work, and space counts extra storage. O(n) work grows with the input length; O(n²) grows like the number of pairs.',
     },
     {
       kind: 'callout',
       tone: 'insight',
-      title: 'Remember, then look up',
-      text: "Keep a **hash map** of everything you have walked past: value → index. At each number `x`, the partner you need is `target - x` (its **complement**, the piece that completes it). Asking a hash map 'do you have this key?' takes about one step, not n steps.",
+      title: 'Ask for one exact partner',
+      text: 'At 5, you need `14 - 5 = 9`. You already passed 9. We will remember earlier prices so you can ask for 9 directly, instead of trying every pair. The missing partner is called the **complement**.',
     },
     {
-      kind: 'diagram',
-      title: 'What a hash map does under the hood',
-      art: `  key "kiwi" --hash()--> 3
-
-  index | what is stored there (a "bucket")
-  ------+---------------------------------
-    0   |
-    1   | "fig" → 1
-    2   |
-    3   | "kiwi" → 9    "plum" → 4
-    4   | "apple" → 3`,
-      caption: "A hash map is an array of buckets. A **hash function** turns the key into a bucket number, so the map jumps straight to the right bucket instead of searching. Two keys can land in the same bucket (a **collision**, like kiwi and plum), but buckets stay tiny on average, so get, set and has cost **O(1) on average**.",
-    },
-    {
-      kind: 'list',
-      items: [
-        "**`Map`** is the tool for DSA in JS: any key type, `map.get(k)`, `map.set(k, v)`, `map.has(k)`, `map.size`, and it remembers insertion order.",
-        "**Plain objects** `{}` turn every key into a string: `obj[1]` and `obj['1']` are the same slot, and `Object.keys` hands you back strings. Fine for letters, risky for numbers.",
-        "**`Set`** is a map with keys only: `set.add(x)`, `set.has(x)`. Use it when you only care *whether* you saw something.",
-        "Numbers and strings are compared **by value**. Arrays and objects are compared **by reference**: `map.set([1, 2], 'a')` then `map.get([1, 2])` is `undefined`, because the second `[1, 2]` is a different array. Build a string key instead: `[1, 2].join(',')`.",
-        "Counting idiom: `map.set(k, (map.get(k) ?? 0) + 1)`. The `?? 0` turns a missing key (`undefined`) into 0.",
+      kind: 'table',
+      title: 'A hash map is a table you can ask by key',
+      head: ['Key: what you ask for', 'Value: what it remembers'],
+      rows: [
+        ['4', 'index 0'],
+        ['9', 'index 1'],
       ],
+    },
+    {
+      kind: 'text',
+      text: 'A **hash map** stores pairs of a **key** and a **value**. The key is the label you search for; the value is the information saved under it. Here the key is a price and the value is its index. Asking for the saved information is a **lookup**. We write `9 → 1` to mean “price 9 was at index 1”.',
+    },
+    {
+      kind: 'table',
+      title: 'JavaScript gives you Map',
+      head: ['Code', 'Meaning'],
+      rows: [
+        ['`const seen = new Map()`', 'Make an empty map.'],
+        ['`seen.set(9, 1)`', 'Save value 1 under key 9.'],
+        ['`seen.has(9)`', 'Ask whether key 9 is present: true or false.'],
+        [
+          '`seen.get(9)`',
+          'Read its saved value: 1. A missing key gives undefined (no saved value).',
+        ],
+        ['`seen.set(4, 0)`', 'Save index 0 under price 4.'],
+        [
+          '`seen.has(4)`',
+          'True even though its saved index is 0. JavaScript treats 0 as false in an if condition, so use has to test presence.',
+        ],
+      ],
+    },
+    {
+      kind: 'text',
+      text: 'Think of the map as choosing a storage spot from the key, rather than checking every entry. **O(1) on average** means a lookup usually needs about the same amount of work as the map grows. It does not promise exactly one machine step. Saving a key has the same average cost.',
     },
     {
       kind: 'steps',
@@ -69,42 +87,67 @@ export const lookupLesson: Lesson = {
       frames: [
         {
           cells: [4, 9, 1, 6, 5],
-          pointers: { i: 0 },
+          pointers: {
+            i: 0,
+          },
           active: [0],
-          vars: { need: '14 - 4 = 10', seen: '{}' },
-          note: "At 4 we need 10. The map is empty, so no. Store 4 → 0.",
+          vars: {
+            need: '14 - 4 = 10',
+            seen: '{}',
+          },
+          note: 'At 4 we need 10. The map is empty, so no. Store 4 → 0.',
         },
         {
           cells: [4, 9, 1, 6, 5],
-          pointers: { i: 1 },
+          pointers: {
+            i: 1,
+          },
           active: [1],
           done: [0],
-          vars: { need: '14 - 9 = 5', seen: '{4:0}' },
-          note: "At 9 we need 5. Not in the map. Store 9 → 1.",
+          vars: {
+            need: '14 - 9 = 5',
+            seen: '{4:0}',
+          },
+          note: 'At 9 we need 5. Not in the map. Store 9 → 1.',
         },
         {
           cells: [4, 9, 1, 6, 5],
-          pointers: { i: 2 },
+          pointers: {
+            i: 2,
+          },
           active: [2],
           done: [0, 1],
-          vars: { need: '14 - 1 = 13', seen: '{4:0, 9:1}' },
-          note: "At 1 we need 13. No. Store 1 → 2.",
+          vars: {
+            need: '14 - 1 = 13',
+            seen: '{4:0, 9:1}',
+          },
+          note: 'At 1 we need 13. No. Store 1 → 2.',
         },
         {
           cells: [4, 9, 1, 6, 5],
-          pointers: { i: 3 },
+          pointers: {
+            i: 3,
+          },
           active: [3],
           done: [0, 1, 2],
-          vars: { need: '14 - 6 = 8', seen: '{4:0, 9:1, 1:2}' },
-          note: "At 6 we need 8. No. Store 6 → 3.",
+          vars: {
+            need: '14 - 6 = 8',
+            seen: '{4:0, 9:1, 1:2}',
+          },
+          note: 'At 6 we need 8. No. Store 6 → 3.',
         },
         {
           cells: [4, 9, 1, 6, 5],
-          pointers: { i: 4 },
+          pointers: {
+            i: 4,
+          },
           active: [4],
           found: [1, 4],
-          vars: { need: '14 - 5 = 9', seen: '{4:0, 9:1, 1:2, 6:3}' },
-          note: "At 5 we need 9, and the map says 9 lives at index 1. Answer `[1, 4]`. One pass, one lookup per item.",
+          vars: {
+            need: '14 - 5 = 9',
+            seen: '{4:0, 9:1, 1:2, 6:3}',
+          },
+          note: 'At 5 we need 9, and the map says 9 lives at index 1. Answer `[1, 4]`. One pass, one lookup per item.',
         },
       ],
     },
@@ -135,6 +178,12 @@ export const lookupLesson: Lesson = {
 }`,
     },
     {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Read the cost comparison',
+      text: 'Sorting puts numbers in order; it usually costs O(n log n), between one walk and all-pairs work. Two pointers means searching with two positions; module 3 teaches it. In the space column, O(1) means storage stays fixed as n grows, while O(n) allows storage that grows with n.',
+    },
+    {
       kind: 'compare',
       title: 'Two Sum, three ways',
       rows: [
@@ -145,24 +194,36 @@ export const lookupLesson: Lesson = {
     },
     {
       kind: 'text',
-      text: "**The pattern: complement lookup.** Reach for it when the problem says *pair*, *two items that add up / differ by / combine to* something, or *have I seen the partner of this before?* Walk once, ask the map for the partner, then store yourself.",
+      text: '**Pattern: complement lookup.** When you need two items to make a target, calculate the missing partner. Ask about earlier items, then remember the current one.',
     },
     {
       kind: 'code',
       lang: 'pseudo',
-      title: 'Template: complement lookup',
-      code: `seen ← empty map
-for each x in items:
-    partner ← whatever completes x       // target - x, x - k, (60 - x % 60) % 60 ...
+      title: 'Template: find a partner',
+      code: `seen ← empty map                  // number → its index
+for i from 0 to n - 1:
+    partner ← target - items[i]
     if partner in seen:
-        use seen[partner]                 // found a pair, or add to a count
-    record x in seen                      // index, or count + 1`,
+        return [seen[partner], i]
+    seen[items[i]] ← i`,
     },
     {
       kind: 'callout',
       tone: 'trap',
-      title: 'Two classic bugs',
-      text: "**1. Store after you check.** If you store `x` first, then for `nums = [7]`, `target = 14` you find 7 'in the map' and pair the number with itself. **2. Index 0 is falsy.** `if (seen.get(need))` skips a partner that lives at index 0. Ask `seen.has(need)` instead.",
+      title: 'Check before you save',
+      text: 'For `[7]` and target 14, saving 7 first would let it pair with itself. Ask about earlier prices first; save the current price only after that check.',
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'When you need the number of pairs',
+      text: 'For `[2, 2, 5]` and target 7, the 5 makes two pairs. Store `2 → 2`: the number 2 has appeared twice. This number of appearances is its **count**, also called its **frequency**.',
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Increase a count that might be missing',
+      text: 'Increase it with `count.set(x, (count.get(x) ?? 0) + 1)`. The `?? 0` means “use 0 if this key is missing”. In pseudocode, `count[x] or 0` means the same thing.',
     },
   ],
   problems: [
@@ -172,27 +233,32 @@ for each x in items:
       difficulty: 'easy',
       leetcode: 1,
       pattern: 'Complement lookup',
-      statement: "A gift card is worth exactly `target`. Prices are in `nums`. Exactly one pair of **different** items costs exactly `target` in total. Return their indexes `[i, j]` with `i < j`.",
+      statement:
+        'You have a gift card worth `target` and item prices in `nums`. Return the indexes of two different items whose prices add to target, with the smaller index first. Indexes start at 0. Exactly one pair works.',
       examples: [
         { input: 'nums = [4, 9, 1, 6, 5], target = 14', output: '[1, 4]', explain: '9 + 5 = 14.' },
-        { input: 'nums = [3, 3], target = 6', output: '[0, 1]', explain: 'Two different items can have the same price.' },
+        {
+          input: 'nums = [3, 3], target = 6',
+          output: '[0, 1]',
+          explain: 'Two different items can have the same price.',
+        },
       ],
       constraints: ['2 ≤ n ≤ 10⁴', '-10⁹ ≤ nums[i], target ≤ 10⁹', 'exactly one answer exists'],
       hints: [
-        "For a number `x`, which exact value would complete the pair?",
-        "You need a fast way to ask 'have I already seen that value, and where?'",
-        "Map value → index. At each `x`, look up `target - x` first, then store `x`.",
+        'Try one price: if the target is 14 and the price is 5, what other price would you need?',
+        'Remember earlier prices and their indexes in a map.',
+        'For each index i, look for `target - nums[i]` before saving `nums[i] → i`. Use has so a saved index 0 is not missed.',
       ],
       approaches: [
         {
           name: 'Brute force',
-          idea: 'Try every pair (i, j). It is correct because it checks every possibility, but it does about n²/2 checks.',
+          idea: 'Try each pair of different indexes. For [4, 9, 5], that checks 4 + 9, 4 + 5, and 9 + 5, so no pair is missed.',
           time: 'O(n²)',
           space: 'O(1)',
         },
         {
           name: 'Hash map, one pass',
-          idea: "The partner of `x` is always `target - x`. Keep a map of values you have passed, so the partner check is one lookup. Checking before storing means a number never pairs with itself.",
+          idea: 'At price 5 with target 14, you need 9. A map of earlier price → index tells you where 9 appeared; checking before saving prevents an item from matching itself.',
           pseudo: `function twoSum(nums, target):
     seen ← empty map            // value → index
     for i from 0 to n - 1:
@@ -238,7 +304,7 @@ for each x in items:
         { name: 'first and last', args: [[5, 1, 2, 8, 9, 20], 25], expected: [0, 5] },
         { name: 'big numbers', args: [[1000000000, -999999999, 7], 1], expected: [0, 1] },
       ],
-      takeaway: "Pair problems become one pass when you store what you've seen and look up the complement.",
+      takeaway: 'Find the missing price, ask the map for its index, then save the current price.',
     },
     {
       id: 'hashing-song-pairs',
@@ -246,27 +312,33 @@ for each x in items:
       difficulty: 'medium',
       leetcode: 1010,
       pattern: 'Complement lookup (counting)',
-      statement: "A radio DJ wants to play two songs back to back so the pair ends exactly on a whole minute. `time[i]` is the length of song `i` in seconds. Count the pairs `i < j` where `time[i] + time[j]` is divisible by 60.",
+      statement:
+        'A DJ plays two songs back to back. Their lengths in seconds are in `time`. Count pairs of different positions whose combined length is a whole number of minutes: 60, 120, 180 seconds, and so on. Count each pair once, with the earlier song first.',
       examples: [
-        { input: 'time = [30, 20, 150, 100, 40]', output: '3', explain: '(30, 150), (20, 100) and (20, 40) total 180, 120 and 60 seconds.' },
+        {
+          input: 'time = [30, 20, 150, 100, 40]',
+          output: '3',
+          explain: '(30, 150), (20, 100) and (20, 40) total 180, 120 and 60 seconds.',
+        },
         { input: 'time = [60, 60, 60]', output: '3', explain: 'Every pair totals 120 seconds.' },
       ],
       constraints: ['1 ≤ n ≤ 6 × 10⁴', '1 ≤ time[i] ≤ 500'],
       hints: [
-        "Only the leftover seconds matter: 150 behaves exactly like 30. Look at `t % 60`.",
-        "A song with remainder `r` pairs with any earlier song whose remainder completes it to 60.",
-        "Keep a count of each remainder seen so far. For remainder `r` you need `(60 - r) % 60`. The extra `% 60` makes remainder 0 pair with 0, not 60.",
+        '150 seconds is 2 full minutes with 30 seconds left over. This leftover is the remainder: `150 % 60 = 30`. Only leftovers matter for completing a minute.',
+        'A remainder of 20 needs 40. A remainder of 0 needs 0. Remember how many earlier songs had each remainder; a count is a number of appearances.',
+        'For [20, 20, 40]: save count 1 for remainder 20, then raise it to 2. At 40 you need 20, so add 2 pairs.',
+        'For each song, let `r = t % 60` and `need = (60 - r) % 60`. Add the earlier count for need, then increase the count for r. The extra % makes r = 0 need 0, not 60. Pseudocode uses mod for %.',
       ],
       approaches: [
         {
           name: 'Check every pair',
-          idea: 'Test `(a + b) % 60 === 0` for every pair. Correct, but about n²/2 checks, which is 1.8 billion at n = 60,000.',
+          idea: 'Try every pair and add their lengths. A remainder of 0 after dividing that total by 60 means it fills whole minutes.',
           time: 'O(n²)',
           space: 'O(1)',
         },
         {
           name: 'Count remainders',
-          idea: "Two songs fit when their remainders add to 60 (or are both 0). So at each song, every earlier song with the matching remainder makes one new pair. A count per remainder gives you all of them in one lookup.",
+          idea: 'At 40 seconds left over, each earlier song with 20 seconds left over makes a pair. Save remainder → count so you can add every match without trying earlier songs one by one; at most 60 remainders need storage.',
           pseudo: `function numPairsDivisibleBy60(time):
     count ← empty map                // remainder → how many songs so far
     pairs ← 0
@@ -317,7 +389,7 @@ for each x in items:
         { name: 'mixed', args: [[1, 59, 2, 58, 120]], expected: 2 },
         { name: 'remainder 0 with 0', args: [[60, 120, 180, 30]], expected: 3 },
       ],
-      takeaway: "When only a remainder matters, count remainders: the 'complement' is (60 - r) % 60.",
+      takeaway: 'Count earlier leftover-second values that complete a whole minute.',
     },
     {
       id: 'hashing-pairs-diff-k',
@@ -325,27 +397,37 @@ for each x in items:
       difficulty: 'easy',
       leetcode: 2006,
       pattern: 'Complement lookup (counting)',
-      statement: "A shop keeps a list of prices `nums`. Count the pairs `i < j` where the two prices differ by exactly `k`, that is `|nums[i] - nums[j]| = k`. You solved this in module 1 with two loops, because `n` was tiny. Now do it in one pass, as if `n` were 10⁵.",
+      statement:
+        'A shop lists prices in `nums`. Count pairs of different positions whose prices are exactly `k` apart, ignoring which price is larger. Count each position pair once. For `[1, 2, 2, 1]` and k = 1, each of the two 1s pairs with each of the two 2s: 4 pairs.',
       examples: [
-        { input: 'nums = [1, 2, 2, 1], k = 1', output: '4', explain: 'Each 1 pairs with each 2: 2 × 2 = 4 pairs.' },
-        { input: 'nums = [3, 2, 1, 5, 4], k = 2', output: '3', explain: '(3, 1), (3, 5) and (2, 4).' },
+        {
+          input: 'nums = [1, 2, 2, 1], k = 1',
+          output: '4',
+          explain: 'Each 1 pairs with each 2: 2 × 2 = 4 pairs.',
+        },
+        {
+          input: 'nums = [3, 2, 1, 5, 4], k = 2',
+          output: '3',
+          explain: '(3, 1), (3, 5) and (2, 4).',
+        },
       ],
       constraints: ['1 ≤ n ≤ 10⁵', '-100 ≤ nums[i] ≤ 100', '1 ≤ k ≤ 99'],
       hints: [
-        "For a number `x`, which two values would be exactly `k` away?",
-        "`x - k` and `x + k`. How many of each have you already seen?",
-        "Keep a count map. At each `x` add `count[x - k] + count[x + k]`, then count `x`.",
+        'At price 5 with k = 2, a partner could cost 3 or 7.',
+        'Remember the number of earlier appearances of each price. These are counts, not indexes.',
+        'For [1, 1, 2] with k = 1, the last 2 has two earlier partners of price 1. Add 2, not just 1.',
+        'For each x, add the earlier counts of x - k and x + k, treating a missing count as 0. Then increase the count of x.',
       ],
       approaches: [
         {
           name: 'Check every pair',
-          idea: 'Compare every pair with `Math.abs`. Correct and fine for n = 200.',
+          idea: 'Try every pair of different positions. `Math.abs(a - b)` is the distance between the prices without a minus sign; count the pair when that distance is k.',
           time: 'O(n²)',
           space: 'O(1)',
         },
         {
           name: 'Count map, one pass',
-          idea: "A partner of `x` is either `x - k` or `x + k`. Every earlier copy of those values forms one new pair, so add their counts. Since k ≥ 1, the two partners are different numbers and nothing is counted twice.",
+          idea: 'At x = 5 and k = 2, only 3 and 7 can match. Add how many earlier copies of each you saved, then save x; every pair is counted when you reach its later position.',
           pseudo: `function countKDifference(nums, k):
     count ← empty map
     pairs ← 0
@@ -389,59 +471,62 @@ for each x in items:
         { name: 'chain', args: [[1, 1, 2, 2, 3], 1], expected: 6 },
         { name: 'negatives', args: [[-1, 1, -3], 2], expected: 2 },
       ],
-      takeaway: "A pair can be 'above' or 'below' you: look up both x - k and x + k.",
+      takeaway:
+        'A price k away can be smaller or larger: count earlier copies of both possibilities.',
     },
   ],
   quiz: [
     {
-      prompt: "Why is `map.has(key)` about O(1) on average?",
-      options: [
-        'The map keeps its keys sorted and uses binary search.',
-        'A hash function turns the key into a bucket number, and buckets hold very few keys on average.',
-        'JavaScript caches the last key you asked for.',
-      ],
-      answer: 1,
-      explanation: "The hash jumps straight to one bucket. Collisions happen, but buckets stay tiny, so the work does not grow with n on average.",
+      prompt: 'After `seen.set(9, 1)`, what do the key 9 and value 1 mean?',
+      options: ['Price 9 was at index 1.', 'Price 1 was at index 9.', 'There are nine items.'],
+      answer: 0,
+      explanation:
+        'The key is the price you can ask for. Its saved value tells you where that price appeared.',
     },
     {
-      prompt: "You run `const m = new Map(); m.set([1, 2], 'x');`. What is `m.get([1, 2])`?",
-      options: ["'x'", 'undefined', 'It throws an error'],
+      prompt: 'You reach 5 and the target is 14. Which earlier number do you look for?',
+      options: ['14', '9', '5'],
       answer: 1,
-      explanation: "Arrays are compared by reference. The second `[1, 2]` is a new array, so it is a different key. Use a string key like `'1,2'`.",
+      explanation: '14 - 5 = 9. That is the missing partner, or complement.',
     },
     {
-      prompt: "In Two Sum, what goes wrong if you store `nums[i]` in the map **before** checking for `target - nums[i]`?",
+      prompt: 'Why should Two Sum check the map before saving the current price?',
       options: [
-        'Nothing, the order does not matter.',
-        'A number can pair with itself, e.g. `[7]` with target 14.',
-        'The loop becomes O(n²).',
+        'To avoid pairing an item with itself.',
+        'To keep prices sorted.',
+        'To remove repeated prices.',
       ],
-      answer: 1,
-      explanation: "The map would already hold 7 when you look for 7. Check first, then store.",
+      answer: 0,
+      explanation:
+        'For a price of 7 and target 14, the match must be another item, not the current one.',
     },
   ],
   takeaways: [
-    "A hash map gives about O(1) get/set/has, so it turns 'search the array again' into one lookup.",
-    "Complement lookup: walk once, ask the map for the partner, then store yourself.",
-    "In JS use `Map`/`Set`; build string keys for arrays; use `?? 0` and `has()` to dodge undefined and index 0.",
+    'A map saves information under a key: here, price → index.',
+    'Calculate the missing partner, look it up, then save the current item.',
+    'Use `has` to test whether a key is present. Index 0 is a valid saved answer.',
   ],
 };
 
 export const countingLesson: Lesson = {
   id: 'counting',
   title: 'Counting with a frequency map',
-  summary: 'When only "how many of each" matters, count once and compare counts.',
+  summary: 'Count how many times each item appears, then use those counts.',
   minutes: 20,
   blocks: [
     {
       kind: 'callout',
       tone: 'story',
-      title: 'The word game check',
-      text: "In a word game you hold the tiles `L I S T E N`. Your friend plays `SILENT` and says it uses exactly your tiles. The game has to check that fast, for millions of players. Order does not matter. Only *how many of each letter* matters.",
+      title: 'Check the word tiles',
+      text: 'You hold the tiles T, O, O, L. Your friend plays LOOT. Can they make that word using exactly your tiles?',
     },
     {
       kind: 'text',
-      text: "**The problem (Valid Anagram).** Two strings `s` and `t` are **anagrams** if one is a rearrangement of the other: same letters, same number of each. `'listen'` and `'silent'` are anagrams. `'rat'` and `'car'` are not.",
+      text: 'Both words have 1 T, 2 Os, and 1 L. So the answer is true. Words with the same letters and the same number of each letter are **anagrams**. Their letter order may differ. `tool` and `loot` qualify; `tool` and `toll` do not.',
+    },
+    {
+      kind: 'text',
+      text: 'Start by crossing off one matching tile for each letter. The plan below searches for a letter, then removes one copy. From module 1: pseudocode is a plain code plan. `←` stores, `=` means equal, `≠` means not equal, and loop endpoints are included. `n` is the input length.',
     },
     {
       kind: 'code',
@@ -459,13 +544,13 @@ export const countingLesson: Lesson = {
     },
     {
       kind: 'text',
-      text: "It works, but each 'find and remove' scans the list, so it is O(n²). Sorting both strings and comparing is better, O(n log n). **Spot the waste:** both ideas care about *where* letters are, but the question only asks *how many*. Positions are noise.",
+      text: 'For each O, you search through the remaining tiles again. We will replace those searches with a count for each letter. From module 1: time counts work, and space counts extra storage. O(n) work grows with the input length; O(n²) grows like the number of pairs.',
     },
     {
       kind: 'callout',
       tone: 'insight',
-      title: 'Count, do not search',
-      text: "Build a **frequency map**: letter → how many times it appears. Add 1 for every letter of `s`, subtract 1 for every letter of `t`. If every count ends at 0, the strings are anagrams. If a count ever drops below 0, `t` used a letter `s` did not have.",
+      title: 'A map of letters to counts',
+      text: 'A **frequency map** saves how many times each item appears. For `tool`, it holds `t → 1`, `o → 2`, `l → 1`. Use one saved tile each time you read a letter of `loot`: subtract 1 from that letter’s count.',
     },
     {
       kind: 'steps',
@@ -473,47 +558,74 @@ export const countingLesson: Lesson = {
       frames: [
         {
           cells: ['l', 'o', 'o', 't'],
-          vars: { count: '{t:1, o:2, l:1}' },
+          vars: {
+            count: '{t:1, o:2, l:1}',
+          },
           note: "First pass over `s = 'tool'` builds the counts. Now walk `t`.",
         },
         {
           cells: ['l', 'o', 'o', 't'],
-          pointers: { i: 0 },
+          pointers: {
+            i: 0,
+          },
           active: [0],
-          vars: { count: '{t:1, o:2, l:0}' },
-          note: "`l`: count goes 1 → 0. Still not negative, keep going.",
+          vars: {
+            count: '{t:1, o:2, l:0}',
+          },
+          note: '`l`: count goes 1 → 0. Still not negative, keep going.',
         },
         {
           cells: ['l', 'o', 'o', 't'],
-          pointers: { i: 1 },
+          pointers: {
+            i: 1,
+          },
           active: [1],
           done: [0],
-          vars: { count: '{t:1, o:1, l:0}' },
-          note: "`o`: 2 → 1.",
+          vars: {
+            count: '{t:1, o:1, l:0}',
+          },
+          note: '`o`: 2 → 1.',
         },
         {
           cells: ['l', 'o', 'o', 't'],
-          pointers: { i: 2 },
+          pointers: {
+            i: 2,
+          },
           active: [2],
           done: [0, 1],
-          vars: { count: '{t:1, o:0, l:0}' },
-          note: "`o` again: 1 → 0.",
+          vars: {
+            count: '{t:1, o:0, l:0}',
+          },
+          note: '`o` again: 1 → 0.',
         },
         {
           cells: ['l', 'o', 'o', 't'],
-          pointers: { i: 3 },
+          pointers: {
+            i: 3,
+          },
           active: [3],
           done: [0, 1, 2],
-          vars: { count: '{t:0, o:0, l:0}' },
-          note: "`t`: 1 → 0.",
+          vars: {
+            count: '{t:0, o:0, l:0}',
+          },
+          note: '`t`: 1 → 0.',
         },
         {
           cells: ['l', 'o', 'o', 't'],
           found: [0, 1, 2, 3],
-          vars: { count: '{t:0, o:0, l:0}', answer: 'true' },
-          note: "Same length and no count went below 0, so every count is 0. Anagrams.",
+          vars: {
+            count: '{t:0, o:0, l:0}',
+            answer: 'true',
+          },
+          note: 'Same length and no count went below 0, so every count is 0. Anagrams.',
         },
       ],
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Why true at the end?',
+      text: 'First check that the words have the same length. A count below 0 means you used a tile you did not have. If you use the same number of tiles without running out of any letter, you used exactly the available tiles.',
     },
     {
       kind: 'code',
@@ -546,12 +658,6 @@ export const countingLesson: Lesson = {
 }`,
     },
     {
-      kind: 'callout',
-      tone: 'tip',
-      title: 'Only lowercase letters? Use an array',
-      text: "If the input is only `a`-`z`, an array of 26 zeros is a tiny, fast frequency map: `count[ch.charCodeAt(0) - 97]++`. Same idea, no hashing.",
-    },
-    {
       kind: 'compare',
       title: 'Valid Anagram, three ways',
       rows: [
@@ -562,27 +668,26 @@ export const countingLesson: Lesson = {
     },
     {
       kind: 'text',
-      text: "**Counts unlock 'top k' too.** Spotify Wrapped wants your 2 most played artists. Step 1 is the same frequency map. Step 2: you could sort the artists by count (O(n log n)), but there is a neater trick. A count can never be bigger than n, so make **buckets by count**: `bucket[c]` holds every value seen exactly `c` times. Then read buckets from the highest count down. That is **bucket sort**, and it is O(n). (A heap also works; heaps are module 12.)",
+      text: '**Another use: your most played songs.** In `[1, 1, 1, 2, 2, 3]`, song 1 has 3 plays, song 2 has 2, and song 3 has 1. “Top k” means the k items with the largest counts. For `k = 2`, return `[1, 2]`. You can sort the song ids by their counts, largest first.',
     },
     {
-      kind: 'diagram',
-      title: 'Top 2 of [1, 1, 1, 2, 2, 3, 4] with buckets',
-      art: `counts:  1 → 3    2 → 2    3 → 1    4 → 1
-
-bucket[count] = values seen that many times
-  count 7 |
-   ...    |
-  count 3 | 1        <- read from the top down
-  count 2 | 2
-  count 1 | 3, 4
-  count 0 |
-
-take 1, then 2  →  k = 2 done: [1, 2]`,
-      caption: "Buckets are indexed by count, from 0 to n. Walking them top-down lists values from most to least frequent, with no sorting.",
+      kind: 'callout',
+      tone: 'insight',
+      title: 'Give each possible count its own list',
+      text: 'We will avoid sorting by putting ids into lists labeled by play count. Each list is a **bucket**: just a container for items with something in common. With 6 plays, no song can have more than 6 plays, so buckets 0 through 6 cover every possible count.',
+    },
+    {
+      kind: 'list',
+      items: [
+        'Count the plays: `1 → 3`, `2 → 2`, `3 → 1`.',
+        'Create 7 separate empty lists, labeled 0 through 6. Put id 1 in bucket 3, id 2 in bucket 2, and id 3 in bucket 1.',
+        'Read from bucket 6 down. Buckets 6, 5, and 4 are empty. Take 1 from bucket 3, then 2 from bucket 2. Stop after 2 ids. This is called **bucket sort**: arrange items by numbered containers.',
+      ],
+      ordered: true,
     },
     {
       kind: 'text',
-      text: "**The pattern: frequency map.** Reach for it when the problem says *anagram*, *same letters*, *most / least frequent*, *appears more than*, *unique*, or when order inside the input does not matter, only amounts.",
+      text: '**Pattern: count, then answer.** Use a frequency map for “same letters”, “appears once”, or “most common”. Two walks through n items still take O(n) work: one walk counts, and another uses the counts.',
     },
     {
       kind: 'code',
@@ -597,8 +702,14 @@ for each x in items:
     {
       kind: 'callout',
       tone: 'trap',
-      title: 'Counting traps in JS',
-      text: "**1.** With a plain object, `count[x]++` on a missing key gives `NaN` (undefined + 1). Write `(count.get(x) ?? 0) + 1`. **2.** Object keys are strings: count numbers in `{}` and `Object.keys(count)` returns `'1'`, `'2'`, not `1`, `2`, so a 'top k' answer comes back as strings. A `Map` keeps the real numbers.",
+      title: 'Start missing counts at zero',
+      text: 'A new map does not know that a missing letter has count 0. `count.get(ch)` returns `undefined`, meaning no value is saved. Use `(count.get(ch) ?? 0) + 1`.',
+    },
+    {
+      kind: 'callout',
+      tone: 'trap',
+      title: 'Give each bucket its own list',
+      text: 'For buckets, `Array.from({ length: n + 1 }, () => [])` creates a separate list for each count; `.fill([])` would reuse one list.',
     },
   ],
   problems: [
@@ -608,27 +719,36 @@ for each x in items:
       difficulty: 'easy',
       leetcode: 242,
       pattern: 'Frequency map',
-      statement: "A word game checks whether a played word uses exactly the player's tiles. Return `true` if `t` is a rearrangement of `s` (same letters, same counts), otherwise `false`.",
+      statement:
+        'Return true if `t` uses exactly the same letters as `s`, with the same number of each letter. Order may differ. Such words are called anagrams. For `tool` and `loot`, each has 1 t, 2 Os, and 1 l, so return true.',
       examples: [
-        { input: "s = 'listen', t = 'silent'", output: 'true' },
-        { input: "s = 'rat', t = 'car'", output: 'false', explain: "`t` has a `c`, `s` has a `t`." },
+        {
+          input: "s = 'tool', t = 'loot'",
+          output: 'true',
+          explain: 'Both words have t:1, o:2, l:1.',
+        },
+        {
+          input: "s = 'tool', t = 'toll'",
+          output: 'false',
+          explain: 'The first word has two Os and one L; the second has one O and two Ls.',
+        },
       ],
       constraints: ['0 ≤ s.length, t.length ≤ 5 × 10⁴', 'lowercase English letters'],
       hints: [
-        "Does the order of letters matter at all?",
-        "If the lengths differ, you can stop right away.",
-        "Count each letter of `s` up, each letter of `t` down. A count below zero means `false`.",
+        'Compare the word lengths. Different numbers of letters cannot use exactly the same tiles.',
+        'How many copies of each letter does the first word provide?',
+        'Save those counts. Subtract 1 for each letter of t. A missing letter starts at count 0; any count below 0 means false. With equal lengths, finishing without a negative means true.',
       ],
       approaches: [
         {
           name: 'Sort and compare',
-          idea: 'Anagrams become the same string once their letters are sorted. Short, but sorting costs O(n log n).',
+          idea: 'Put each word’s letters in alphabetical order and compare the resulting strings. Words with exactly the same letter counts give the same sorted string.',
           time: 'O(n log n)',
           space: 'O(n)',
         },
         {
           name: 'Frequency map',
-          idea: "Two strings are anagrams exactly when every letter has the same count in both. Count up for `s`, down for `t`; with equal lengths, no count going negative means they all end at zero.",
+          idea: 'Count the tiles provided by s, then use one tile for each letter of t. If lengths match and no letter runs out, t has used exactly the available tiles.',
           pseudo: `function isAnagram(s, t):
     if length of s ≠ length of t:
         return false
@@ -688,28 +808,41 @@ for each x in items:
       difficulty: 'easy',
       leetcode: 387,
       pattern: 'Frequency map',
-      statement: "A chat app highlights the first letter in a username that appears only once. Return the index of the first character in `s` that does not repeat anywhere in `s`, or `-1` if every character repeats.",
+      statement:
+        'A chat app highlights the first letter in a username that appears only once. Return its index, counting from 0. Return -1 if none qualifies. For `aab`, a appears twice and b once, so return index 2.',
       examples: [
-        { input: "s = 'leetcode'", output: '0', explain: "`l` appears once." },
-        { input: "s = 'loveleetcode'", output: '2', explain: "`l` and `o` repeat; `v` at index 2 does not." },
-        { input: "s = 'aabb'", output: '-1' },
+        {
+          input: "s = 'aab'",
+          output: '2',
+          explain: 'The two As are at indexes 0 and 1. B at index 2 appears once.',
+        },
+        {
+          input: "s = 'abca'",
+          output: '1',
+          explain: 'A repeats later. B at index 1 is the first letter with count 1.',
+        },
+        {
+          input: "s = 'aabb'",
+          output: '-1',
+          explain: 'Both letters repeat.',
+        },
       ],
       constraints: ['1 ≤ s.length ≤ 10⁵', 'lowercase English letters'],
       hints: [
-        "To know a letter is unique you must have seen the whole string. So one pass is not enough to decide early.",
-        "Do two passes: the first one counts, the second one finds.",
-        "In the second pass, return the first index whose letter has count 1.",
+        'In `abca`, you cannot know the first a repeats until you reach the end.',
+        'Count every letter first, then walk the original string again.',
+        'Return the first index whose letter has count 1. If you finish without finding one, return -1.',
       ],
       approaches: [
         {
           name: 'Check each letter against all others',
-          idea: 'For each position, scan the whole string for another copy. Correct, but O(n²).',
+          idea: 'For each letter position, search every other position in the string for another copy of that letter. The first position with no other copy is the answer.',
           time: 'O(n²)',
           space: 'O(1)',
         },
         {
           name: 'Count, then scan',
-          idea: "After one counting pass you know every letter's total. A second pass in the original order finds the first letter whose total is 1, so 'first' is respected.",
+          idea: 'First save each letter’s final count. Then read the original string from left to right and return the first index with count 1; this preserves the required order.',
           pseudo: `function firstUniqChar(s):
     count ← empty map
     for each ch in s:
@@ -752,7 +885,7 @@ for each x in items:
         { name: 'all same', args: ['kkkk'], expected: -1 },
         { name: 'repeat comes later', args: ['abca'], expected: 1 },
       ],
-      takeaway: "Two passes are fine: count everything first, then answer in the original order.",
+      takeaway: 'Two passes are fine: count everything first, then answer in the original order.',
     },
     {
       id: 'hashing-top-k-frequent',
@@ -760,33 +893,47 @@ for each x in items:
       difficulty: 'medium',
       leetcode: 347,
       pattern: 'Frequency map + bucket sort',
-      statement: "A music app wants your `k` most played song ids for your year-in-review. `nums` is the play log (one id per play). Return the `k` ids played most often, in any order. The answer is guaranteed to be unique.",
+      statement:
+        'A music app records one song id per play in `nums`. Return the `k` different ids with the largest play counts, in any order. For `[1, 1, 1, 2, 2, 3]` and k = 2, counts are 1:3, 2:2, 3:1, so return [1, 2]. Ties never leave a choice about which ids belong in the answer.',
       examples: [
-        { input: 'nums = [1, 1, 1, 2, 2, 3], k = 2', output: '[1, 2]' },
-        { input: 'nums = [4, 4, -1, -1, -1, 2], k = 1', output: '[-1]' },
+        {
+          input: 'nums = [1, 1, 1, 2, 2, 3], k = 2',
+          output: '[1, 2]',
+          explain: 'Id 1 has 3 plays and id 2 has 2; both beat id 3 with 1 play.',
+        },
+        {
+          input: 'nums = [4, 4, -1, -1, -1, 2], k = 1',
+          output: '[-1]',
+          explain: 'Id -1 has 3 plays, more than any other id.',
+        },
       ],
-      constraints: ['1 ≤ n ≤ 10⁵', 'k is between 1 and the number of distinct ids', 'the answer is unique'],
+      constraints: [
+        '1 ≤ n ≤ 10⁵',
+        'k is between 1 and the number of distinct ids',
+        'the answer is unique',
+      ],
       hints: [
-        "Step one is obvious: how many times was each id played?",
-        "Sorting the ids by count works, but costs O(n log n). Can a count ever be bigger than n?",
-        "Make `n + 1` buckets where `bucket[c]` lists the ids played exactly `c` times. Read buckets from `n` down to 1 until you have `k` ids.",
+        'Count how many times each song id appears.',
+        'You could sort ids by play count. To avoid sorting, notice that no count can exceed the number of plays.',
+        'A bucket is a list for one count. For counts 1:3, 2:2, 3:1, put id 1 in bucket 3, id 2 in bucket 2, and id 3 in bucket 1.',
+        'Create n + 1 separate buckets. Read from bucket n down to 1 and collect ids until you have k. Skip empty buckets.',
       ],
       approaches: [
         {
           name: 'Count, then sort by count',
-          idea: 'Build the frequency map, sort its entries by count descending, take the first k. Correct and simple, but the sort costs O(n log n).',
+          idea: 'Count each id’s plays, sort the saved ids from largest count to smallest, and take k. This gives the most played ids directly.',
           time: 'O(n log n)',
           space: 'O(n)',
         },
         {
           name: 'Count, then a heap of size k',
-          idea: 'Keep only the k best so far in a min-heap: O(n log k). Covered in module 12.',
+          idea: 'A heap is a tool that quickly exposes the smallest saved score; module 12 explains how it works. You can keep the k largest play counts by discarding a smaller one when a better one arrives.',
           time: 'O(n log k)',
           space: 'O(n)',
         },
         {
           name: 'Count + bucket sort',
-          idea: "A count is always between 1 and n, so counts can be array indexes. Put each id into `bucket[count]`, then walk from the biggest count down: you meet ids from most to least played, with no sorting.",
+          idea: 'With 6 plays, a count must be between 1 and 6. Put each id in the list for its count, then read those lists from highest count to lowest until you have k ids.',
           pseudo: `function topKFrequent(nums, k):
     count ← empty map
     for each x in nums:
@@ -848,40 +995,41 @@ for each x in items:
         { name: 'all the same', args: [[7, 7, 7, 7], 1], expected: [7] },
       ],
       compare: 'unordered',
-      takeaway: "Counts live between 1 and n, so they can be bucket indexes: top-k without sorting.",
+      takeaway: 'Bucket c holds the ids played c times; read larger counts first.',
     },
   ],
   quiz: [
     {
-      prompt: "Strings `s` and `t` have the same length. While counting `t` down, a count hits -1. What can you conclude?",
+      prompt:
+        '`tool` provides two Os. After using both, a third O takes the count to -1. What does that tell you?',
       options: [
-        'Nothing yet, keep going.',
-        '`t` has more of that letter than `s`, so they are not anagrams.',
-        'They are anagrams.',
+        'The words are anagrams.',
+        'The second word needs too many Os.',
+        'You should sort the letters.',
       ],
       answer: 1,
-      explanation: "A negative count means `t` used a letter `s` did not have enough of. Stop and return false.",
+      explanation: 'A negative count means you have run out of that letter.',
     },
     {
-      prompt: "In the bucket sort for top k, why can we use the count as an array index?",
+      prompt: 'Song 7 played three times. Where does its id go in the bucket method?',
+      options: ['Put 3 in bucket 7.', 'Put 7 in bucket 3.', 'Put 7 in every bucket.'],
+      answer: 1,
+      explanation: 'The bucket label is the count. Its contents are the song ids with that count.',
+    },
+    {
+      prompt: 'Why count the whole username before finding its first letter that appears once?',
       options: [
-        'Counts are always between 1 and n, so an array of n + 1 buckets covers every possible count.',
-        'Counts are always small numbers like 1, 2, 3.',
-        'Because JavaScript arrays grow automatically.',
+        'A later letter might repeat an earlier one.',
+        'Maps only work after sorting.',
+        'The last letter is always unique.',
       ],
       answer: 0,
-      explanation: "No value can appear more than n times, so `bucket[count]` always exists.",
-    },
-    {
-      prompt: "You count numbers in a plain object `{}` and return `Object.keys(count)`. What is wrong?",
-      options: ['Nothing.', 'The keys come back as strings like `\'3\'`, not numbers.', 'The keys come back sorted by count.'],
-      answer: 1,
-      explanation: "Plain object keys are always strings. Use a `Map` to keep real numbers.",
+      explanation: 'In `abca`, the first a looks unique until you reach the last a.',
     },
   ],
   takeaways: [
-    "When only amounts matter, a frequency map replaces searching and sorting.",
-    "Two passes (count, then answer) are still O(n).",
-    "Top k: count, then bucket by count and read from the top. O(n), no sort.",
+    'Frequency means number of appearances. Store item → count.',
+    'Count everything before answering questions that depend on the final counts.',
+    'For top k, a bucket labeled c holds the items that appear c times.',
   ],
 };

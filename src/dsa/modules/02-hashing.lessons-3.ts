@@ -5,18 +5,22 @@ import type { Lesson } from '../types';
 export const prefixLesson: Lesson = {
   id: 'prefix-sums',
   title: 'Prefix sums',
-  summary: 'Add once from the left; then any range sum is one subtraction.',
+  summary: 'Save totals from the start so you can add a range by subtracting two totals.',
   minutes: 20,
   blocks: [
     {
       kind: 'callout',
       tone: 'story',
       title: 'The step counter',
-      text: "Your step-counter app shows a graph of steps per hour. Tap 'from 9 am to 5 pm' and it shows the total instantly, for any range you pick, over years of data. It does not re-add every hour each time. It keeps a **running total** (steps since midnight) and subtracts two numbers: total at 5 pm minus total at 9 am.",
+      text: 'Your app records steps each hour: `[2, 5, 1, 4, 3]`, in hundreds. You select hours 1 through 3. It should show `5 + 1 + 4 = 10`. Later, you select a different stretch of hours.',
     },
     {
       kind: 'text',
-      text: "**The problem (Range Sum Query).** You get an array `nums` once, then many questions `(left, right)`: what is `nums[left] + ... + nums[right]`? For `nums = [2, 5, 1, 4, 3]` (hundreds of steps per hour), the query `(1, 3)` is `5 + 1 + 4 = 10`.",
+      text: '**Range Sum Query.** A **range** is a stretch from one position to another, including both ends here. A **query** is one question about the data. Given many `[left, right]` queries, return each range’s sum. The numbers stay the same between questions.',
+    },
+    {
+      kind: 'text',
+      text: 'Start by adding the numbers in each requested range. From module 1: pseudocode is a plain code plan. `←` stores, `=` means equal, `≠` means not equal, and loop endpoints are included. `n` is the input length.',
     },
     {
       kind: 'code',
@@ -33,13 +37,23 @@ export const prefixLesson: Lesson = {
     },
     {
       kind: 'text',
-      text: "Each query costs up to n steps, so q queries cost O(q · n). With 10⁴ queries over 10⁴ hours, that is 10⁸ additions. **Spot the waste:** query `(1, 3)` and query `(0, 4)` both add `5 + 1 + 4`. Every query re-adds numbers we have added before.",
+      text: 'Queries `[1, 3]` and `[0, 3]` both add 5, 1, and 4. We will save totals once so later queries can reuse them. From module 1: time counts work, and space counts extra storage. O(n) work grows with the input length; O(n²) grows like the number of pairs. Here `q` means the number of queries; O(q · n) allows up to n additions for each one.',
     },
     {
       kind: 'callout',
       tone: 'insight',
-      title: 'Store running totals',
-      text: "Build `pre` where `pre[i]` = the sum of the **first i** numbers, so `pre[0] = 0`. Then the sum from `left` to `right` is everything up to `right`, minus everything before `left`: `pre[right + 1] - pre[left]`. One subtraction per query.",
+      title: 'Save totals from the start',
+      text: 'After reading 2, your total is 2. Add 5 to get 7. Add 1 to get 8. This is a **running total**: keep the total so far and add the next number. A **prefix** is the part from the start, so these saved totals are called **prefix sums**.',
+    },
+    {
+      kind: 'list',
+      items: [
+        'Before reading any numbers, the total is 0. Save it as `pre[0] = 0`.',
+        'After 2, save `pre[1] = 2`. After 2 and 5, save `pre[2] = 7`. The slot number tells you how many input numbers you have added.',
+        'For hours 1 through 3, take `pre[4] = 12`, the total of 2, 5, 1, 4. Remove `pre[1] = 2`, which is before your range. You get `12 - 2 = 10`.',
+        'In general, use `pre[right + 1] - pre[left]`. The `+ 1` includes the number at right. You need n + 1 slots to save both the empty start and the n totals.',
+      ],
+      ordered: true,
     },
     {
       kind: 'steps',
@@ -47,38 +61,59 @@ export const prefixLesson: Lesson = {
       frames: [
         {
           cells: [0, '', '', '', '', ''],
-          pointers: { i: 0 },
+          pointers: {
+            i: 0,
+          },
           found: [0],
-          vars: { 'pre[i]': 'sum of first i numbers' },
-          note: "`pre` has n + 1 slots. `pre[0] = 0`: the sum of zero numbers.",
+          vars: {
+            'pre[i]': 'sum of first i numbers',
+          },
+          note: '`pre` has n + 1 slots. `pre[0] = 0`: the sum of zero numbers.',
         },
         {
           cells: [0, 2, '', '', '', ''],
-          pointers: { i: 1 },
+          pointers: {
+            i: 1,
+          },
           active: [1],
-          vars: { step: 'pre[1] = pre[0] + nums[0] = 0 + 2' },
-          note: "Each slot is the previous slot plus one more number.",
+          vars: {
+            step: 'pre[1] = pre[0] + nums[0] = 0 + 2',
+          },
+          note: 'Each slot is the previous slot plus one more number.',
         },
         {
           cells: [0, 2, 7, '', '', ''],
-          pointers: { i: 2 },
+          pointers: {
+            i: 2,
+          },
           active: [2],
-          vars: { step: 'pre[2] = 2 + 5' },
-          note: "Running total after two hours: 7.",
+          vars: {
+            step: 'pre[2] = 2 + 5',
+          },
+          note: 'Running total after two hours: 7.',
         },
         {
           cells: [0, 2, 7, 8, 12, 15],
-          pointers: { i: 5 },
+          pointers: {
+            i: 5,
+          },
           active: [3, 4, 5],
-          vars: { step: '8 = 7 + 1, 12 = 8 + 4, 15 = 12 + 3' },
-          note: "Keep going to the end. One pass, O(n), done once.",
+          vars: {
+            step: '8 = 7 + 1, 12 = 8 + 4, 15 = 12 + 3',
+          },
+          note: 'Keep going to the end. One pass, O(n), done once.',
         },
         {
           cells: [0, 2, 7, 8, 12, 15],
-          pointers: { left: 1, 'right+1': 4 },
+          pointers: {
+            left: 1,
+            'right+1': 4,
+          },
           found: [1, 4],
-          vars: { 'sum(1..3)': 'pre[4] - pre[1] = 12 - 2 = 10' },
-          note: "Query (1, 3): total of the first 4 numbers minus total of the first 1. That is 5 + 1 + 4 = 10.",
+          vars: {
+            'sum(1..3)': 'pre[4] - pre[1] = 12 - 2 = 10',
+          },
+          note: 'Query (1, 3): total of the first 4 numbers minus total of the first 1. That is 5 + 1 + 4 = 10.',
         },
       ],
     },
@@ -92,7 +127,8 @@ pre[4] = [ 2 + 5 + 1 + 4 ]          = 12
 pre[1] = [ 2 ]                      =  2
             ---------------
 pre[4] - pre[1] =  5 + 1 + 4        = 10`,
-      caption: "Both totals include the same first part. Subtracting cancels it and leaves exactly the range you asked for.",
+      caption:
+        'Both totals include the same first part. Subtracting cancels it and leaves exactly the range you asked for.',
     },
     {
       kind: 'code',
@@ -117,7 +153,7 @@ pre[4] - pre[1] =  5 + 1 + 4        = 10`,
     },
     {
       kind: 'text',
-      text: "**Same trick, other operations: Product of Array Except Self.** For each `i`, return the product of every number except `nums[i]`, without division. Split it: *product of everything to the left of i* times *product of everything to the right of i*. Build the left products in one pass from the left and the right products in one pass from the right.",
+      text: '**Related task: multiply everything except one number.** Multiplying numbers gives their **product**. In `[2, 3, 4]`, the answer for position 1 is `2 * 4 = 8`. Save products from the left and from the right, then multiply them. A **suffix** is the part that ends at the end of the array; a suffix product multiplies that part.',
     },
     {
       kind: 'trace',
@@ -129,7 +165,7 @@ pre[4] - pre[1] =  5 + 1 + 4        = 10`,
         [2, 3, '1·2 = 2', 4, 8],
         [3, 4, '1·2·3 = 6', 1, 6],
       ],
-      note: "Nothing to the left of index 0 and nothing to the right of the last index, so those start at 1 (multiplying by 1 changes nothing, like adding 0).",
+      note: 'The answer at each position is left product times right product. Start an empty side at 1 because multiplying by 1 leaves the other side unchanged. Save a side’s product before including the current number.',
     },
     {
       kind: 'compare',
@@ -141,7 +177,7 @@ pre[4] - pre[1] =  5 + 1 + 4        = 10`,
     },
     {
       kind: 'text',
-      text: "**The pattern: prefix sums.** Reach for it when the problem says *sum of a range / subarray*, *many queries on a fixed array*, *balance*, *running total*, or *left side vs right side* (pivot, product except self). It only helps when the array does not change between queries.",
+      text: '**Pattern: save a total before you need it again.** Use prefix sums for many range questions on fixed numbers. A **subarray** is a non-empty, unbroken part of an array: `[5, 1]` is a subarray of `[2, 5, 1, 4]`; `[2, 1]` is not, because it skips 5. Its sum is also a range sum.',
     },
     {
       kind: 'code',
@@ -156,8 +192,14 @@ rangeSum ← pre[right + 1] - pre[left]`,
     {
       kind: 'callout',
       tone: 'trap',
-      title: 'The off-by-one',
-      text: "If you make `pre` the same length as `nums` (with `pre[i]` = sum *through* i), then a range starting at 0 needs `pre[left - 1]` = `pre[-1]`, which is `undefined` in JS and gives `NaN`. The extra `pre[0] = 0` slot removes that special case. Remember: `pre[right + 1] - pre[left]`.",
+      title: 'A slot number is a count, not an input index',
+      text: '`pre[3]` adds the first three numbers: input indexes 0, 1, 2. To include input index 3, you need `pre[4]`. For a range starting at 0, subtract `pre[0] = 0`; you never need a slot at -1.',
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'What changes when the input changes?',
+      text: 'If you change the first input number, all later saved totals change too. Prefix sums are a good fit when the numbers stay fixed between queries.',
     },
   ],
   problems: [
@@ -167,27 +209,37 @@ rangeSum ← pre[right + 1] - pre[left]`,
       difficulty: 'easy',
       leetcode: 303,
       pattern: 'Prefix sums',
-      statement: "A step-counter app stores `nums[i]` = steps in hour `i`. It then answers many questions `[left, right]`: total steps from hour `left` to hour `right`, inclusive. Return the list of answers, one per query, in order.",
+      statement:
+        'You get daily changes in `nums` and questions in `queries`. Each question `[left, right]` asks for the sum from index left through index right, including both ends. Indexes start at 0. Return the answers in query order. For `[2, 5, 1, 4]` and queries `[[1, 3], [0, 1]]`, return `[10, 7]`: 5 + 1 + 4 = 10, and 2 + 5 = 7. The input numbers stay fixed and may be negative.',
       examples: [
-        { input: 'nums = [-2, 0, 3, -5, 2, -1], queries = [[0, 2], [2, 5], [0, 5]]', output: '[1, -1, -3]', explain: 'The numbers can be negative too (think bank deposits and withdrawals).' },
-        { input: 'nums = [2, 5, 1, 4, 3], queries = [[1, 3]]', output: '[10]' },
+        {
+          input: 'nums = [2, 5, 1, 4], queries = [[1, 3], [0, 1]]',
+          output: '[10, 7]',
+          explain: 'The first range is 5 + 1 + 4 = 10. The second is 2 + 5 = 7.',
+        },
+        {
+          input: 'nums = [-2, 0, 3, -5, 2, -1], queries = [[0, 2], [2, 5], [0, 5]]',
+          output: '[1, -1, -3]',
+          explain:
+            'For the first answer, -2 + 0 + 3 = 1. Subtraction of saved totals also works with negative values.',
+        },
       ],
       constraints: ['1 ≤ n ≤ 10⁴', '0 ≤ queries ≤ 10⁴', '0 ≤ left ≤ right < n'],
       hints: [
-        "Adding each range from scratch repeats work. What can you build once, before any query?",
-        "Running totals: `pre[i]` = sum of the first `i` numbers, with `pre[0] = 0`.",
-        "Sum of `left..right` = `pre[right + 1] - pre[left]`.",
+        'Two questions may add some of the same days. What totals could you save once?',
+        'Save pre[i] as the sum of the first i numbers, including pre[0] = 0 before reading any.',
+        'For [2, 5, 1, 4], the first four numbers total 12 and the first one totals 2. The range [1, 3] is 12 - 2 = 10. In general, subtract pre[left] from pre[right + 1].',
       ],
       approaches: [
         {
           name: 'Add each range',
-          idea: 'Loop from left to right for every query. Correct, but O(n) per query.',
+          idea: 'For every question, loop through the requested indexes and add their numbers. This works but repeats additions when ranges overlap.',
           time: 'O(q · n)',
           space: 'O(1)',
         },
         {
           name: 'Prefix sums',
-          idea: "Everything up to `right` minus everything before `left` leaves exactly the range. Building the running totals once makes every query one subtraction.",
+          idea: 'Save a running total after each input number, plus 0 for the empty start. The total through right minus the total before left leaves the requested sum, so each question needs one subtraction.',
           pseudo: `function rangeSums(nums, queries):
     pre ← list of n + 1 zeros
     for i from 0 to n - 1:
@@ -223,7 +275,7 @@ rangeSum ← pre[right + 1] - pre[left]`,
         { name: 'all the same', args: [[7, 7, 7, 7], [[0, 3], [1, 2], [3, 3]]], expected: [28, 14, 7] },
         { name: 'all negative', args: [[-1, -2, -3], [[0, 1], [1, 2]]], expected: [-3, -5] },
       ],
-      takeaway: "Build running totals once; every range sum is then pre[right + 1] - pre[left].",
+      takeaway: 'Build running totals once; every range sum is then pre[right + 1] - pre[left].',
     },
     {
       id: 'hashing-pivot-index',
@@ -231,28 +283,37 @@ rangeSum ← pre[right + 1] - pre[left]`,
       difficulty: 'easy',
       leetcode: 724,
       pattern: 'Prefix sums',
-      statement: "Weights hang along a straight bar at positions `0..n-1`. Find the leftmost position `i` where the total weight strictly to the left equals the total strictly to the right. (With nothing on a side, that side's total is 0.) Return `-1` if no such position exists. Weights can be negative.",
+      statement:
+        'Find the first index whose numbers on the left add to the same total as its numbers on the right. Leave out the number at that index. An empty side totals 0. For `[1, 2, 1]`, return 1: the left is 1 and the right is 1. Return -1 if no index works. Numbers may be negative.',
       examples: [
-        { input: 'nums = [1, 7, 3, 6, 5, 6]', output: '3', explain: 'Left: 1 + 7 + 3 = 11. Right: 5 + 6 = 11.' },
+        {
+          input: 'nums = [1, 7, 3, 6, 5, 6]',
+          output: '3',
+          explain: 'Left: 1 + 7 + 3 = 11. Right: 5 + 6 = 11.',
+        },
         { input: 'nums = [1, 2, 3]', output: '-1' },
-        { input: 'nums = [2, 1, -1]', output: '0', explain: 'Left is empty (0). Right: 1 + (-1) = 0.' },
+        {
+          input: 'nums = [2, 1, -1]',
+          output: '0',
+          explain: 'Left is empty (0). Right: 1 + (-1) = 0.',
+        },
       ],
       constraints: ['1 ≤ n ≤ 10⁴', '-1000 ≤ nums[i] ≤ 1000'],
       hints: [
-        "Summing the left and right side for every `i` is O(n²). What do you know once you have the total?",
-        "Keep a running `left` sum as you walk.",
-        "The right side is `total - left - nums[i]`. Check `left === right`, then add `nums[i]` to `left`.",
+        'At each position, the whole total consists of the left side, the current number, and the right side.',
+        'Save the whole total once. As you walk, keep the sum of numbers before the current position.',
+        'Compute right = total - left - nums[i]. For [1, 2, 1] at index 1: 4 - 1 - 2 = 1. Compare left and right before adding nums[i] to left.',
       ],
       approaches: [
         {
           name: 'Sum both sides for every i',
-          idea: 'Two inner loops per position. Correct, O(n²).',
+          idea: 'At each position, add every number on its left and then every number on its right. Compare the two totals and return the first equal pair; this repeatedly adds the same numbers.',
           time: 'O(n²)',
           space: 'O(1)',
         },
         {
           name: 'Total minus running left sum',
-          idea: "Left + middle + right = total, so once you know the total and the running left sum, the right side is free. One pass after computing the total.",
+          idea: 'Compute the whole total once and keep a running sum for the left side. Subtract the left sum and current number to get the right sum, so each new position takes only a few operations.',
           pseudo: `function pivotIndex(nums):
     total ← sum of nums
     left ← 0
@@ -297,7 +358,7 @@ rangeSum ← pre[right + 1] - pre[left]`,
         { name: 'last index', args: [[-1, -1, 0, 1, 1, 0]], expected: 5 },
         { name: 'all zeros, leftmost', args: [[0, 0, 0]], expected: 0 },
       ],
-      takeaway: "Right side = total - left - current: one running sum gives you both sides.",
+      takeaway: 'Right side = total - left - current: one running sum gives you both sides.',
     },
     {
       id: 'hashing-product-except-self',
@@ -305,33 +366,42 @@ rangeSum ← pre[right + 1] - pre[left]`,
       difficulty: 'medium',
       leetcode: 238,
       pattern: 'Prefix and suffix products',
-      statement: "For each position `i`, return the product of every number in `nums` except `nums[i]`. Do it in O(n) and **without division** (a single 0 would break division anyway).",
+      statement:
+        'For each index i, return the product of all numbers in `nums` except `nums[i]`. Product means the result of multiplying. For `[2, 3, 4]`, return `[12, 8, 6]`: 3 * 4 = 12, 2 * 4 = 8, and 2 * 3 = 6. Use no division. Aim for O(n), meaning work grows with the input length.',
       examples: [
-        { input: 'nums = [1, 2, 3, 4]', output: '[24, 12, 8, 6]' },
-        { input: 'nums = [0, 4, 5]', output: '[20, 0, 0]' },
+        {
+          input: 'nums = [2, 3, 4]',
+          output: '[12, 8, 6]',
+          explain: 'Leave out each position in turn: 3 × 4, 2 × 4, then 2 × 3.',
+        },
+        {
+          input: 'nums = [0, 4, 5]',
+          output: '[20, 0, 0]',
+          explain: 'Leaving out 0 gives 4 × 5 = 20. Every other product includes 0.',
+        },
       ],
       constraints: ['2 ≤ n ≤ 10⁵', 'every product fits in a 32-bit integer'],
       hints: [
-        "The answer at `i` = (product of everything left of `i`) × (product of everything right of `i`).",
-        "Fill `answer[i]` with the left product in a pass from the left, starting at 1.",
-        "Then walk from the right keeping a running `right` product, and multiply it in.",
+        'For one index, the numbers you keep are exactly those on its left and those on its right.',
+        'For [2, 3, 4], save left products [1, 2, 6]. Save the product before multiplying in the current number. An empty side starts at 1 because multiplying by 1 changes nothing.',
+        'Walk back from the right with right = 1. At index 2 get 6 * 1 = 6, then right becomes 4. At index 1 get 2 * 4 = 8, then right becomes 12. At index 0 get 1 * 12 = 12.',
       ],
       approaches: [
         {
           name: 'Multiply all others for every i',
-          idea: 'An inner loop skips `i` and multiplies the rest. Correct, O(n²).',
+          idea: 'For each position, loop through all other positions and multiply their numbers. It works even with zeros, but repeats most multiplications.',
           time: 'O(n²)',
           space: 'O(1) extra',
         },
         {
           name: 'Total product, then divide',
-          idea: 'Divide the total by `nums[i]`. Fast, but forbidden here, and breaks on zeros.',
+          idea: 'Multiplying the entire array and dividing by each current number would be quick when there are no zeros. This task forbids division, and dividing by zero would not produce the required answer.',
           time: 'O(n)',
           space: 'O(1) extra',
         },
         {
           name: 'Left pass, then right pass',
-          idea: "Everything except `i` is exactly 'left of i' plus 'right of i'. Running products from each end give both parts in O(n), and the output array can hold the left products so no extra list is needed.",
+          idea: 'For [2, 3, 4], first save products to the left: [1, 2, 6]. A walk from the right supplies products [12, 4, 1]; multiplying the two sides at each index gives [12, 8, 6] without division.',
           pseudo: `function productExceptSelf(nums):
     answer ← list of n ones
     left ← 1
@@ -391,59 +461,67 @@ rangeSum ← pre[right + 1] - pre[left]`,
         { name: 'two zeros', args: [[0, 0]], expected: [0, 0] },
         { name: 'ones', args: [[5, 1, 1]], expected: [1, 5, 5] },
       ],
-      takeaway: "'Everything except i' = left part × right part; build each with a running value.",
+      takeaway: 'Save the product before each position, then multiply by the product after it.',
     },
   ],
   quiz: [
     {
-      prompt: "`pre = [0, 2, 7, 8, 12, 15]` for `nums = [2, 5, 1, 4, 3]`. What is the sum of `nums[2..4]`?",
+      prompt:
+        '`pre = [0, 2, 7, 8, 12, 15]` for `nums = [2, 5, 1, 4, 3]`. What is the sum of `nums[2..4]`?',
       options: ['pre[4] - pre[2] = 5', 'pre[5] - pre[2] = 8', 'pre[5] - pre[1] = 13'],
       answer: 1,
-      explanation: "Sum of left..right = pre[right + 1] - pre[left] = pre[5] - pre[2] = 15 - 7 = 8 (1 + 4 + 3).",
+      explanation:
+        'Sum of left..right = pre[right + 1] - pre[left] = pre[5] - pre[2] = 15 - 7 = 8 (1 + 4 + 3).',
     },
     {
-      prompt: "Why does `pre` get n + 1 slots with `pre[0] = 0`?",
+      prompt: 'Why does `pre` get n + 1 slots with `pre[0] = 0`?',
       options: [
         'So a range that starts at index 0 needs no special case.',
         'Because JavaScript arrays start at 1.',
         'To store the total at the end.',
       ],
       answer: 0,
-      explanation: "With `pre[0] = 0`, a range starting at 0 is `pre[right + 1] - pre[0]`, same formula as every other range.",
+      explanation:
+        'With `pre[0] = 0`, a range starting at 0 is `pre[right + 1] - pre[0]`, same formula as every other range.',
     },
     {
-      prompt: "When do prefix sums stop being a good fit?",
+      prompt: 'When do prefix sums stop being a good fit?',
       options: [
         'When the numbers can be negative.',
         'When the array keeps changing between queries.',
         'When there are many queries.',
       ],
       answer: 1,
-      explanation: "One change would force you to rebuild every later total. Negatives are fine.",
+      explanation: 'One change would force you to rebuild every later total. Negatives are fine.',
     },
   ],
   takeaways: [
-    "Prefix sums: build running totals once, answer any range in O(1) with pre[right + 1] - pre[left].",
-    "Give `pre` an extra leading 0 so ranges starting at index 0 need no special case.",
-    "The left-pass / right-pass idea also works for products and other 'everything except i' questions.",
+    'A prefix sum is a saved total from the start.',
+    '`pre[i]` adds the first i numbers; `pre[0] = 0` adds none.',
+    'A range sum is `pre[right + 1] - pre[left]`, including both ends.',
+    'For products on each side, start an empty side at 1.',
   ],
 };
 
 export const prefixHashLesson: Lesson = {
   id: 'prefix-sum-hash-map',
   title: 'Prefix sums + hash map',
-  summary: 'Count subarrays with a target sum by looking up earlier running totals.',
+  summary: 'Remember earlier totals to count unbroken stretches that add to a target.',
   minutes: 25,
   blocks: [
     {
       kind: 'callout',
       tone: 'story',
-      title: 'The bank auditor',
-      text: "A bank auditor reads a ledger of daily changes: deposits are positive, withdrawals negative. She asks: *how many stretches of consecutive days changed the balance by exactly +3?* She does not test every stretch. She writes down the running balance each day and asks: *how many earlier days had a balance exactly 3 lower than today?*",
+      title: 'The bank ledger',
+      text: 'Your daily balance changes are `[1, 2, 1]`. How many unbroken stretches add to 3? Days 0 through 1 give `1 + 2 = 3`. Days 1 through 2 give `2 + 1 = 3`. There are 2.',
     },
     {
       kind: 'text',
-      text: "**The problem (Subarray Sum Equals K).** Count the **subarrays** (unbroken runs of neighbouring elements) whose sum is exactly `k`. For `nums = [1, 2, 1, -1, 2]` and `k = 3` the answer is 3: `[1, 2]`, `[2, 1]` and `[1, 2, 1, -1]`.",
+      text: '**Subarray Sum Equals K.** A subarray is a non-empty stretch of neighbouring items, with no skipped positions. Count all subarrays whose sum equals `k`. Different starting positions count separately, even when their numbers match. Deposits can be positive, withdrawals negative.',
+    },
+    {
+      kind: 'text',
+      text: 'Start at each position and keep adding one more day. Count each time the total equals k. From module 1: pseudocode is a plain code plan. `←` stores, `=` means equal, `≠` means not equal, and loop endpoints are included. `n` is the input length.',
     },
     {
       kind: 'code',
@@ -461,29 +539,28 @@ export const prefixHashLesson: Lesson = {
     },
     {
       kind: 'text',
-      text: "Correct, and already smarter than re-adding each subarray, but still O(n²): 2 × 10⁴ numbers means 2 × 10⁸ steps. Can a sliding window help? No: with negative numbers, growing the window can make the sum smaller, so you never know which way to move (windows are module 4). **Spot the waste:** at each end `j`, the real question is *how many starts make the sum k?* and we answer it by trying every start.",
+      text: 'For each ending day, you still try every possible starting day. We will reuse saved totals to count those starts without trying them one by one. From module 1: time counts work, and space counts extra storage. O(n) work grows with the input length; O(n²) grows like the number of pairs.',
     },
     {
       kind: 'callout',
       tone: 'insight',
-      title: 'Flip the question',
-      text: "Let `prefix` be the running total up to the current index. A subarray that ends here sums to `k` exactly when some **earlier** running total equals `prefix - k`. So keep a map `running total → how many times it has appeared`, and at each step add `count[prefix - k]` to the answer.",
+      title: 'Subtract an earlier total',
+      text: 'The total through `[1, 2, 1]` is 4. Removing the total 1 from before the last two days leaves `4 - 1 = 3`. So when the current total is 4 and you want 3, ask for earlier total `4 - 3 = 1`. In general, the earlier total you need is `current total - k`.',
     },
     {
-      kind: 'diagram',
-      title: 'Why prefix - k',
-      art: `   start of array          i             j
-   |-----------------------|-------------|
-   |  earlier prefix  P    |  subarray   |
-   |-------- current prefix  Q ----------|
-
-   subarray sum = Q - P
-   Q - P = k   means   P = Q - k`,
-      caption: "Every subarray ending at the current position is 'current total minus some earlier total'. Counting earlier totals equal to `Q - k` counts exactly the subarrays with sum `k`.",
+      kind: 'list',
+      items: [
+        'Start with total 0 before any days. Save `0 → 1`: total 0 has appeared once. In `{0: 1}`, 0 is the total and 1 is its count. This is an initial entry, not a day in the input.',
+        'Read 1: current total is 1. You need earlier total `1 - 3 = -2`. None is saved. Save `1 → 1`.',
+        'Read 2: current total is 3. You need earlier total `3 - 3 = 0`. Its saved count is 1, so count `[1, 2]`. Then save `3 → 1`. Without the starting entry, you would miss this stretch from day 0.',
+        'Read 1: current total is 4. You need earlier total `4 - 3 = 1`. Its count is 1, so count `[2, 1]`. Then save `4 → 1`. The answer is 2.',
+        'The map saves total → number of earlier appearances. For [0, 0] with k = 0, the first 0 matches once, then raises the saved count of total 0 to 2. The second 0 matches twice, giving 3 stretches overall: the first zero, the second zero, and both together.',
+      ],
+      ordered: true,
     },
     {
       kind: 'trace',
-      title: 'nums = [1, 2, 1, -1, 2], k = 3, map starts as {0: 1}',
+      title: 'Try a longer ledger: nums = [1, 2, 1, -1, 2], k = 3',
       columns: ['x', 'prefix', 'need', 'found', 'total', 'map after'],
       rows: [
         [1, 1, -2, 0, 0, '{0:1, 1:1}'],
@@ -492,13 +569,7 @@ export const prefixHashLesson: Lesson = {
         [-1, 3, 0, 1, 3, '{0:1, 1:1, 3:2, 4:1}'],
         [2, 5, 2, 0, 3, '{0:1, 1:1, 3:2, 4:1, 5:1}'],
       ],
-      note: "`need = prefix - k`, `found = count[need]`. Row 2 finds `[1, 2]`, row 3 finds `[2, 1]`, row 4 finds `[1, 2, 1, -1]`. Answer: 3.",
-    },
-    {
-      kind: 'callout',
-      tone: 'trap',
-      title: 'The {0: 1} seed',
-      text: "Before the loop, the map must already hold `0 → 1`: the running total of the empty start, *before* index 0. Without it, subarrays that start at index 0 are never found. In the trace above, rows 2 and 4 both used that 0. Without the seed you get **1** instead of 3.",
+      note: 'prefix is the current running total; need is prefix - k; found is how often need appeared earlier. total is the answer so far. Each map entry is running total:count. At -1 the running total returns to 3, so its saved count becomes 2.',
     },
     {
       kind: 'code',
@@ -517,7 +588,7 @@ export const prefixHashLesson: Lesson = {
       kind: 'code',
       lang: 'js',
       code: `function subarraySum(nums, k) {
-  const seen = new Map([[0, 1]]);
+  const seen = new Map([[0, 1]]); // one [key, value] pair: total 0 seen once
   let prefix = 0;
   let count = 0;
   for (const x of nums) {
@@ -530,7 +601,17 @@ export const prefixHashLesson: Lesson = {
     },
     {
       kind: 'text',
-      text: "**A twist: Contiguous Array.** In a list of 0s and 1s, find the longest subarray with as many 0s as 1s. Trick: count each 0 as **-1**. Equal counts now means *sum = 0*, so we want the longest subarray with sum 0. Two changes from above: we want the **longest**, so store the **first** index where each running total appeared; and the seed is `{0: -1}` (total 0 'at index -1', before the array starts).",
+      text: '**Next task: the longest balanced stretch.** In `[0, 1, 0, 1]`, all 4 items form a stretch with two 0s and two 1s. Call that stretch **balanced**. This time you want a length, so the map must save where a total first appeared instead of how often.',
+    },
+    {
+      kind: 'list',
+      items: [
+        'Treat a 0 as -1 and a 1 as +1. The pair `[0, 1]` now adds to `-1 + 1 = 0`. Equal numbers of 0s and 1s cancel out.',
+        'Before index 0, the total is 0. Save `0 → -1`, using the imaginary position -1 to mean “before the array”. This is `{0: -1}`: its value is an index, not a count.',
+        'At index 0, total is -1. Save its first index: `-1 → 0`. At index 1, total is 0 again. The stretch after index -1 has sum 0 and length `1 - (-1) = 2`.',
+        'At index 2, total is -1 again. Keep its first index 0. At index 3, total is 0 again: length `3 - (-1) = 4`. Keeping the earliest matching position gives the longest stretch.',
+      ],
+      ordered: true,
     },
     {
       kind: 'steps',
@@ -538,59 +619,120 @@ export const prefixHashLesson: Lesson = {
       frames: [
         {
           cells: [0, 1, 0, 0, 1, 1, 0],
-          vars: { prefix: 0, first: '{0:-1}', best: 0 },
-          note: "Seed: running total 0 is seen 'at index -1', just before the array.",
+          vars: {
+            prefix: 0,
+            first: '{0:-1}',
+            best: 0,
+          },
+          note: 'Initial entry: running total 0 at position -1, just before the array.',
         },
         {
           cells: [0, 1, 0, 0, 1, 1, 0],
-          pointers: { i: 0 },
+          pointers: {
+            i: 0,
+          },
           active: [0],
-          vars: { prefix: -1, first: '{0:-1, -1:0}', best: 0 },
-          note: "A 0 adds -1. Total -1 is new: remember its first index, 0.",
+          vars: {
+            prefix: -1,
+            first: '{0:-1, -1:0}',
+            best: 0,
+          },
+          note: 'A 0 adds -1. Total -1 is new: remember its first index, 0.',
         },
         {
           cells: [0, 1, 0, 0, 1, 1, 0],
-          pointers: { i: 1 },
+          pointers: {
+            i: 1,
+          },
           found: [0, 1],
-          vars: { prefix: 0, first: '{0:-1, -1:0}', best: 2 },
-          note: "Total 0 again. First seen at -1, so indexes 0..1 are balanced: length 1 - (-1) = 2.",
+          vars: {
+            prefix: 0,
+            first: '{0:-1, -1:0}',
+            best: 2,
+          },
+          note: 'Total 0 again. First seen at -1, so indexes 0..1 are balanced: length 1 - (-1) = 2.',
         },
         {
           cells: [0, 1, 0, 0, 1, 1, 0],
-          pointers: { i: 2 },
+          pointers: {
+            i: 2,
+          },
           found: [1, 2],
-          vars: { prefix: -1, first: '{0:-1, -1:0}', best: 2 },
-          note: "Total -1, first seen at 0: length 2 - 0 = 2. Do not overwrite the first index.",
+          vars: {
+            prefix: -1,
+            first: '{0:-1, -1:0}',
+            best: 2,
+          },
+          note: 'Total -1, first seen at 0: length 2 - 0 = 2. Do not overwrite the first index.',
         },
         {
           cells: [0, 1, 0, 0, 1, 1, 0],
-          pointers: { i: 3 },
+          pointers: {
+            i: 3,
+          },
           active: [3],
-          vars: { prefix: -2, first: '{0:-1, -1:0, -2:3}', best: 2 },
-          note: "Total -2 is new. Remember index 3.",
+          vars: {
+            prefix: -2,
+            first: '{0:-1, -1:0, -2:3}',
+            best: 2,
+          },
+          note: 'Total -2 is new. Remember index 3.',
         },
         {
           cells: [0, 1, 0, 0, 1, 1, 0],
-          pointers: { i: 4 },
+          pointers: {
+            i: 4,
+          },
           found: [1, 2, 3, 4],
-          vars: { prefix: -1, first: '{0:-1, -1:0, -2:3}', best: 4 },
-          note: "Total -1, first at 0: indexes 1..4 (1, 0, 0, 1) are balanced. Length 4.",
+          vars: {
+            prefix: -1,
+            first: '{0:-1, -1:0, -2:3}',
+            best: 4,
+          },
+          note: 'Total -1, first at 0: indexes 1..4 (1, 0, 0, 1) are balanced. Length 4.',
         },
         {
           cells: [0, 1, 0, 0, 1, 1, 0],
-          pointers: { i: 5 },
+          pointers: {
+            i: 5,
+          },
           found: [0, 1, 2, 3, 4, 5],
-          vars: { prefix: 0, first: '{0:-1, -1:0, -2:3}', best: 6 },
-          note: "Total 0, first at -1: indexes 0..5 are balanced. Length 6. The seed made this one possible.",
+          vars: {
+            prefix: 0,
+            first: '{0:-1, -1:0, -2:3}',
+            best: 6,
+          },
+          note: 'Total 0, first at -1: indexes 0..5 are balanced. Length 6. The initial entry made this one possible.',
         },
         {
           cells: [0, 1, 0, 0, 1, 1, 0],
-          pointers: { i: 6 },
+          pointers: {
+            i: 6,
+          },
           found: [1, 2, 3, 4, 5, 6],
-          vars: { prefix: -1, first: '{0:-1, -1:0, -2:3}', best: 6 },
-          note: "Total -1, first at 0: length 6 again. Answer: 6.",
+          vars: {
+            prefix: -1,
+            first: '{0:-1, -1:0, -2:3}',
+            best: 6,
+          },
+          note: 'Total -1, first at 0: length 6 again. Answer: 6.',
         },
       ],
+    },
+    {
+      kind: 'list',
+      items: [
+        '**A further variation: full boxes of size 6.** After a total of 8 items, 2 are left over after filling a box. After a total of 20, 2 are also left over. That leftover is the **remainder**: `8 % 6 = 2` and `20 % 6 = 2`. Pseudocode writes `%` as `mod`.',
+        'The items added between those totals are `20 - 8 = 12`: exactly two boxes. Equal remainders mean the stretch between them adds to a **multiple** of 6, a number made of whole groups of 6.',
+        'For Continuous Subarray Sum, save each remainder’s first index. A match gives a possible stretch; also check that its length is at least 2. The initial `0 → -1` lets a stretch begin at index 0.',
+      ],
+      ordered: true,
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'One alternative in the comparison',
+      text: 'A sliding window is a stretch whose ends move as you search; module 4 teaches it. Adding a negative number can lower a stretch’s total, so a simple grow-or-shrink rule does not work here.',
     },
     {
       kind: 'compare',
@@ -604,24 +746,27 @@ export const prefixHashLesson: Lesson = {
     },
     {
       kind: 'text',
-      text: "**The pattern: prefix sum + hash map.** Reach for it when the problem asks to *count* subarrays, or find the *longest* subarray, with a sum (or balance, or remainder) equal to something, **especially when numbers can be negative**. Store counts when you count, first indexes when you want the longest.",
+      text: '**Pattern: prefix sums with a map.** For a target sum, ask for an earlier total that is k smaller. Store counts to count stretches; store first indexes to measure the longest.',
     },
     {
       kind: 'code',
       lang: 'pseudo',
-      title: 'Template: prefix sum + hash map',
-      code: `seen ← map with {0: 1}       // counting; use {0: -1} for longest
+      title: 'Template: count stretches with a target sum',
+      code: `seen ← map with {0: 1}             // total → earlier appearances
 prefix ← 0
-for i from 0 to n - 1:
-    prefix ← prefix + value(nums[i])     // maybe 0 → -1, or mod k
-    look up seen[prefix - target]        // add count, or i - first index
-    record prefix in seen                // count + 1, or first index only`,
+answer ← 0
+for each x in nums:
+    prefix ← prefix + x
+    need ← prefix - k
+    answer ← answer + (seen[need] or 0)
+    seen[prefix] ← (seen[prefix] or 0) + 1
+return answer`,
     },
     {
       kind: 'callout',
       tone: 'trap',
-      title: 'Order and seeds',
-      text: "**Look up before you record**, or with `k = 0` every element would match its own running total. **Seed the map** (`{0: 1}` when counting, `{0: -1}` when measuring length), or subarrays that start at index 0 vanish. **For 'longest', never overwrite** a running total's first index: the earliest start gives the longest run.",
+      title: 'Read earlier totals before saving the current one',
+      text: 'With `[0]` and k = 0, the initial total 0 gives one real stretch. If you saved the new total first, you would count 2, including an empty stretch. Keep the initial entry. For a longest-length question, keep the first index whenever a total repeats.',
     },
   ],
   problems: [
@@ -631,27 +776,33 @@ for i from 0 to n - 1:
       difficulty: 'medium',
       leetcode: 560,
       pattern: 'Prefix sum + hash map',
-      statement: "A bank ledger lists daily balance changes (deposits positive, withdrawals negative). Count the stretches of consecutive days (subarrays) whose changes add up to exactly `k`.",
+      statement:
+        'A bank records daily changes in `nums`: positive for money added and negative for money taken out. Count non-empty stretches of neighbouring days whose changes add to exactly k. For `[1, 1, 1]` and k = 2, days 0–1 and days 1–2 each add to 2, so return 2. These stretches are subarrays; they can overlap.',
       examples: [
         { input: 'nums = [1, 1, 1], k = 2', output: '2', explain: 'Days 0-1 and days 1-2.' },
-        { input: 'nums = [1, 2, 1, -1, 2], k = 3', output: '3', explain: '[1, 2], [2, 1] and [1, 2, 1, -1].' },
+        {
+          input: 'nums = [1, 2, 1, -1, 2], k = 3',
+          output: '3',
+          explain: '[1, 2], [2, 1] and [1, 2, 1, -1].',
+        },
       ],
       constraints: ['1 ≤ n ≤ 2 × 10⁴', '-1000 ≤ nums[i] ≤ 1000', '-10⁷ ≤ k ≤ 10⁷'],
       hints: [
-        "A sliding window will not work: the numbers can be negative.",
-        "Sum of a subarray = (running total now) - (running total just before it started).",
-        "Keep a map from running total to how many times you have seen it, seeded with `{0: 1}`. At each step add `seen[prefix - k]`.",
+        'At one ending day, how could an earlier running total tell you which stretch adds to k?',
+        'A stretch adds to current total minus total before its start. So look for earlier total = current total - k.',
+        'Start with 0 → 1 because total 0 occurred once before the first day. For [1, 2] and k = 3: totals become 1, then 3. At 3, the needed earlier total is 0, giving one stretch from day 0.',
+        'Save total → number of earlier appearances. At each day, add the count for prefix - k, or 0 if missing. Only then increase the count for the current prefix.',
       ],
       approaches: [
         {
           name: 'Every start, running sum',
-          idea: 'For each start, extend the end one step at a time and keep a running total. Correct, O(n²).',
+          idea: 'Choose every starting day and extend the stretch one day at a time, keeping its total. This checks every start-and-end pair without re-adding each whole stretch.',
           time: 'O(n²)',
           space: 'O(1)',
         },
         {
           name: 'Prefix sum + hash map',
-          idea: "A subarray ending here has sum `k` exactly when an earlier running total equals `prefix - k`. Counting earlier totals in a map counts all such subarrays in one lookup; the `{0: 1}` seed stands for 'start at index 0'.",
+          idea: 'At current total 4 with target 3, each earlier total of 1 gives one matching stretch. Save counts of earlier totals, including 0 → 1 before the input, and ask for current total minus k before recording the current total.',
           pseudo: `function subarraySum(nums, k):
     seen ← map with {0: 1}
     prefix ← 0
@@ -703,7 +854,7 @@ for i from 0 to n - 1:
         { name: 'alternating', args: [[1, -1, 1, -1], 0], expected: 4 },
         { name: 'mixed', args: [[3, 4, 7, 2, -3, 1, 4, 2], 7], expected: 4 },
       ],
-      takeaway: "Count subarrays with sum k: count earlier running totals equal to prefix - k, seeded with {0: 1}.",
+      takeaway: 'Count earlier totals that are k smaller; include the total 0 before any input.',
     },
     {
       id: 'hashing-contiguous-array',
@@ -711,27 +862,38 @@ for i from 0 to n - 1:
       difficulty: 'medium',
       leetcode: 525,
       pattern: 'Prefix sum + hash map (first index)',
-      statement: "A coin was flipped many times: `0` for tails, `1` for heads. Return the length of the longest unbroken run of flips with exactly as many heads as tails.",
+      statement:
+        'A coin-flip log uses 0 for tails and 1 for heads. Return the length of the longest unbroken stretch with equal numbers of each. For `[0, 1, 0]`, the first two flips have one of each and length 2; all three do not match, so return 2. The title “contiguous” means neighbouring positions with no gaps.',
       examples: [
-        { input: 'nums = [0, 1]', output: '2' },
-        { input: 'nums = [0, 1, 0, 0, 1, 1, 0]', output: '6', explain: 'Indexes 0..5 (or 1..6) have three of each.' },
+        {
+          input: 'nums = [0, 1, 0]',
+          output: '2',
+          explain:
+            'Either neighbouring pair has one 0 and one 1. The whole array has two 0s but one 1.',
+        },
+        {
+          input: 'nums = [0, 1, 0, 0, 1, 1, 0]',
+          output: '6',
+          explain: 'Indexes 0 through 5 contain three 0s and three 1s, giving length 6.',
+        },
       ],
       constraints: ['1 ≤ n ≤ 10⁵', 'nums[i] is 0 or 1'],
       hints: [
-        "Count a 0 as -1 and a 1 as +1. What is the sum of a balanced run?",
-        "You now need the longest subarray with sum 0. When does a running total repeat?",
-        "Store the first index of each running total, seeded `{0: -1}`. If the total was seen at index `j`, the run `j+1..i` is balanced: length `i - j`.",
+        'Treat each 0 as -1 and each 1 as +1. A stretch with equal counts now adds to 0.',
+        'Equal running totals mean the part between them adds to 0. To get the longest part, remember each total’s first index.',
+        'Start with 0 → -1 for total 0 before the array. For [0, 1], totals are -1 at index 0 and 0 at index 1; matching the starting total gives length 1 - (-1) = 2.',
+        'At index i, if total was first seen at j, the balanced stretch starts at j + 1 and has length i - j. Keep the largest length and never replace an earlier saved index.',
       ],
       approaches: [
         {
           name: 'Every start, running balance',
-          idea: 'For each start, extend and track zeros minus ones; record the longest balanced run. O(n²).',
+          idea: 'Start at each index and extend through later positions, counting 0s and 1s. Whenever the two counts match, compare this stretch’s length with the best so far.',
           time: 'O(n²)',
           space: 'O(1)',
         },
         {
           name: 'Prefix balance + first index',
-          idea: "With 0 as -1, a run is balanced exactly when the running total is the same at both ends. The longest such run starts right after the **first** time this total appeared, so store only first indexes.",
+          idea: 'Count a 0 as -1 and a 1 as +1, so a balanced stretch adds to 0. Save each total’s first index, starting with 0 → -1 before the input; a repeated total at index i gives length i minus its first index.',
           pseudo: `function findMaxLength(nums):
     first ← map with {0: -1}         // running total → first index
     prefix ← 0
@@ -786,7 +948,8 @@ for i from 0 to n - 1:
         { name: 'balanced run at the end', args: [[0, 0, 1, 0, 0, 0, 1, 1]], expected: 6 },
         { name: 'whole array', args: [[1, 0, 1, 0, 1, 0]], expected: 6 },
       ],
-      takeaway: "Turn 'equal counts' into 'sum 0' with ±1, and keep the FIRST index of each running total for the longest run.",
+      takeaway:
+        'Treat 0 as -1, then matching totals mark a balanced stretch. Keep the first index for the longest length.',
     },
     {
       id: 'hashing-continuous-subarray-sum',
@@ -794,28 +957,34 @@ for i from 0 to n - 1:
       difficulty: 'medium',
       leetcode: 523,
       pattern: 'Prefix remainder + hash map',
-      statement: "Eggs are packed in boxes of `k`. A farm logs how many eggs each hen laid, in order (`nums`, all ≥ 0). Is there a run of **at least two** neighbouring hens whose eggs fill boxes exactly, that is, whose total is a multiple of `k` (0 counts as a multiple)?",
+      statement:
+        'Eggs are packed in boxes holding k eggs each. `nums` lists each hen’s egg count, in order. Return true if a stretch of at least two neighbouring hens fills whole boxes with no eggs left over. For `[2, 4]` and k = 6, 2 + 4 = 6 fills one box, so return true. A total of 0 also qualifies. All counts are non-negative.',
       examples: [
         { input: 'nums = [23, 2, 4, 6, 7], k = 6', output: 'true', explain: '2 + 4 = 6.' },
         { input: 'nums = [23, 2, 6, 4, 7], k = 13', output: 'false' },
-        { input: 'nums = [5, 0, 0, 0], k = 3', output: 'true', explain: '0 + 0 = 0, a multiple of 3.' },
+        {
+          input: 'nums = [5, 0, 0, 0], k = 3',
+          output: 'true',
+          explain: '0 + 0 = 0, a multiple of 3.',
+        },
       ],
       constraints: ['1 ≤ n ≤ 10⁵', '0 ≤ nums[i] ≤ 10⁹', '1 ≤ k ≤ 2³¹ - 1'],
       hints: [
-        "A subarray sum is a difference of two running totals. When is a difference a multiple of `k`?",
-        "When both running totals leave the same remainder after dividing by `k`.",
-        "Map remainder → first index, seeded `{0: -1}`. If the remainder was seen at `j` and `i - j ≥ 2`, return true. Never overwrite a first index.",
+        'A remainder is the leftover after division. For k = 6, totals 8 and 20 both leave 2; their difference 12 fills whole boxes.',
+        'The sum of a stretch is the current running total minus an earlier one. Matching remainders mean that difference is a multiple of k, meaning a whole number of boxes.',
+        'Save remainder → first index, starting with 0 → -1 before the input. For [2, 4] and k = 6: remainders become 2 at index 0, then 0 at index 1. The match at -1 gives length 1 - (-1) = 2.',
+        'At each index, update the remainder using (remainder + nums[i]) % k. If it was seen before, require i - first[remainder] >= 2. Save only the first index of each remainder. Pseudocode uses mod for %.',
       ],
       approaches: [
         {
           name: 'Every start, running sum',
-          idea: 'For each start, extend to length ≥ 2 and test `sum % k === 0`. O(n²).',
+          idea: 'Choose each starting hen and add counts through later hens. For every stretch of at least two hens, check that dividing its total by k leaves remainder 0.',
           time: 'O(n²)',
           space: 'O(1)',
         },
         {
           name: 'Prefix remainder + first index',
-          idea: "Two running totals with the same remainder differ by a multiple of `k`, so the run between them works. Keeping the earliest index per remainder gives the longest run, which is the best chance to reach length 2.",
+          idea: 'Totals 8 and 20 leave the same remainder after division by 6, so their difference 12 is a whole number of boxes. Remember each remainder’s first index and check that the distance to a matching index is at least 2; at most the smaller of n + 1 and k different remainders are stored.',
           pseudo: `function checkSubarraySum(nums, k):
     first ← map with {0: -1}         // remainder → first index
     prefix ← 0
@@ -874,50 +1043,49 @@ for i from 0 to n - 1:
         { name: 'near misses', args: [[1, 2, 12], 6], expected: false },
         { name: 'do not overwrite first', args: [[1, 0], 2], expected: false },
       ],
-      takeaway: "Same remainder twice means the part in between is a multiple of k.",
+      takeaway:
+        'Matching running-total remainders mark whole boxes; also require a stretch of at least two hens.',
     },
   ],
   quiz: [
     {
-      prompt: "In Subarray Sum Equals K, why does the map start as `{0: 1}`?",
+      prompt: 'For `[1, 2]` and k = 3, why start the map with `0 → 1`?',
       options: [
-        'It stands for the running total before index 0, so subarrays starting at index 0 are counted.',
-        'Because k is never 0.',
-        'To avoid dividing by zero.',
+        'It counts the total before reading any numbers, so the whole stretch can be found.',
+        'The array must contain a zero.',
+        'It sets the answer to 1.',
       ],
       answer: 0,
-      explanation: "A subarray from index 0 to j has sum `prefix - 0`. The seed provides that 0.",
+      explanation:
+        'The final total is 3. You need earlier total 3 - 3 = 0, which occurred once before the array.',
     },
     {
-      prompt: "Why can't a sliding window solve Subarray Sum Equals K in general?",
-      options: [
-        'It is too slow.',
-        'Negative numbers mean growing the window can lower the sum, so you cannot tell which side to move.',
-        'It needs a sorted array.',
-      ],
-      answer: 1,
-      explanation: "Windows rely on 'bigger window = bigger sum', which only holds for non-negative numbers.",
-    },
-    {
-      prompt: "For Contiguous Array (longest balanced run), what do you store per running total?",
-      options: ['How many times it appeared', 'The most recent index', 'The first index it appeared at'],
+      prompt:
+        'Your current total is 7, k is 3, and earlier total 4 appeared twice. How many matching stretches end here?',
+      options: ['0', '1', '2'],
       answer: 2,
-      explanation: "The earliest matching start gives the longest run, so never overwrite it.",
+      explanation:
+        'Each earlier total of 4 gives a different start whose stretch adds to 7 - 4 = 3.',
     },
     {
-      prompt: "Running totals mod 5 are 3 at index 1 and 3 at index 4. What do you know?",
-      options: [
-        'nums[2] + nums[3] + nums[4] is a multiple of 5.',
-        'nums[1] + ... + nums[4] is a multiple of 5.',
-        'Nothing useful.',
-      ],
-      answer: 0,
-      explanation: "The run is the part after index 1 up to index 4: indexes 2..4.",
+      prompt:
+        'For the longest balanced stretch, total 0 first appears at position -1 and appears again at index 3. What length does this give?',
+      options: ['2', '3', '4'],
+      answer: 2,
+      explanation: '3 - (-1) = 4. The imaginary position -1 lets the stretch include index 0.',
+    },
+    {
+      prompt:
+        'Running totals 8 and 20 both leave remainder 2 after division by 6. What is the sum between them?',
+      options: ['2', '12, a whole number of groups of 6', '28'],
+      answer: 1,
+      explanation: 'Subtract the earlier total: 20 - 8 = 12. The equal leftovers cancel.',
     },
   ],
   takeaways: [
-    "Subarray sum = current running total - earlier running total. Look up the earlier one in a map.",
-    "Seed the map: `{0: 1}` for counting, `{0: -1}` for longest length.",
-    "Store counts to count, first indexes to find the longest. Look up before you record.",
+    'A stretch’s sum is the current running total minus the total before it began.',
+    'For counting, save total → count and start with `0 → 1` for the empty start.',
+    'For longest length, save total → first index and start with `0 → -1`.',
+    'Ask about earlier totals before saving the current total.',
   ],
 };

@@ -3,23 +3,47 @@ import type { Lesson } from '../types';
 const lesson: Lesson = {
   id: 'big-o',
   title: 'Big-O by counting steps',
-  summary: 'Measure an idea by counting its steps, then cut the steps with "best so far".',
+  summary: 'Count repeated work, then save time by remembering the cheapest price so far.',
   minutes: 18,
   blocks: [
     {
       kind: 'callout',
       tone: 'story',
       title: 'The stock app question',
-      text: 'Your stock app shows last week\'s prices for one share. You wonder: "If I had bought on the best day and sold on a later, better day, how much would I have made?" The app has years of prices, so your answer has to be fast, not just correct.',
+      text: 'Your stock app shows the price of one share each day. You want to know how much you could have earned by buying once and selling later. Start with a few days you can check by hand.',
     },
     {
       kind: 'text',
-      text: 'Prices, one per day: `[7, 1, 5, 3, 6, 4]`. Buy on one day, sell on a **later** day. The best is buy at `1` (day 1), sell at `6` (day 4): profit `5`. If prices only fall, you skip the trade and the profit is `0`.',
+      text: 'Prices are `[7, 1, 5, 3, 6, 4]`. Buy at `1`, then sell at `6`: you earn `6 - 1 = 5`. You cannot sell before you buy. If every possible trade loses money, do nothing and return `0`.',
+    },
+    {
+      kind: 'text',
+      text: 'The prices you give the function are its **input**. The answer it returns is its **output**. Here the input is `[7, 1, 5, 3, 6, 4]` and the output is `5`.',
+    },
+    {
+      kind: 'text',
+      text: 'An **array** is an ordered list of items, also called elements. An **index** is an item’s position, counted from `0`: `prices[1]` is `1`, the second price. Here, `n` means the number of prices, so `n = 6`.',
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Read the plan before the code',
+      text: '**Pseudocode** is a code-like plan that you read by hand. `best ← 0` means store `0` in `best`. `=` checks equality; JavaScript uses `===` for that. A colon and the indented lines below it show what belongs inside a loop or an `if`.',
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Read this loop',
+      text: '`for buy from 0 to n - 1` includes both ends: here, `0, 1, 2, 3, 4, 5`. If the start is past the end, skip that loop. `prices[buy]` reads the price at position `buy`. `max(a, b)` chooses the bigger value; `min(a, b)` chooses the smaller one.',
+    },
+    {
+      kind: 'text',
+      text: 'Try every allowed choice and keep the best answer. This is called **brute force**. With `[7, 1, 5]`, the trades are `7 → 1`, `7 → 5`, and `1 → 5`. Only the last makes money: `5 - 1 = 4`. In the plan below, the outer loop picks a buy day. The indented inner loop tries each later sell day for that buy day.',
     },
     {
       kind: 'code',
       lang: 'pseudo',
-      title: 'Brute force: try every pair of days',
+      title: 'Brute force: try every allowed trade',
       code: `function maxProfit(prices):
     best ← 0
     for buy from 0 to n - 1:
@@ -29,40 +53,49 @@ const lesson: Lesson = {
     },
     {
       kind: 'text',
-      text: 'It works. But how fast is it? Do not time it with a stopwatch: computers differ. **Count the steps** instead. With `n` days, the first buy day tries `n - 1` sell days, the next tries `n - 2`, and so on. That adds up to about `n × n / 2` pairs.',
+      text: 'To compare speed, count repeated work. Call one pair check a **step** here. It takes several small code operations, but we care about how often it repeats. Six prices need 15 pair checks. Doubling to 12 prices needs 66: roughly four times as many.',
     },
     {
       kind: 'table',
-      title: 'Steps as the input grows',
-      head: ['Days (n)', 'Brute force (all pairs)', 'One pass (later in this lesson)'],
+      title: 'More prices, much more work',
+      head: ['Prices (n)', 'Check every pair', 'Read each price once'],
       rows: [
-        ['6', '15', '6'],
-        ['1,000', '~500,000', '1,000'],
-        ['100,000', '~5,000,000,000', '100,000'],
+        ['6', '15 pairs', '6 visits'],
+        ['1,000', '499,500 pairs', '1,000 visits'],
+        ['100,000', 'about 5 billion pairs', '100,000 visits'],
       ],
     },
     {
       kind: 'text',
-      text: 'A computer does roughly **10⁸ simple steps per second**. So 100,000 days of prices takes the brute force about 50 seconds. **Big-O** is the name for how the step count grows when `n` grows. Keep only the biggest term and drop the constant: `n × n / 2` becomes **O(n²)**, read "order n squared".',
-    },
-    {
-      kind: 'list',
-      items: [
-        '**Loops one after another add up**: two separate loops over `n` is `n + n` steps, which is still **O(n)**.',
-        '**A loop inside a loop multiplies**: `n` times `n` is **O(n²)**.',
-        '**Drop constants and small terms**: `3n + 5` is O(n); `n² + n` is O(n²).',
-        '**Space** is the extra memory you create (new arrays, maps), not the input itself. A few variables is **O(1)**, "constant".',
-      ],
+      text: '**Big-O** describes how work grows as the input grows. Checking all pairs has **O(n²)** time cost, read “O of n squared”. `n²` means `n × n`: at 1,000 prices, that is 1,000,000. There are about half that many pairs, but the growth is still roughly fourfold when you double the input.',
     },
     {
       kind: 'text',
-      text: '**Spot the waste.** When the brute force looks at selling on day 4, it checks every earlier buy day: 7, 1, 5, 3. But only one of them can ever win: the **cheapest** one. The other comparisons are thrown away every time.',
+      text: 'Reading each price once has **O(n)** time cost: twice as many prices means roughly twice the work. Big-O leaves out fixed multipliers. Two separate full loops do `n + n = 2 × n` visits, so they are also O(n). A loop inside another full loop does `n × n` visits, so it is O(n²).',
+    },
+    {
+      kind: 'text',
+      text: '**Complexity** describes how a cost grows with the input size. **Time complexity** describes the amount of work. Reading all n prices once takes O(n) time. Big-O gives the growth shape, not an exact number of seconds.',
+    },
+    {
+      kind: 'text',
+      text: '**Space complexity** describes extra memory, such as new arrays, beyond the input you were given. Two or three variables stay two or three variables as n grows. That is **O(1)** space, called **constant** space. O(1) time likewise means a fixed amount of work.',
+    },
+    {
+      kind: 'text',
+      text: 'Now let’s remove repeated work. If you sell at `6`, earlier prices are `7, 1, 5, 3`. You only need the cheapest, `1`. Checking the other buy prices again cannot improve that sale.',
     },
     {
       kind: 'callout',
       tone: 'insight',
       title: 'Remember the best so far',
-      text: 'Walk the days once. Keep one number: the cheapest price seen so far. On each day, "sell today" profit is `today - cheapest`. That one remembered number replaces the whole inner loop.',
+      text: 'Read the prices once, from left to right. This is **one pass**. Keep the cheapest price seen and the best profit seen. For each new price, compare today’s possible profit with your best profit.',
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Read the walkthrough',
+      text: 'Use Next to visit one day at a time. The marker `i` shows the current index. The values below the prices show what you remember after that day. The first day can set the cheapest price, but it cannot make a profit yet.',
     },
     {
       kind: 'steps',
@@ -70,52 +103,94 @@ const lesson: Lesson = {
       frames: [
         {
           cells: [7, 1, 5, 3, 6, 4],
-          pointers: { i: 0 },
+          pointers: {
+            i: 0,
+          },
           active: [0],
-          vars: { cheapest: 7, 'sell today': 0, best: 0 },
+          vars: {
+            cheapest: 7,
+            'sell today': 0,
+            best: 0,
+          },
           note: 'Day 0: the cheapest price so far is 7. Selling today earns 0.',
         },
         {
           cells: [7, 1, 5, 3, 6, 4],
-          pointers: { i: 1 },
+          pointers: {
+            i: 1,
+          },
           active: [1],
           done: [0],
-          vars: { cheapest: 1, 'sell today': 0, best: 0 },
+          vars: {
+            cheapest: 1,
+            'sell today': 0,
+            best: 0,
+          },
           note: 'Day 1: 1 is cheaper than 7, so it becomes the new cheapest.',
         },
         {
           cells: [7, 1, 5, 3, 6, 4],
-          pointers: { i: 2 },
+          pointers: {
+            i: 2,
+          },
           active: [1, 2],
           done: [0],
-          vars: { cheapest: 1, 'sell today': 4, best: 4 },
+          vars: {
+            cheapest: 1,
+            'sell today': 4,
+            best: 4,
+          },
           note: 'Day 2: selling at 5 after buying at 1 earns 4. New best.',
         },
         {
           cells: [7, 1, 5, 3, 6, 4],
-          pointers: { i: 3 },
+          pointers: {
+            i: 3,
+          },
           active: [1, 3],
           done: [0, 2],
-          vars: { cheapest: 1, 'sell today': 2, best: 4 },
+          vars: {
+            cheapest: 1,
+            'sell today': 2,
+            best: 4,
+          },
           note: 'Day 3: selling at 3 earns only 2. Best stays 4.',
         },
         {
           cells: [7, 1, 5, 3, 6, 4],
-          pointers: { i: 4 },
+          pointers: {
+            i: 4,
+          },
           active: [1, 4],
           done: [0, 2, 3],
-          vars: { cheapest: 1, 'sell today': 5, best: 5 },
+          vars: {
+            cheapest: 1,
+            'sell today': 5,
+            best: 5,
+          },
           note: 'Day 4: selling at 6 earns 5. New best.',
         },
         {
           cells: [7, 1, 5, 3, 6, 4],
-          pointers: { i: 5 },
+          pointers: {
+            i: 5,
+          },
           found: [1, 4],
           done: [0, 2, 3, 5],
-          vars: { cheapest: 1, 'sell today': 3, best: 5 },
-          note: 'Day 5: selling at 4 earns 3. Done after 6 steps: buy at 1, sell at 6, profit 5.',
+          vars: {
+            cheapest: 1,
+            'sell today': 3,
+            best: 5,
+          },
+          note: 'Day 5: selling at 4 earns 3. After 6 price visits, the best trade is buy at 1 and sell at 6, for profit 5.',
         },
       ],
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Starting before you have seen a price',
+      text: '`infinity` (JavaScript `Infinity`) is bigger than every ordinary price. It lets the first price become the cheapest. `best` starts at `0` because you may skip trading. Updating cheapest first can compare a price with itself; that gives `0`, so it never creates a positive same-day profit.',
     },
     {
       kind: 'code',
@@ -143,46 +218,56 @@ const lesson: Lesson = {
 }`,
     },
     {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Read the comparison',
+      text: '`10⁵` means 10 multiplied by itself five times: 100,000. `5·10⁹` means 5 × 1,000,000,000, or 5 billion. The `~` sign means “about”. These are work estimates, not a promise about seconds. The comparison shows time (work) and space (extra memory).',
+    },
+    {
       kind: 'compare',
       title: 'Best time to buy and sell',
       rows: [
-        { approach: 'Try every pair', time: 'O(n²)', space: 'O(1)', note: 'Correct, but ~5·10⁹ steps for 10⁵ days.' },
-        { approach: 'Cheapest so far (one pass)', time: 'O(n)', space: 'O(1)', note: 'Each day is looked at once. You cannot beat this: you must read every price.' },
-      ],
-    },
-    {
-      kind: 'table',
-      title: 'The Big-O ladder (n = 100,000)',
-      head: ['Big-O', 'In plain words', 'Looks like', 'Steps'],
-      rows: [
-        ['O(1)', 'constant', 'read `arr[i]`', '1'],
-        ['O(log n)', 'halve each time', 'binary search (module 5)', '~17'],
-        ['O(n)', 'one look per item', 'one loop', '10⁵'],
-        ['O(n log n)', 'sorting', '`arr.sort((a, b) => a - b)`', '~1.7·10⁶'],
-        ['O(n²)', 'every pair', 'loop inside a loop', '10¹⁰ (too slow)'],
-        ['O(2ⁿ)', 'every subset', 'backtracking (module 9)', 'hopeless'],
+        {
+          approach: 'Try every pair',
+          time: 'O(n²)',
+          space: 'O(1)',
+          note: 'Correct, but ~5·10⁹ steps for 10⁵ days.',
+        },
+        {
+          approach: 'Cheapest so far (one pass)',
+          time: 'O(n)',
+          space: 'O(1)',
+          note: 'Each day is looked at once. You cannot beat this: you must read every price.',
+        },
       ],
     },
     {
       kind: 'text',
-      text: '**The pattern: best so far.** Reach for it when the answer is a pair `i < j` and, for a fixed right end `j`, only the best left end matters (the cheapest, the biggest, the smallest so far). Carry that best value forward instead of looping back.',
+      text: '**Pattern: best so far.** A pattern is an idea you can reuse. Use this one when you need an earlier item and a later item, but only the best earlier value matters. `i < j` means position `i` comes before position `j`. Remember that earlier value instead of searching for it again.',
     },
     {
       kind: 'code',
       lang: 'pseudo',
-      title: 'Template: best so far',
-      code: `bestLeft ← value for index 0
-answer ← worst possible
+      title: 'Template: remember the best earlier value',
+      code: `bestEarlier ← first item
+answer ← starting answer for this problem
 for j from 1 to n - 1:
-    answer ← better of (answer, combine(bestLeft, item j))
-    bestLeft ← better of (bestLeft, item j)
+    try combining bestEarlier with item j
+    update answer if that choice is better
+    update bestEarlier using item j
 return answer`,
     },
     {
       kind: 'callout',
       tone: 'trap',
-      title: 'Hidden loops',
-      text: 'One `for` loop is not always O(n). `arr.includes(x)`, `arr.indexOf(x)`, `arr.slice()`, `[...arr]` and `arr.shift()` each walk the whole array. Put one inside a loop and you are back to **O(n²)** without seeing a second `for`.',
+      title: 'A short line can hide a loop',
+      text: '`arr.includes(x)` searches for `x` and may check every item. Calling it once for each item can therefore take O(n²) time. Copying a whole array with `arr.slice()` or `[...arr]` also visits every item. Count the work inside the loop, including library calls.',
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Read the practice panels',
+      text: 'A problem’s constraints are its limits and promises. Start with its statement and worked example. Try the hints one at a time. Each approach is a way to solve it; the time and space labels describe its work and extra memory.',
     },
   ],
   problems: [
@@ -193,27 +278,31 @@ return answer`,
       leetcode: 121,
       pattern: 'Best so far',
       statement:
-        'You get `prices`, the price of one share on each day. Choose one day to buy and a **later** day to sell. Return the biggest profit you can make. If no trade makes money, return `0`.',
+        'You get `prices`, the price of one share each day. Buy once and sell on a later day. Return the biggest profit, or `0` if you cannot make money. For `[7, 1, 5]`, buy at 1 and sell at 5: profit `5 - 1 = 4`.',
       examples: [
         { input: 'prices = [7,1,5,3,6,4]', output: '5', explain: 'Buy at 1, sell at 6.' },
-        { input: 'prices = [7,6,4,3,1]', output: '0', explain: 'Prices only fall, so do not trade.' },
+        {
+          input: 'prices = [7,6,4,3,1]',
+          output: '0',
+          explain: 'Prices only fall, so do not trade.',
+        },
       ],
-      constraints: ['1 ≤ n ≤ 10⁵', '0 ≤ prices[i] ≤ 10⁴'],
+      constraints: ['The array has 1 to 100,000 prices.', 'Each price is from 0 to 10,000.'],
       hints: [
-        'Pretend you must sell on day `j`. Which buy day would you pick?',
-        'Only the cheapest price before day `j` matters for selling on day `j`.',
-        'Walk once. Keep `cheapest` so far and `best` profit so far. Update `cheapest` first, then `best = max(best, price - cheapest)`.',
+        'Try choosing a sell day first. Which of the earlier prices would be the best buy?',
+        'Only the smallest earlier price matters. Can you remember it while reading left to right?',
+        'Keep cheapest and best. For each price, update cheapest with min, then best with max(best, price - cheapest).',
       ],
       approaches: [
         {
           name: 'Try every pair',
-          idea: 'Check every buy day with every later sell day and keep the biggest difference. It is correct because it tries every legal trade.',
+          idea: 'For each buy day, check every later sell day. For `[7, 1, 5]`, check 7 → 1, 7 → 5, and 1 → 5. Keeping the biggest positive difference works because you try every allowed trade.',
           time: 'O(n²)',
           space: 'O(1)',
         },
         {
           name: 'Cheapest so far',
-          idea: 'For a fixed sell day, the best buy day is the cheapest one before it. So remember the cheapest price while walking, and compare "sell today" with the best profit seen.',
+          idea: 'Let’s replace the repeated search for a buy day with one remembered price. If you sell at 5 after seeing `[7, 1]`, the cheapest earlier price, 1, gives the best profit: 4. Keep that cheapest price and the best profit while you read once.',
           pseudo: `function maxProfit(prices):
     cheapest ← infinity
     best ← 0
@@ -258,7 +347,8 @@ return answer`,
         { name: 'new low then recovery', args: [[3, 2, 6, 5, 0, 3]], expected: 4 },
         { name: 'zigzag', args: [[2, 1, 2, 1, 0, 1, 2]], expected: 2 },
       ],
-      takeaway: 'When only the best earlier value matters, carry it forward instead of looping back.',
+      takeaway:
+        'When only the best earlier value matters, carry it forward instead of looping back.',
     },
     {
       id: 'thinking-running-sum',
@@ -267,27 +357,34 @@ return answer`,
       leetcode: 1480,
       pattern: 'Best so far',
       statement:
-        'A step counter app logs your steps for each day in `nums`. Return a new array where position `i` holds your **total steps from day 0 to day i**.',
+        'An app records daily score changes in `nums`. Return a new array with the total so far at every position. For `[2, 3, 1]`, return `[2, 5, 6]`: first 2, then `2 + 3`, then `2 + 3 + 1`. A negative change lowers the total.',
       examples: [
-        { input: 'nums = [1,2,3,4]', output: '[1,3,6,10]', explain: '1, then 1+2, then 1+2+3, then 1+2+3+4.' },
+        {
+          input: 'nums = [1,2,3,4]',
+          output: '[1,3,6,10]',
+          explain: '1, then 1+2, then 1+2+3, then 1+2+3+4.',
+        },
         { input: 'nums = [3,1,2,10,1]', output: '[3,4,6,16,17]' },
       ],
-      constraints: ['1 ≤ n ≤ 1000', '-10⁶ ≤ nums[i] ≤ 10⁶'],
+      constraints: [
+        'The array has 1 to 1,000 numbers.',
+        'Each number is from -1,000,000 to 1,000,000.',
+      ],
       hints: [
-        'The brute force re-adds everything from day 0 for each day. What did you already add up on the previous day?',
-        'Total up to day `i` = total up to day `i - 1` + `nums[i]`.',
-        'Keep one running `total`. Add each number to it and push the total into the output.',
+        'Write the total after each item in `[2, 3, 1]`. Which additions would you repeat if you started from the beginning each time?',
+        'After the first two items the total is 5. For the next item, just add 1 to that total.',
+        'Start total at 0. Add each value to total, then append total to the new array. Append means add at the end; JavaScript uses push.',
       ],
       approaches: [
         {
-          name: 'Re-add every prefix',
-          idea: 'For each day, loop from day 0 to that day and add. Correct, but day `i` repeats all the additions of day `i - 1`.',
+          name: 'Add from the beginning each time',
+          idea: 'For every position, add all numbers from the beginning to that position. In `[2, 3, 1]`, that means adding 2 again for every total. The answers are correct, but earlier additions keep repeating.',
           time: 'O(n²)',
           space: 'O(n)',
         },
         {
           name: 'Carry the total',
-          idea: 'Yesterday\'s total already holds the sum of every earlier day, so today\'s total is one addition away. Each number is added exactly once.',
+          idea: 'Let’s reuse the previous total. In `[2, 3, 1]`, total goes 0 → 2 → 5 → 6; add each new total to the end of out with push. The returned array grows to n items, which is why the space cost here includes O(n) for the output.',
           pseudo: `function runningSum(nums):
     out ← empty list
     total ← 0
@@ -330,7 +427,8 @@ return answer`,
         { name: 'negatives', args: [[-1, 2, -3]], expected: [-1, 1, -2] },
         { name: 'zeros', args: [[0, 0, 0]], expected: [0, 0, 0] },
       ],
-      takeaway: 'If step i redoes step i - 1 plus a little, keep step i - 1\'s result. (Module 2 turns this into prefix sums.)',
+      takeaway:
+        'When the next answer only adds one new item, keep the previous total instead of adding everything again.',
     },
     {
       id: 'thinking-best-sightseeing-pair',
@@ -339,28 +437,28 @@ return answer`,
       leetcode: 1014,
       pattern: 'Best so far',
       statement:
-        'A highway has viewpoints at kilometre `0, 1, 2, …`. Viewpoint `i` has a beauty score `values[i]`. You visit two viewpoints `i < j`. Your trip score is `values[i] + values[j]` minus the drive between them, `j - i`. Return the best trip score.',
+        'A road has viewpoints at positions `0, 1, 2, …`, one kilometre apart. Each has a score in `values`. Choose two positions `i < j`. Add their scores and subtract the distance `j - i`. Return the biggest result. For `[8, 1, 5]`, positions 0 and 2 give `8 + 5 - 2 = 11`.',
       examples: [
         { input: 'values = [8,1,5,2,6]', output: '11', explain: 'i = 0, j = 2: 8 + 5 - 2 = 11.' },
         { input: 'values = [1,2]', output: '2', explain: '1 + 2 - 1 = 2.' },
       ],
-      constraints: ['2 ≤ n ≤ 5·10⁴', '1 ≤ values[i] ≤ 1000'],
+      constraints: ['The array has 2 to 50,000 scores.', 'Each score is from 1 to 1,000.'],
       hints: [
-        'n can be 5·10⁴, so all pairs (about 1.25·10⁹) is too slow. Aim for one pass.',
-        'Regroup the score: `(values[i] + i) + (values[j] - j)`. The first part only depends on `i`, the second only on `j`.',
-        'For a fixed `j`, you want the biggest `values[i] + i` with `i < j`. Carry it forward, like the cheapest price in the stock problem.',
-        'At each `j`: answer = max(answer, bestLeft + values[j] - j), then bestLeft = max(bestLeft, values[j] + j).',
+        'Try every pair on `[8, 1, 5]`. For one fixed right position, what part of the score comes from the left position?',
+        'The score is `values[i] + values[j] - j + i`. Move the terms into two groups: `(values[i] + i) + (values[j] - j)`. For i = 0 and j = 2, that is `(8 + 0) + (5 - 2) = 11`.',
+        'For each right position j, keep the largest earlier values[i] + i. This is like remembering the cheapest earlier stock price, but now you want the largest left part.',
+        'Try the current j with bestLeft before updating bestLeft with values[j] + j. This keeps the two positions different.',
       ],
       approaches: [
         {
           name: 'Try every pair',
-          idea: 'Score every pair `i < j` and keep the best. Correct, but about n²/2 pairs.',
+          idea: 'Compute the score for every pair of different positions in left-to-right order. With `[8, 1, 5]`, the scores are 8, 11, and 5, so keep 11. This tries every allowed pair but takes O(n²) time.',
           time: 'O(n²)',
           space: 'O(1)',
         },
         {
           name: 'Best left part so far',
-          idea: 'Split the score into a part that belongs to `i` (`values[i] + i`) and a part that belongs to `j` (`values[j] - j`). For each `j`, only the biggest left part seen so far can win, so one remembered number replaces the inner loop.',
+          idea: 'Let’s separate what comes from each position: `values[i] + values[j] - (j - i)` becomes `(values[i] + i) + (values[j] - j)`. In `[8, 1, 5]`, the best left part before j = 2 is `8 + 0 = 8`, and the right part is `5 - 2 = 3`, giving 11. Remember the largest left part; start best at -Infinity, a value below any possible score, so the first real pair replaces it.',
           pseudo: `function maxScoreSightseeingPair(values):
     bestLeft ← values[0] + 0
     best ← -infinity
@@ -405,19 +503,22 @@ return answer`,
         { name: 'two peaks far apart', args: [[2, 9, 1, 1, 9]], expected: 15 },
         { name: 'distance hurts the big pair', args: [[7, 1, 1, 1, 1, 1, 1, 1, 8]], expected: 8 },
       ],
-      takeaway: 'Rewrite a pair score so each half depends on one index; then "best so far" works.',
+      takeaway:
+        'If you can split a pair score into a left part plus a right part, remember the best earlier left part.',
     },
   ],
   quiz: [
     {
-      prompt: 'One loop walks `n` items. After it finishes, a second, separate loop walks the same `n` items. What is the Big-O?',
-      options: ['O(n²)', 'O(n)', 'O(log n)', 'O(1)'],
+      prompt:
+        'One loop walks `n` items. After it finishes, a second, separate loop walks the same `n` items. What is the Big-O?',
+      options: ['O(n²)', 'O(n)', 'It needs no work', 'O(1)'],
       answer: 1,
-      explanation: 'Loops one after another add: `n + n = 2n`. Drop the constant and you get O(n).',
+      explanation: 'You make 2 × n visits. Doubling n doubles those visits, so the growth is O(n).',
     },
     {
-      prompt: 'Inside a loop over `n` items you call `arr.includes(x)` on an array of `n` items. What is the Big-O?',
-      options: ['O(n)', 'O(n log n)', 'O(n²)', 'O(1)'],
+      prompt:
+        'Inside a loop over `n` items you call `arr.includes(x)` on an array of `n` items. What is the Big-O?',
+      options: ['O(n)', 'Two visits total', 'O(n²)', 'O(1)'],
       answer: 2,
       explanation: '`includes` walks the array, so it is a hidden loop inside your loop: `n × n`.',
     },
@@ -425,13 +526,14 @@ return answer`,
       prompt: 'Prices are `[9, 2, 8, 1, 3]`. What does the one-pass answer return?',
       options: ['2', '6', '7', '8'],
       answer: 1,
-      explanation: 'Buy at 2, sell at 8 for 6. The later low of 1 only allows selling at 3, which earns 2.',
+      explanation:
+        'Buy at 2, sell at 8 for 6. The later low of 1 only allows selling at 3, which earns 2.',
     },
   ],
   takeaways: [
-    'Measure an idea by counting steps as `n` grows, not with a stopwatch.',
-    'Nested loops multiply, loops in a row add; drop constants and small terms.',
-    'If an inner loop only hunts for the best earlier value, carry that value forward instead.',
+    'Use n for the input length. Big-O describes how the work grows when n grows.',
+    'Separate loops add their work; repeated full loops inside each other multiply it.',
+    'Remember the best earlier value when searching earlier items again would repeat work.',
   ],
 };
 

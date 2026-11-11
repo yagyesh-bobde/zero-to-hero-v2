@@ -3,7 +3,7 @@ import type { Lesson } from '../types';
 const lesson: Lesson = {
   id: 'js-toolkit',
   title: 'JavaScript toolkit and traps',
-  summary: 'The JS tools you will use in every problem, what they cost, and the traps that break correct ideas.',
+  summary: 'Sort and copy arrays safely, build separate rows, and avoid losing digits.',
   minutes: 18,
   blocks: [
     {
@@ -14,12 +14,23 @@ const lesson: Lesson = {
     },
     {
       kind: 'text',
-      text: 'Same bug, real problem: kids stand in a line for a class photo with heights `heights`. The photographer wants them in order from shortest to tallest. Return **how many kids are standing in the wrong spot**. For `[1, 1, 4, 2, 1, 3]` the sorted line is `[1, 1, 1, 2, 3, 4]`, and 3 spots differ.',
+      text: 'For a class photo, compare the current heights with the order from shortest to tallest. With `[2, 1, 3]`, the sorted line is `[1, 2, 3]`. Positions 0 and 1 differ, so return `2`. We need to keep the original line to make that comparison.',
+    },
+    {
+      kind: 'code',
+      lang: 'pseudo',
+      title: 'First plan: keep both lines',
+      code: `expected ← a sorted copy of heights
+wrong ← 0
+for i from 0 to n - 1:
+    if heights[i] ≠ expected[i]:
+        wrong ← wrong + 1
+return wrong`,
     },
     {
       kind: 'code',
       lang: 'js',
-      title: 'First try (has two bugs)',
+      title: 'First JavaScript try: why does it return 0?',
       code: `function heightChecker(heights) {
   const expected = heights.sort();
   let wrong = 0;
@@ -31,13 +42,23 @@ const lesson: Lesson = {
     },
     {
       kind: 'text',
-      text: '**Spot the bugs.** (1) `sort()` with no comparator turns numbers into **strings** and sorts them like words: `"10"` comes before `"9"` because `"1"` comes before `"9"`. (2) `sort()` changes the array **in place** and returns the same array, so `expected` and `heights` are one array. Every spot "matches" and the answer is always `0`.',
+      text: '`heights.sort()` changes `heights` itself. This is called changing an array **in place**. It also returns that same array. So `expected` and `heights` name the same line, and comparing them finds no differences. We must make a separate copy before sorting.',
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Spread makes a copy',
+      text: 'In `[...heights]`, the three dots copy the values into a new array. For `[2, 1, 3]`, you get a second `[2, 1, 3]`. Sorting the copy will then leave the original numeric array alone. Copying n items takes O(n) time and O(n) space.',
+    },
+    {
+      kind: 'text',
+      text: 'There is a second bug. Without instructions, `sort()` compares values as text. In `[25, 9, 10]`, the text “10” starts with “1”, so it comes before “9”. Numeric order should be `[9, 10, 25]`. We need to tell sort how to compare numbers.',
     },
     {
       kind: 'callout',
       tone: 'insight',
-      title: 'Copy, then sort with a comparator',
-      text: '`[...heights].sort((a, b) => a - b)` copies first, then sorts as numbers. The comparator returns a negative number when `a` should come first. `a - b` means small to big; `b - a` means big to small.',
+      title: 'Give sort a number comparison',
+      text: 'A **comparator** is a function that tells sort which of two values belongs first. `(a, b) => a - b` returns a negative value if a is smaller, zero if equal, and a positive value if a is bigger. For 9 and 10, `9 - 10 = -1`, so 9 comes first. Use it after making the copy.',
     },
     {
       kind: 'trace',
@@ -77,27 +98,70 @@ const lesson: Lesson = {
 }`,
     },
     {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Read the comparison costs',
+      text: 'For height values from 1 to 100, you can count each height instead of sorting by comparisons. That is **counting sort**, taught in module 8. O(n + 100) means visit n heights plus 100 counters. O(100) space is a fixed 100 counters, so it is constant with respect to n. The plain sort row below is incorrect even though it has a cost.',
+    },
+    {
       kind: 'compare',
       title: 'Height checker',
       rows: [
-        { approach: '`heights.sort()`', time: 'O(n log n)', space: 'O(1)', note: 'Wrong twice: string order, and it overwrites the input.' },
-        { approach: 'Copy + `sort((a, b) => a - b)`', time: 'O(n log n)', space: 'O(n)', note: 'Correct and simple. Fine for n ≤ 100.' },
-        { approach: 'Count each height (module 8)', time: 'O(n + 100)', space: 'O(100)', note: 'Heights are at most 100, so counting sort skips the comparisons.' },
+        {
+          approach: '`heights.sort()`',
+          time: 'O(n log n)',
+          space: 'O(1)',
+          note: 'Wrong twice: string order, and it overwrites the input.',
+        },
+        {
+          approach: 'Copy + `sort((a, b) => a - b)`',
+          time: 'O(n log n)',
+          space: 'O(n)',
+          note: 'Correct and simple. Fine for n ≤ 100.',
+        },
+        {
+          approach: 'Count each height (module 8)',
+          time: 'O(n + 100)',
+          space: 'O(100)',
+          note: 'Heights are at most 100, so counting sort skips the comparisons.',
+        },
       ],
     },
     {
       kind: 'table',
-      title: 'What common JS operations cost',
-      head: ['Operation', 'Cost', 'Why it matters'],
+      title: 'Array tools: what happens behind a short line',
+      head: ['Tool', 'Example', 'Work'],
       rows: [
-        ['`arr.push(x)`, `arr.pop()`', 'O(1)', 'The end of an array is cheap. Use it as a stack.'],
-        ['`arr.shift()`, `arr.unshift(x)`', 'O(n)', 'Every item moves over. For a queue use an index (module 6).'],
-        ['`arr.includes(x)`, `indexOf`', 'O(n)', 'A hidden loop. For many lookups use a `Set` (module 2).'],
-        ['`slice`, `[...arr]`, `concat`', 'O(n)', 'Copies everything, every time you call it.'],
-        ['`arr.sort(cmp)`', 'O(n log n)', 'Sorts in place: copy first if you need the original.'],
-        ['`set.has(x)`, `map.get(k)`', 'O(1) on average', 'The fast way to ask "have I seen this?"'],
-        ['`str.split(\'\')`, `[...str]`', 'O(n)', 'Turns a string into an array you can change.'],
+        [
+          '`push` / `pop`',
+          'Add / remove the last item.',
+          'O(1) per call on average; occasional array growth can take longer.',
+        ],
+        [
+          '`shift` / `unshift`',
+          'Remove / add at the front.',
+          'O(n): other positions may need to move.',
+        ],
+        [
+          '`includes` / `indexOf`',
+          'Look for a value; indexOf returns its first position, or -1.',
+          'O(n) in the worst case: the value may be last or missing.',
+        ],
+        [
+          '`slice` / spread / `concat`',
+          'Copy items, or join arrays end to end.',
+          'O(n) for n items copied. A short line still does the copying.',
+        ],
+        [
+          '`sort` with a comparator',
+          'Put numbers in order.',
+          'Usually modeled as O(n log n); it changes the array you call it on.',
+        ],
       ],
+    },
+    {
+      kind: 'text',
+      text: 'A **2D array**, or grid, is an array containing row arrays. For two empty rows, you want `[[], []]`, with each row separate. `new Array(2).fill([])` instead repeats the same row twice. Adding 7 through the first row gives `[[7], [7]]`.',
     },
     {
       kind: 'diagram',
@@ -117,59 +181,68 @@ Array.from({ length: 3 }, () => [])
   grid[2] ──>  [ ]
 
   grid[0].push(5)  ->  [[5], [], []]`,
-      caption: '`fill(value)` puts the **same** value in every slot. For arrays that means the same array. `Array.from` calls the function once per slot, so each row is new.',
+      caption:
+        '`fill(value)` puts the **same** value in every slot. For arrays that means the same array. `Array.from` calls the function once per slot, so each row is new.',
     },
     {
       kind: 'code',
       lang: 'js',
-      title: 'Toolkit: the safe versions',
-      code: `// Sort numbers: always pass a comparator
-nums.sort((a, b) => a - b);                       // small to big
-const sorted = [...nums].sort((a, b) => b - a);   // big to small, nums untouched
-
-// 2D grid: a new row for every slot
-const grid = Array.from({ length: rows }, () => new Array(cols).fill(0));
-
-// Middle index: whole numbers only
-const mid = Math.floor((lo + hi) / 2);
-
-// Change a string: go through an array, join once
-const chars = [...word];
-chars[0] = chars[0].toUpperCase();
-const fixed = chars.join('');
-
-// Start values for "best so far"
-let biggest = -Infinity;
-let smallest = Infinity;
-
-// Count things: Map keeps number keys as numbers
-const count = new Map();
-count.set(x, (count.get(x) ?? 0) + 1);
-
-// Huge whole numbers: BigInt (note the n)
-const huge = 2n ** 64n;`,
+      title: 'Make each row separately',
+      code: `const grid = Array.from({ length: 2 }, () => new Array(3).fill(0));
+// The function runs twice, making two separate rows:
+// [[0, 0, 0], [0, 0, 0]]
+grid[0][1] = 7;
+// [[0, 7, 0], [0, 0, 0]]`,
     },
     {
-      kind: 'list',
-      items: [
-        '**Strings cannot be changed.** `s[0] = "X"` does nothing (and throws an error in strict mode). Make an array, change it, `join(\'\')`.',
-        '**`7 / 2` is `3.5`**, not 3. Use `Math.floor` for indexes. For negatives, `Math.floor(-3.5)` is `-4` while `Math.trunc(-3.5)` is `-3`.',
-        '**`-7 % 3` is `-1`** in JS, not 2. To wrap around safely: `((x % m) + m) % m`.',
-        '**`Math.max(...arr)`** passes every item as an argument and can crash on very large arrays. A plain loop is always safe.',
-        '**`for (const i in arr)`** gives the indexes as **strings** (`"0"`, `"1"`). Use `for (const x of arr)` or a counting `for` loop.',
-      ],
-    },
-    {
-      kind: 'callout',
-      tone: 'trap',
-      title: 'Numbers above 2⁵³',
-      text: 'JS numbers are exact only up to `2⁵³ - 1 = 9,007,199,254,740,991` (`Number.MAX_SAFE_INTEGER`). Past that, `9007199254740993` quietly becomes `...992`. So turning 20 digits into a `Number` gives the wrong answer, and even `(a * b) % 1_000_000_007` is wrong when `a` and `b` are near 10⁹, because `a * b` is computed first. Use `BigInt` (`10n ** 18n`), or work digit by digit.',
+      kind: 'text',
+      text: 'To flip a grid, swap each cell’s row and column positions. In `[[1, 2, 3], [4, 5, 6]]`, the cell `2` is at row 0, column 1. It moves to row 1, column 0. The result is `[[1, 4], [2, 5], [3, 6]]`. This is called a **transpose**; the practice problem below builds it with separate rows.',
     },
     {
       kind: 'callout',
       tone: 'tip',
-      title: 'Map or plain object?',
-      text: 'Prefer `Map` for counting and lookups. A plain object turns every key into a string (`obj[1]` and `obj["1"]` are the same slot) and already has built-in keys, so `"constructor" in {}` is `true`. `Map` keeps key types, has `.size`, and loops in the order you added keys. Module 2 is all about using it well.',
+      title: 'Indexes need whole numbers',
+      text: '`7 / 2` is 3.5. `Math.floor(7 / 2)` rounds down to 3, which you can use as an array index. To find a middle position between indexes `lo` and `hi`, use `Math.floor((lo + hi) / 2)`.',
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Remainders can be negative',
+      text: '`7 % 3` is 1: divide by 3 and keep the remainder. JavaScript gives `-7 % 3` as -1. For a repeating row of 3 positions, use `((-7 % 3) + 3) % 3`, which gives index 2. The general formula is `((x % m) + m) % m` for a positive size m.',
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Strings need a different way to edit',
+      text: 'A string is text, such as `"cat"`. You cannot replace a character by assigning to `word[0]`. Make a character array with `[...word]`, change it, then join it back with `.join(\'\')`. For example, changing the first array item to `"b"` turns `"cat"` into `"bat"` after joining.',
+    },
+    {
+      kind: 'callout',
+      tone: 'trap',
+      title: 'A Number cannot keep every long integer exact',
+      text: '`2⁵³` means multiply 2 by itself 53 times. JavaScript’s largest safe whole number is `2⁵³ - 1`, or 9,007,199,254,740,991. Above that, some integers are rounded: `9007199254740993` becomes `9007199254740992`. A 20-digit reading is too long to safely turn into a Number.',
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Keep the digits, or use BigInt',
+      text: 'For `[1, 2, 9] + 1`, work from the right: 9 becomes 0 and carries 1 to the 2, making `[1, 3, 0]`. This avoids converting the full number. Another tool is **BigInt**, a JavaScript type for large whole numbers: `9007199254740993n + 1n` stays exact. Its ending `n` is JavaScript syntax, separate from our name n for input length.',
+    },
+    {
+      kind: 'text',
+      text: '**Pattern: build the result separately when you need the original.** Copy a numeric array before sorting it for comparison. For a new grid, create a fresh row for each row. Before using a convenient method, ask whether it changes the original and how many items it visits.',
+    },
+    {
+      kind: 'code',
+      lang: 'pseudo',
+      title: 'Template: keep the original for comparison',
+      code: `expected ← a copy of input
+put expected in the required order
+answer ← 0
+for each position i in input:
+    if input[i] ≠ expected[i]:
+        answer ← answer + 1
+return answer`,
     },
   ],
   problems: [
@@ -180,13 +253,17 @@ const huge = 2n ** 64n;`,
       leetcode: 1051,
       pattern: 'JS sort with comparator',
       statement:
-        'Kids line up for a class photo with heights `heights`. The photographer wants them sorted from shortest to tallest. Return how many positions `i` have a different height than the sorted line would have there.',
+        'For a class photo, heights should go from shortest to tallest. Return how many positions in `heights` differ from that sorted line. For `[2, 1, 3]`, the sorted line is `[1, 2, 3]`. The first two positions differ, so return `2`.',
       examples: [
-        { input: 'heights = [1,1,4,2,1,3]', output: '3', explain: 'Sorted is [1,1,1,2,3,4]; positions 2, 4 and 5 differ.' },
+        {
+          input: 'heights = [1,1,4,2,1,3]',
+          output: '3',
+          explain: 'Sorted is [1,1,1,2,3,4]; positions 2, 4 and 5 differ.',
+        },
         { input: 'heights = [5,1,2,3,4]', output: '5' },
         { input: 'heights = [1,2,3,4,5]', output: '0' },
       ],
-      constraints: ['1 ≤ n ≤ 100', '1 ≤ heights[i] ≤ 100'],
+      constraints: ['There are 1 to 100 heights.', 'Each height is from 1 to 100.'],
       hints: [
         'Build the sorted line, then compare position by position.',
         'Does `sort()` change the original array? What does it return?',
@@ -195,7 +272,7 @@ const huge = 2n ** 64n;`,
       approaches: [
         {
           name: 'Sorted copy',
-          idea: 'The sorted copy is exactly the line the photographer wants, so every position where the two differ is a kid in the wrong spot. Copying keeps the original line to compare against, and the comparator sorts by number instead of by text.',
+          idea: 'Sort a separate copy so you still have the original order to compare against. For `[2, 1, 3]`, positions 0 and 1 differ from `[1, 2, 3]`, so return 2. Pass a - b as the comparator to sort by numeric value.',
           pseudo: `function heightChecker(heights):
     expected ← a sorted copy of heights
     wrong ← 0
@@ -238,7 +315,8 @@ const huge = 2n ** 64n;`,
         { name: 'multi-digit, scrambled', args: [[100, 9, 10]], expected: 3 },
         { name: 'two pairs swapped', args: [[3, 3, 1, 1]], expected: 4 },
       ],
-      takeaway: 'Never call `sort()` on numbers without `(a, b) => a - b`, and copy first if you still need the original.',
+      takeaway:
+        'Never call `sort()` on numbers without `(a, b) => a - b`, and copy first if you still need the original.',
     },
     {
       id: 'thinking-concatenation',
@@ -247,20 +325,20 @@ const huge = 2n ** 64n;`,
       leetcode: 1929,
       pattern: 'Build an array',
       statement:
-        'A music app has a playlist `nums` and a "play twice" button. Return a new array of length `2n` that is the playlist followed by the same playlist again.',
+        'A music app has a “play twice” button. Return a new array with the playlist `nums` followed by the same items again. For `[4, 7]`, return `[4, 7, 4, 7]`. If the original length is n, the result length is `2n`, meaning `2 × n`.',
       examples: [
         { input: 'nums = [1,2,1]', output: '[1,2,1,1,2,1]' },
         { input: 'nums = [1,3,2,1]', output: '[1,3,2,1,1,3,2,1]' },
       ],
-      constraints: ['1 ≤ n ≤ 1000', '1 ≤ nums[i] ≤ 1000'],
+      constraints: ['The playlist has 1 to 1,000 items.', 'Each item is a number from 1 to 1,000.'],
       hints: [
-        'Position `i` and position `i + n` of the answer both hold `nums[i]`.',
-        'In JS you can also spread the array twice into a new one: `[...nums, ...nums]`.',
+        'Write the playlist twice on paper. The order stays the same in each half.',
+        'For a loop solution, nums[i] belongs at i and at i + n. Or spread nums twice into a new array: [...nums, ...nums].',
       ],
       approaches: [
         {
           name: 'Fill both halves',
-          idea: 'Make an array of length 2n. Each `nums[i]` belongs at `i` (first copy) and `i + n` (second copy).',
+          idea: 'Make a new array twice as long. With `[4, 7]`, put 4 at positions 0 and 2, then 7 at positions 1 and 3. Each original item fills one slot in each half.',
           code: `function getConcatenation(nums) {
   const n = nums.length;
   const ans = new Array(2 * n);
@@ -275,7 +353,7 @@ const huge = 2n ** 64n;`,
         },
         {
           name: 'Spread twice',
-          idea: 'Spreading copies every item into the new array in order, so spreading twice gives the playlist then the playlist again. Same O(n) cost, one readable line.',
+          idea: 'Spread copies items into the new array in order. `[...nums, ...nums]` copies the playlist twice without changing nums. It makes 2 × n copies, so its time and output space still grow as O(n).',
           pseudo: `function getConcatenation(nums):
     ans ← empty list
     append every item of nums to ans
@@ -303,7 +381,7 @@ const huge = 2n ** 64n;`,
         { name: 'same song twice', args: [[7, 7]], expected: [7, 7, 7, 7] },
         { name: 'big values', args: [[1000, 1]], expected: [1000, 1, 1000, 1] },
       ],
-      takeaway: 'Spread `[...a, ...b]` builds a new array; it still costs O(n), it just reads nicer.',
+      takeaway: 'Spread copies array items in order. Copying n items twice still has O(n) growth.',
     },
     {
       id: 'thinking-transpose',
@@ -312,21 +390,29 @@ const huge = 2n ** 64n;`,
       leetcode: 867,
       pattern: 'Build a 2D grid',
       statement:
-        'A spreadsheet `matrix` has one row per student and one column per subject. Flip it so each row is a subject and each column is a student: the value at row `r`, column `c` moves to row `c`, column `r`. Return the new grid.',
+        'A spreadsheet is a grid `matrix`, stored as an array of row arrays. Make a new grid by swapping each cell’s row and column positions. For `[[1, 2, 3], [4, 5, 6]]`, return `[[1, 4], [2, 5], [3, 6]]`: the old columns become the new rows. This change is called a transpose.',
       examples: [
         { input: 'matrix = [[1,2,3],[4,5,6],[7,8,9]]', output: '[[1,4,7],[2,5,8],[3,6,9]]' },
-        { input: 'matrix = [[1,2,3],[4,5,6]]', output: '[[1,4],[2,5],[3,6]]', explain: '2 rows × 3 columns becomes 3 rows × 2 columns.' },
+        {
+          input: 'matrix = [[1,2,3],[4,5,6]]',
+          output: '[[1,4],[2,5],[3,6]]',
+          explain: '2 rows × 3 columns becomes 3 rows × 2 columns.',
+        },
       ],
-      constraints: ['1 ≤ rows, cols ≤ 1000', '1 ≤ rows × cols ≤ 10⁵'],
+      constraints: [
+        'There are 1 to 1,000 rows and 1 to 1,000 columns.',
+        'There are at most 100,000 cells in total.',
+        'All rows have the same number of columns.',
+      ],
       hints: [
-        'The answer has `cols` rows and `rows` columns. It is not square in general.',
-        'Create it with `Array.from({ length: cols }, () => new Array(rows))`, not `fill([])`.',
-        'Then `out[c][r] = matrix[r][c]` for every cell.',
+        'Look at one column of the input. Where should its values go in the output?',
+        'The result has one row for each old column. Make separate rows with Array.from, so writing in one cannot change another.',
+        'For every old row r and column c, set out[c][r] = matrix[r][c]. Read matrix[r][c] as row r, then position c within that row.',
       ],
       approaches: [
         {
           name: 'New grid, copy each cell',
-          idea: 'Every cell moves to exactly one new spot (row and column swap), so one visit per cell is enough. `Array.from` makes a separate array for each new row, so writing to one row does not change the others.',
+          idea: 'A grid with 2 rows and 3 columns becomes 3 rows with 2 columns each. Copy every cell once, placing matrix[r][c] at out[c][r]. Array.from calls its function for each new row, so the rows are separate; O(rows · cols) means the number of cells you visit and create.',
           pseudo: `function transpose(matrix):
     rows ← number of rows in matrix
     cols ← number of columns in matrix
@@ -367,14 +453,54 @@ const huge = 2n ** 64n;`,
   return out;
 }`,
       tests: [
-        { name: 'square', args: [[[1, 2, 3], [4, 5, 6], [7, 8, 9]]], expected: [[1, 4, 7], [2, 5, 8], [3, 6, 9]] },
-        { name: 'wide becomes tall', args: [[[1, 2, 3], [4, 5, 6]]], expected: [[1, 4], [2, 5], [3, 6]] },
+        {
+          name: 'square',
+          args: [
+            [
+              [1, 2, 3],
+              [4, 5, 6],
+              [7, 8, 9],
+            ],
+          ],
+          expected: [
+            [1, 4, 7],
+            [2, 5, 8],
+            [3, 6, 9],
+          ],
+        },
+        {
+          name: 'wide becomes tall',
+          args: [
+            [
+              [1, 2, 3],
+              [4, 5, 6],
+            ],
+          ],
+          expected: [
+            [1, 4],
+            [2, 5],
+            [3, 6],
+          ],
+        },
         { name: 'one cell', args: [[[5]]], expected: [[5]] },
         { name: 'one row', args: [[[1, 2, 3]]], expected: [[1], [2], [3]] },
         { name: 'one column', args: [[[1], [2]]], expected: [[1, 2]] },
-        { name: 'negatives', args: [[[-1, 0], [0, -1]]], expected: [[-1, 0], [0, -1]] },
+        {
+          name: 'negatives',
+          args: [
+            [
+              [-1, 0],
+              [0, -1],
+            ],
+          ],
+          expected: [
+            [-1, 0],
+            [0, -1],
+          ],
+        },
       ],
-      takeaway: 'Build grids with `Array.from({ length }, () => row)`; `fill([])` shares one row.',
+      takeaway:
+        'Swapping row and column positions needs a new grid with the dimensions swapped and each row separate.',
     },
     {
       id: 'thinking-plus-one',
@@ -383,29 +509,33 @@ const huge = 2n ** 64n;`,
       leetcode: 66,
       pattern: 'Digit by digit',
       statement:
-        'A car\'s odometer stores its reading as an array of digits, most significant first: `[1, 2, 9]` means 129. Add one kilometre and return the new digits. The reading can have up to 100 digits, and there are no leading zeros (except the number 0 itself).',
+        'A car’s distance counter stores its digits from left to right in `digits`: `[1, 2, 9]` means 129. Add 1 and return the digits. For `[1, 2, 9]`, 9 + 1 gives 10: write 0 and carry 1 to the next place, making `[1, 3, 0]`. There can be up to 100 digits, so do not turn the whole reading into a Number. You may change the given array.',
       examples: [
         { input: 'digits = [1,2,3]', output: '[1,2,4]' },
         { input: 'digits = [1,2,9]', output: '[1,3,0]', explain: '9 + 1 = 10: write 0, carry 1.' },
         { input: 'digits = [9,9]', output: '[1,0,0]' },
       ],
-      constraints: ['1 ≤ digits.length ≤ 100', '0 ≤ digits[i] ≤ 9'],
+      constraints: [
+        'There are 1 to 100 digits.',
+        'Each digit is from 0 to 9.',
+        'The first digit is not 0 unless the whole number is 0.',
+      ],
       hints: [
-        'Why not `Number(digits.join(\'\')) + 1`? Think about 100 digits and 2⁵³.',
-        'Add like you do on paper: start from the last digit.',
-        'A digit below 9 just goes up by one and you are done. A 9 becomes 0 and the carry moves left.',
-        'If every digit was 9, put a 1 in front.',
+        'Start at the rightmost digit, just as you would when adding on paper.',
+        'If that digit is below 9, raise it by 1 and stop. If it is 9, write 0 and carry the extra 1 to the left.',
+        'Keep moving left through 9s. If you reach a digit below 9, increase it and return the array.',
+        'If every digit was 9, they are now all 0. Return a new array with 1 followed by those zeros.',
       ],
       approaches: [
         {
           name: 'Convert to a number',
-          idea: '`Number(digits.join(\'\')) + 1` works for short inputs but breaks above 2⁵³ (about 16 digits). `BigInt` fixes that, but it builds and parses a whole new number for one +1.',
+          idea: 'Joining digits as text and converting to Number works for a short reading, but long readings can be rounded above the safe integer limit. BigInt can hold the full integer, but direct digit work avoids converting it at all.',
           time: 'O(n)',
           space: 'O(n)',
         },
         {
           name: 'Carry from the right',
-          idea: 'Adding 1 only changes the trailing 9s (they become 0) and the first non-9 digit to their left (it goes up by one). Walk from the right, and stop as soon as there is no carry.',
+          idea: 'Let’s add directly to the digits so long readings stay exact. In `[1, 9, 9]`, the last 9 becomes 0, the next 9 becomes 0, and 1 becomes 2: `[2, 0, 0]`. Work from right to left until the carry stops; if every digit was 9, return a new leading 1 followed by zeros.',
           pseudo: `function plusOne(digits):
     for i from n - 1 down to 0:
         if digits[i] < 9:
@@ -461,7 +591,7 @@ const huge = 2n ** 64n;`,
           expected: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
         },
       ],
-      takeaway: 'If the number can be longer than ~15 digits, never turn it into a JS Number.',
+      takeaway: 'For a very long integer, changing its digits directly avoids Number rounding.',
     },
   ],
   quiz: [
@@ -469,37 +599,41 @@ const huge = 2n ** 64n;`,
       prompt: 'What does `[10, 9, 1].sort()` return?',
       options: ['[1, 9, 10]', '[1, 10, 9]', '[10, 9, 1]', '[9, 10, 1]'],
       answer: 1,
-      explanation: 'With no comparator, JS compares the numbers as text: "1" < "10" < "9". Use `(a, b) => a - b`.',
+      explanation:
+        'With no comparator, JS compares the numbers as text: "1" < "10" < "9". Use `(a, b) => a - b`.',
     },
     {
       prompt: '`const g = new Array(2).fill([]); g[0].push(7);` What is `g` now?',
       options: ['[[7], []]', '[[7], [7]]', '[7, []]', 'An error'],
       answer: 1,
-      explanation: '`fill([])` puts the same single array in both slots, so pushing through one slot shows up in both.',
+      explanation:
+        '`fill([])` puts the same single array in both slots, so pushing through one slot shows up in both.',
     },
     {
       prompt: 'Why can `Number("98765432109876543210") + 1` give a wrong answer?',
       options: [
         'Strings cannot be converted to numbers',
-        'The value is above 2⁵³, so JS cannot store every digit exactly',
-        '`+ 1` joins strings instead of adding',
+        'The value is past the safe integer limit, so Number rounds it',
+        '`+ 1` always joins text instead of adding',
         'It always gives the right answer',
       ],
       answer: 1,
-      explanation: 'JS numbers are exact only up to 2⁵³ - 1 (about 9·10¹⁵). Bigger values get rounded. Use BigInt or work digit by digit.',
+      explanation:
+        'A Number cannot store every integer above 9,007,199,254,740,991 exactly. Keep the digits as an array, or use BigInt.',
     },
     {
       prompt: 'What is `-7 % 3` in JavaScript?',
       options: ['2', '-1', '1', '-2'],
       answer: 1,
-      explanation: 'JS keeps the sign of the left side. For a wrap-around index use `((x % m) + m) % m`, which gives 2.',
+      explanation:
+        'JS keeps the sign of the left side. For a wrap-around index use `((x % m) + m) % m`, which gives 2.',
     },
   ],
   takeaways: [
-    'Sort numbers with `(a, b) => a - b`, and copy first if you still need the original order.',
-    'Make grids with `Array.from({ length: n }, () => ...)`; `fill([])` shares one array.',
-    'Know the hidden costs: `shift`, `includes`, `slice` and spread are all O(n).',
-    'Above 2⁵³ JS numbers lose digits: use BigInt or work digit by digit.',
+    'For numeric sorting, pass a comparator. Copy first if you need the original order.',
+    'For grids, create each row separately. fill([]) repeats the same array.',
+    'Searching, copying, and changing the front of an array can each visit n items.',
+    'Long integers may lose digits as a Number. Use digit-by-digit work or BigInt.',
   ],
 };
 

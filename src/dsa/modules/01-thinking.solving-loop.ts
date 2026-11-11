@@ -3,36 +3,36 @@ import type { Lesson } from '../types';
 const lesson: Lesson = {
   id: 'solving-loop',
   title: 'The solving loop',
-  summary: 'One repeatable path from "no idea" to working code: brute force, waste, insight, dry run, edge cases.',
+  summary: 'Start with examples, find repeated work, and check a faster plan by hand.',
   minutes: 20,
   blocks: [
     {
       kind: 'callout',
       tone: 'story',
       title: 'The tiny voting machine',
-      text: 'A school votes for class president on an old machine. The rules promise that the winner got **more than half** of all votes. The machine streams the votes past once and has room to remember just two numbers. Can it still name the winner?',
+      text: 'A class votes for a president. Each number names a candidate: `[2, 1, 2]` means two votes for candidate 2 and one for candidate 1. You are promised that one candidate has more than half the votes. Can you find that candidate while remembering just two values?',
     },
     {
       kind: 'text',
-      text: 'Good solvers do not wait for a flash of genius. They run the same loop every time, and the idea shows up somewhere in the middle. Here is the loop. We will run it on the voting machine, step by step.',
+      text: 'The **majority** is the value that appears more than half the time. In `[2, 1, 2]`, candidate 2 has 2 of the 3 votes, so return `2`. In `[5]`, return `5`. A value appearing exactly half the time would not be a majority.',
     },
     {
       kind: 'list',
       ordered: true,
       items: [
-        '**Understand**: say the problem back in one sentence. Ask what is guaranteed.',
-        '**Examples**: work 2-3 by hand, including a tiny one.',
-        '**Brute force**: the obvious correct answer, and its Big-O.',
-        '**Spot the waste**: what is repeated or thrown away?',
-        '**Optimize**: one idea that removes the waste. Check it against the constraint target.',
-        '**Dry run**: run the idea by hand on an example.',
-        '**Edge cases**: empty, one item, all the same, negatives, biggest n.',
-        '**Code**: translate the pseudocode, then test the edge cases.',
+        '**Understand**: say what goes in, what comes out, and what is promised.',
+        '**Examples**: work a small case by hand, then try a different one.',
+        '**Brute force**: write an obvious correct plan and count its work.',
+        '**Spot the waste**: find what the plan repeats or forgets.',
+        '**Optimize**: change the plan to do less work or use less memory.',
+        '**Dry run**: follow the new plan by hand.',
+        '**Edge cases**: check boundary situations, such as one item or all values equal.',
+        '**Code**: translate the plan and test it.',
       ],
     },
     {
       kind: 'text',
-      text: '**1-2. Understand and examples.** Given `nums`, return the value that appears **more than n / 2 times**. It is guaranteed to exist. `[3, 2, 3]` → `3`. `[2, 2, 1, 1, 1, 2, 2]` → `2` (four of seven). Tiny case: `[5]` → `5`. Limits: `n ≤ 5·10⁴`, so O(n²) (about 2.5·10⁹) is too slow; aim for O(n log n) or O(n).',
+      text: 'An **edge case** is a boundary situation that is easy to overlook. Follow the constraints: this voting problem always has at least one vote, so an empty array is not an allowed input. The largest size is 50,000 votes. O(n²) could mean about 2.5 billion comparisons, so look for less repeated counting.',
     },
     {
       kind: 'code',
@@ -49,13 +49,23 @@ const lesson: Lesson = {
     },
     {
       kind: 'text',
-      text: '**4. Spot the waste.** The value `2` gets counted from scratch every time it shows up as a candidate. Two common fixes: **sort** the array, and the majority must sit in the middle (it covers more than half, so it covers index `n / 2`): O(n log n). Or **count** each value once in a map: O(n) time but O(n) extra memory (that is module 2). The machine only has room for two numbers. Can we do O(n) time *and* O(1) memory?',
+      text: 'For `[2, 1, 2]`, the brute force can count the votes for 2 twice: once for each place 2 appears. Sorting is one improvement. It puts equal votes together, and a group longer than half the array must cover the middle position. For `[2, 1, 2]`, sorted order is `[1, 2, 2]`; the middle is 2.',
+    },
+    {
+      kind: 'text',
+      text: 'Sorting works, but we want to remember only two values. Let’s try removing pairs of different votes. In `[2, 1, 2]`, remove one 2 and one 1. A 2 remains. With more than half the votes, the winner has more votes than all other candidates combined. Removing different pairs cannot remove its lead.',
     },
     {
       kind: 'callout',
       tone: 'insight',
-      title: '5. Optimize: votes cancel out',
-      text: 'Pair each vote for the winner with one vote for someone else and throw both away. The winner has more votes than everyone else **combined**, so it is the one left standing. On a stream, keep a `candidate` and a `count`: same vote, count up; different vote, count down; at zero, the next vote becomes the new candidate. This is the **Boyer-Moore voting** trick.',
+      title: 'Remember the votes that have not paired off',
+      text: 'Keep a `candidate`, the name on the votes you are holding, and a `count`, how many are left unmatched. A matching vote raises the count. A different vote pairs off with one held vote and lowers it. At zero, you hold no votes, so the next vote starts a new group. This method is called **Boyer-Moore voting**.',
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Count is not the total number of votes',
+      text: 'On `[2, 1, 2]`, your count goes `1 → 0 → 1`. Candidate 2 received 2 votes, but the final count is only 1 because a pair was removed. Use Next below to follow the same rule on seven votes.',
     },
     {
       kind: 'steps',
@@ -63,60 +73,101 @@ const lesson: Lesson = {
       frames: [
         {
           cells: [2, 2, 1, 1, 1, 2, 2],
-          pointers: { i: 0 },
+          pointers: {
+            i: 0,
+          },
           active: [0],
-          vars: { candidate: 2, count: 1 },
+          vars: {
+            candidate: 2,
+            count: 1,
+          },
           note: 'Count is 0, so the first vote, 2, becomes the candidate.',
         },
         {
           cells: [2, 2, 1, 1, 1, 2, 2],
-          pointers: { i: 1 },
+          pointers: {
+            i: 1,
+          },
           active: [1],
           done: [0],
-          vars: { candidate: 2, count: 2 },
+          vars: {
+            candidate: 2,
+            count: 2,
+          },
           note: 'Another 2 matches the candidate: count goes up.',
         },
         {
           cells: [2, 2, 1, 1, 1, 2, 2],
-          pointers: { i: 2 },
+          pointers: {
+            i: 2,
+          },
           active: [2],
           done: [0, 1],
-          vars: { candidate: 2, count: 1 },
+          vars: {
+            candidate: 2,
+            count: 1,
+          },
           note: 'A 1 cancels one of the 2s: count goes down.',
         },
         {
           cells: [2, 2, 1, 1, 1, 2, 2],
-          pointers: { i: 3 },
+          pointers: {
+            i: 3,
+          },
           active: [3],
           done: [0, 1, 2],
-          vars: { candidate: 2, count: 0 },
+          vars: {
+            candidate: 2,
+            count: 0,
+          },
           note: 'Another 1 cancels the last 2. Everything so far has paired off.',
         },
         {
           cells: [2, 2, 1, 1, 1, 2, 2],
-          pointers: { i: 4 },
+          pointers: {
+            i: 4,
+          },
           active: [4],
           done: [0, 1, 2, 3],
-          vars: { candidate: 1, count: 1 },
+          vars: {
+            candidate: 1,
+            count: 1,
+          },
           note: 'Count is 0, so 1 becomes the new candidate.',
         },
         {
           cells: [2, 2, 1, 1, 1, 2, 2],
-          pointers: { i: 5 },
+          pointers: {
+            i: 5,
+          },
           active: [5],
           done: [0, 1, 2, 3, 4],
-          vars: { candidate: 1, count: 0 },
+          vars: {
+            candidate: 1,
+            count: 0,
+          },
           note: 'A 2 cancels the 1. Count is back to 0.',
         },
         {
           cells: [2, 2, 1, 1, 1, 2, 2],
-          pointers: { i: 6 },
+          pointers: {
+            i: 6,
+          },
           found: [6],
           done: [0, 1, 2, 3, 4, 5],
-          vars: { candidate: 2, count: 1 },
+          vars: {
+            candidate: 2,
+            count: 1,
+          },
           note: 'Count is 0, so the last 2 becomes the candidate. It survives: the answer is 2.',
         },
       ],
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Read the two if lines separately',
+      text: '`none` means there is no candidate yet; JavaScript uses `null` for that. If the count is zero, choose the current value. Then still run the next `if`: that value matches your new candidate, so its count becomes 1.',
     },
     {
       kind: 'code',
@@ -134,6 +185,21 @@ const lesson: Lesson = {
     return candidate`,
     },
     {
+      kind: 'list',
+      items: [
+        '**One vote** `[5]`: choose 5, count becomes 1, return 5.',
+        '**All equal** `[4, 4, 4]`: the count reaches 3, return 4.',
+        '**A late change** `[1, 2, 2]`: the first pair cancels, then the last 2 becomes the candidate.',
+        '**Negative candidate names** `[-1, -1, 2]`: values are labels; only equality matters. Return -1.',
+      ],
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Read the short JavaScript update',
+      text: '`count += x === candidate ? 1 : -1` adds 1 if the values match, otherwise it adds -1. The `? ... : ...` expression chooses between two values. It is the same decision as the longer if/else in the pseudocode.',
+    },
+    {
       kind: 'code',
       lang: 'js',
       title: '8. Code',
@@ -148,49 +214,70 @@ const lesson: Lesson = {
 }`,
     },
     {
-      kind: 'list',
-      items: [
-        '**7. Edge cases.** One vote `[5]`: it becomes the candidate with count 1. Correct.',
-        '**All the same** `[4, 4, 4]`: count only goes up. Correct.',
-        '**Winner shows up last** `[1, 2, 2]`: 1 is cancelled by the first 2, the last 2 takes over. Correct.',
-        '**Negative values** `[-1, -1, 2]`: nothing in the idea cares about sign. Correct.',
-      ],
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Read the alternatives in the comparison',
+      text: 'A `Map` stores a value beside a key (a label you use to look it up), such as “candidate 2 → 4 votes”. Counting once with a map is another approach, taught in module 2. “Distinct” means different: `[2, 2, 1]` has 2 distinct values. The comparison’s middle index n / 2 means rounded down: for 7 votes, use index 3. Sorting may need extra working memory; its exact amount depends on the sorting tool.',
     },
     {
       kind: 'compare',
       title: 'Majority element',
       rows: [
-        { approach: 'Count every value', time: 'O(n²)', space: 'O(1)', note: 'Recounts the same value again and again.' },
-        { approach: 'Sort, take the middle', time: 'O(n log n)', space: 'O(1) to O(n)', note: 'The majority always covers index n / 2.' },
-        { approach: 'Count in a map (module 2)', time: 'O(n)', space: 'O(n)', note: 'Fast, but needs memory for every distinct value.' },
-        { approach: 'Boyer-Moore voting', time: 'O(n)', space: 'O(1)', note: 'One pass, two variables.' },
+        {
+          approach: 'Count every value',
+          time: 'O(n²)',
+          space: 'O(1)',
+          note: 'Recounts the same value again and again.',
+        },
+        {
+          approach: 'Sort, take the middle',
+          time: 'O(n log n)',
+          space: 'O(1) to O(n)',
+          note: 'The majority always covers index n / 2.',
+        },
+        {
+          approach: 'Count in a map (module 2)',
+          time: 'O(n)',
+          space: 'O(n)',
+          note: 'Fast, but needs memory for every distinct value.',
+        },
+        {
+          approach: 'Boyer-Moore voting',
+          time: 'O(n)',
+          space: 'O(1)',
+          note: 'One pass, two variables.',
+        },
       ],
     },
     {
       kind: 'text',
-      text: '**The pattern is the loop itself.** You did not need to know Boyer-Moore in advance: the brute force showed you the waste, and the "two numbers only" limit pushed you to the cancel-out idea. Run this loop on every problem in this course.',
+      text: '**Pattern: use the solving loop.** Start with a plan you can explain, then look for repeated work. A trick like vote cancellation can take time to find. The loop gives you useful next actions even when a faster idea is not obvious.',
     },
     {
       kind: 'code',
       lang: 'pseudo',
-      title: 'Template: the solving loop',
-      code: `function solve(problem):
-    restate it in one sentence, list what is guaranteed
-    work 2-3 examples by hand, one of them tiny
-    write the brute force and its Big-O
-    target ← Big-O allowed by the constraints
-    while brute force Big-O > target:
-        find the work that is repeated or thrown away
-        remove it with one idea
-    dry-run the idea on an example
-    check edge cases: empty, one item, all same, negatives, max n
-    write the code and test those edge cases`,
+      title: 'Template: a checklist you can repeat',
+      code: `state the input, output, limits, and promises
+work a tiny example by hand
+write an obvious correct plan
+estimate its time and extra memory at the largest size
+if it does too much work:
+    find one repeated task and try to remove it
+dry-run the new plan on a small example
+check the allowed edge cases
+translate into code and test`,
     },
     {
       kind: 'callout',
       tone: 'trap',
       title: 'Voting needs the promise',
       text: 'Boyer-Moore always returns *some* candidate, even when no value has more than half. On `[1, 2, 3]` it returns `3`, which is wrong. It only works because the problem **guarantees** a majority. Without that promise, do a second pass to count the candidate and check it really is more than `n / 2`.',
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Read the sorting code in the practice approaches',
+      text: '`[...nums]` copies the items into a new array. `.sort((a, b) => a - b)` orders numbers from small to big; `b - a` orders big to small. `Math.floor(7 / 2)` is 3: round down to a whole-number index. The next lesson explains these tools and their traps.',
     },
   ],
   problems: [
@@ -201,28 +288,32 @@ const lesson: Lesson = {
       leetcode: 169,
       pattern: 'Solving loop',
       statement:
-        'Votes for class president arrive as `nums`. One candidate got **more than half** of all the votes (this is guaranteed). Return that candidate. Try to use O(1) extra memory.',
+        'Votes are candidate numbers in `nums`. You are promised that one number appears more than half the time. Return it; this number is the majority. For `[3, 2, 3]`, 3 has 2 of the 3 votes, so return `3`. Try to keep only a fixed number of variables: O(1) extra space.',
       examples: [
         { input: 'nums = [3,2,3]', output: '3' },
         { input: 'nums = [2,2,1,1,1,2,2]', output: '2', explain: '2 has 4 of the 7 votes.' },
       ],
-      constraints: ['1 ≤ n ≤ 5·10⁴', '-10⁹ ≤ nums[i] ≤ 10⁹', 'a majority always exists'],
+      constraints: [
+        'There are 1 to 50,000 votes.',
+        'Each candidate number is from -1,000,000,000 to 1,000,000,000.',
+        'One candidate always has more than half the votes.',
+      ],
       hints: [
-        'Start with the brute force: count each value. Then ask what work it repeats.',
-        'If you sort, where in the array must the majority value sit?',
-        'For O(1) memory: pair one winner vote with one other vote and drop both. Who is left?',
-        'Keep `candidate` and `count`. When `count` is 0, take the current vote as candidate; then add 1 if it matches, subtract 1 if not.',
+        'Count every value on a tiny example. If you put equal values together by sorting, where would the majority sit?',
+        'A group longer than half the array must cover the middle. Sorting works, but can you avoid keeping a sorted copy?',
+        'On `[3, 2, 3]`, remove a 3 and a 2. A 3 remains. A winner with more than half the votes survives removing different pairs.',
+        'Keep candidate and count. At count 0, choose the current vote. Then add 1 if it matches candidate, otherwise subtract 1.',
       ],
       approaches: [
         {
           name: 'Count every value',
-          idea: 'For each value, count how often it appears and return the one above n / 2. Correct but it recounts the same value many times.',
+          idea: 'For every candidate you encounter, count its votes across the whole array. Return it if the count is above n / 2. This is correct, but may count the same candidate repeatedly.',
           time: 'O(n²)',
           space: 'O(1)',
         },
         {
           name: 'Sort, take the middle',
-          idea: 'After sorting, equal values sit together. A block longer than half the array must cover the middle index, so `sorted[floor(n / 2)]` is the answer.',
+          idea: 'Put equal values together by sorting a copy. In `[2, 1, 2]`, sorted order is `[1, 2, 2]`, and the middle value is 2. A majority occupies more than half the positions, so it must cover index Math.floor(n / 2); Math.floor rounds down.',
           code: `function majorityElement(nums) {
   const sorted = [...nums].sort((a, b) => a - b);
   return sorted[Math.floor(sorted.length / 2)];
@@ -232,7 +323,7 @@ const lesson: Lesson = {
         },
         {
           name: 'Boyer-Moore voting',
-          idea: 'Cancel each winner vote against one different vote. The winner has more votes than all the others together, so after every cancellation it is still standing. A candidate plus a count is enough to do this in one pass.',
+          idea: 'Let’s use the majority promise to avoid sorting. Remove pairs of different votes: the majority has more votes than all others combined, so some of its votes must survive. Keep one candidate and its unmatched count; this count records what is left after pairing, not its total votes.',
           pseudo: `function majorityElement(nums):
     candidate ← none
     count ← 0
@@ -281,7 +372,8 @@ const lesson: Lesson = {
         { name: 'winner split up', args: [[4, 4, 7, 7, 7, 4, 4]], expected: 4 },
         { name: 'winner in the middle', args: [[10, 9, 9, 9, 10]], expected: 9 },
       ],
-      takeaway: 'A strong promise in the statement ("more than half") often unlocks an O(1)-memory trick.',
+      takeaway:
+        'A promise like “more than half” can make a faster plan valid. Check which promise your plan needs.',
     },
     {
       id: 'thinking-max-product-two',
@@ -290,34 +382,41 @@ const lesson: Lesson = {
       leetcode: 1464,
       pattern: 'Track the top few',
       statement:
-        'In a game you combine two different power-ups from `nums`. A power-up of level `x` gives a boost of `x - 1`, and two boosts multiply. Pick two **different positions** `i ≠ j` and return the biggest `(nums[i] - 1) × (nums[j] - 1)`.',
+        'Pick two power-ups at different positions in `nums`. A level x gives a boost of x - 1. Multiply the two boosts and return the biggest result. For `[3, 4, 5, 2]`, choose levels 4 and 5: `(4 - 1) × (5 - 1) = 12`. Equal levels may be used if they come from two positions.',
       examples: [
         { input: 'nums = [3,4,5,2]', output: '12', explain: '(5 - 1) × (4 - 1) = 12.' },
-        { input: 'nums = [1,5,4,5]', output: '16', explain: 'The two 5s are at different positions: 4 × 4 = 16.' },
+        {
+          input: 'nums = [1,5,4,5]',
+          output: '16',
+          explain: 'The two 5s are at different positions: 4 × 4 = 16.',
+        },
       ],
-      constraints: ['2 ≤ n ≤ 500', '1 ≤ nums[i] ≤ 1000'],
+      constraints: [
+        'There are 2 to 500 power-ups.',
+        'Each level is from 1 to 1,000, so every boost is at least 0.',
+      ],
       hints: [
-        'Run the loop: brute force is every pair. What do you notice about which pair always wins?',
-        'All boosts are 0 or more, so the two biggest values give the biggest product.',
-        'Sorting works, but you can find the two biggest values in one pass with two variables.',
-        'For each x: if x > first, then second = first and first = x; else if x > second, second = x.',
+        'Check every pair on `[3, 4, 5, 2]`. Which two levels give the largest product?',
+        'All boosts are zero or bigger. Making either boost bigger cannot make the product smaller, so choose the two biggest levels.',
+        'You can sort, but only two values matter. Keep first and second as you read the array.',
+        'If x > first, move the old first to second, then put x in first. Otherwise, if x > second, replace second. Return (first - 1) × (second - 1).',
       ],
       approaches: [
         {
           name: 'Every pair',
-          idea: 'Try every pair `i < j` and keep the biggest product. With n ≤ 500 this is fast enough, and it is a correct starting point.',
+          idea: 'Try each pair of positions and keep the biggest product after subtracting 1 from each level. With at most 500 values, this O(n²) method is already practical.',
           time: 'O(n²)',
           space: 'O(1)',
         },
         {
           name: 'Sort',
-          idea: 'Since every boost is at least 0, the two largest values win. Sort and multiply the last two.',
+          idea: 'Every boost is at least zero, so the two largest levels give the largest product. Sort from small to big, then use the last two values. Equal values at different positions still count.',
           time: 'O(n log n)',
           space: 'O(n) for a copy',
         },
         {
           name: 'Track the two biggest',
-          idea: 'You only ever need the top two values, so keep them in two variables while walking. When a new value beats the first, the old first slides down to second.',
+          idea: 'Let’s avoid ordering values we will not use. On `[3, 4, 5]`, the largest and second largest become `(3, 0)`, then `(4, 3)`, then `(5, 4)`. When a new largest arrives, save the old largest as second before replacing it.',
           pseudo: `function maxProduct(nums):
     first ← 0
     second ← 0
@@ -381,23 +480,30 @@ const lesson: Lesson = {
       leetcode: 414,
       pattern: 'Track the top few',
       statement:
-        'A game shows a podium for the top three **different** scores in `nums`. Return the third-highest distinct score. If there are fewer than three different scores, return the highest score instead.',
+        'A game needs the three highest different scores from `nums`. Return the third-highest different score. If fewer than three different scores exist, return the highest. For `[2, 2, 3, 1]`, the different scores in order are 3, 2, 1, so return `1`. The repeated 2 does not get another place.',
       examples: [
         { input: 'nums = [3,2,1]', output: '1' },
-        { input: 'nums = [1,2]', output: '2', explain: 'Only two different scores, so return the highest.' },
+        {
+          input: 'nums = [1,2]',
+          output: '2',
+          explain: 'Only two different scores, so return the highest.',
+        },
         { input: 'nums = [2,2,3,1]', output: '1', explain: 'The distinct scores are 3, 2, 1.' },
       ],
-      constraints: ['1 ≤ n ≤ 10⁴', '-2³¹ ≤ nums[i] ≤ 2³¹ - 1'],
+      constraints: [
+        'There are 1 to 10,000 scores.',
+        'Scores are whole numbers from -2,147,483,648 to 2,147,483,647.',
+      ],
       hints: [
-        'Edge cases first: duplicates, fewer than three distinct values, and very negative values.',
-        'A sort works: sort, drop duplicates, and pick. Can you do it in one pass?',
-        'Keep `first`, `second`, `third`. Skip a value equal to any of them. A bigger value shifts the others down.',
-        'Use `null` (or `-Infinity`) for "not found yet", never a real number like `0` or `-2³¹`, because those can be real scores.',
+        'On `[2, 2, 3, 1]`, why should the second 2 not take another place? Think about repeated values first.',
+        'You could remove repeats, sort from big to small, then choose the third value if it exists.',
+        'To avoid sorting, keep first, second, and third. Skip values already in those slots; insert a new value where it belongs and move smaller ones down.',
+        'Start slots at null, meaning “nothing yet”. Skip repeats before updating. If third is still null at the end, return first.',
       ],
       approaches: [
         {
           name: 'Sort the distinct values',
-          idea: 'Remove duplicates, sort big to small, take index 2 if it exists, else index 0. Correct and easy to reason about.',
+          idea: 'Remove repeated values, sort big to small, and choose index 2 if there are at least three values; otherwise choose index 0. A Set is a JavaScript collection that keeps each value once, so `[...new Set(nums)]` makes the repeat-free array. In the code, `condition ? a : b` chooses a when true and b otherwise.',
           code: `function thirdMax(nums) {
   const distinct = [...new Set(nums)].sort((a, b) => b - a);
   return distinct.length >= 3 ? distinct[2] : distinct[0];
@@ -407,7 +513,7 @@ const lesson: Lesson = {
         },
         {
           name: 'Track the top three',
-          idea: 'Only the three best distinct scores can matter, so keep three slots. A new value either slides into one slot and pushes the smaller ones down, or it is too small (or a duplicate) and is ignored.',
+          idea: 'Let’s keep only the three scores that matter. Skip any value already in a slot; a new larger value pushes smaller scores down. null means an empty slot, continue skips to the next loop item, and `[first, second, third] = [x, first, second]` saves the old values on the right before replacing the slots together.',
           pseudo: `function thirdMax(nums):
     first ← none
     second ← none
@@ -488,32 +594,36 @@ const lesson: Lesson = {
       leetcode: 2110,
       pattern: 'Streak counter',
       statement:
-        'Your stock app wants to highlight **smooth descents**: one or more days in a row where each day\'s price is **exactly 1 lower** than the day before. A single day counts as a smooth descent by itself. Given `prices`, return how many smooth descent periods there are.',
+        'A smooth descent is one or more neighboring days in `prices` where each next price is exactly 1 lower. A single day also counts. Return the number of such periods. For `[3, 2, 1]`, count `[3]`, `[2]`, `[1]`, `[3,2]`, `[2,1]`, and `[3,2,1]`: return `6`. A drop of 2 does not continue a run.',
       examples: [
         {
           input: 'prices = [3,2,1,4]',
           output: '7',
           explain: '[3], [2], [1], [4], [3,2], [2,1], [3,2,1].',
         },
-        { input: 'prices = [8,6,7,7]', output: '4', explain: 'Only the single days. 8 → 6 drops by 2, not 1.' },
+        {
+          input: 'prices = [8,6,7,7]',
+          output: '4',
+          explain: 'Only the single days. 8 → 6 drops by 2, not 1.',
+        },
       ],
-      constraints: ['1 ≤ n ≤ 10⁵', '1 ≤ prices[i] ≤ 10⁵'],
+      constraints: ['There are 1 to 100,000 days.', 'Each price is from 1 to 100,000.'],
       hints: [
-        'Run the loop. n ≤ 10⁵, so checking every period (O(n²)) is too slow.',
-        'Count each period at its **last** day. How many smooth periods end on day `i`?',
-        'If day `i` is exactly 1 below day `i - 1`, the run ending at `i` is one longer than the run ending at `i - 1`. Otherwise it is 1.',
-        'Add the current run length to the answer every day.',
+        'List the periods ending at the last day of `[3, 2, 1]`. How many are there?',
+        'They have lengths 1, 2, and 3. Just as with zero-filled windows, a run of length L gives L periods ending here.',
+        'If today is exactly 1 below yesterday, increase run by 1. Otherwise set run to 1, because the single day counts.',
+        'Add run to total every day. Only compare with yesterday when i > 0.',
       ],
       approaches: [
         {
           name: 'Extend from every start',
-          idea: 'From each day, extend right while each price drops by exactly 1, counting one period per step. Correct but O(n²) when the whole array is one long descent.',
+          idea: 'Start at every day and extend the period while each next price is exactly 1 lower. Count each extension. A long descent gets revisited from many starts, so this can take O(n²) time.',
           time: 'O(n²)',
           space: 'O(1)',
         },
         {
           name: 'Streak counter',
-          idea: 'If the smooth run ending today has length `L`, then exactly `L` periods end today (lengths 1 to L). The run grows by one when today is exactly 1 below yesterday, else it restarts at 1. Adding `L` every day counts every period once.',
+          idea: 'Let’s count each period where it ends. On `[3, 2, 1]`, run lengths are 1, 2, 3, so add `1 + 2 + 3 = 6`. If the price does not drop by exactly 1, restart run at 1 for the single day; this visits each day only once.',
           pseudo: `function getDescentPeriods(prices):
     run ← 0
     total ← 0
@@ -563,21 +673,30 @@ const lesson: Lesson = {
         { name: 'gap in the middle', args: [[10, 9, 7, 6]], expected: 6 },
         { name: 'flat prices', args: [[2, 2, 2]], expected: 3 },
       ],
-      takeaway: 'Same streak trick as zero-filled windows: count each period at the day it ends.',
+      takeaway:
+        'A run can count valid periods as well as measure their length: add its length at each ending position.',
     },
   ],
   quiz: [
     {
-      prompt: 'You wrote a correct brute force and its Big-O is too slow for the limits. What is the next step of the loop?',
-      options: ['Start coding it anyway', 'Spot the waste: find work that is repeated or thrown away', 'Check edge cases', 'Look up the answer'],
+      prompt:
+        'You wrote a correct brute force and its Big-O is too slow for the limits. What is the next step of the loop?',
+      options: [
+        'Start coding it anyway',
+        'Spot the waste: find work that is repeated or thrown away',
+        'Check edge cases',
+        'Look up the answer',
+      ],
       answer: 1,
-      explanation: 'The waste in the brute force is the map to the faster idea. Edge cases and code come after the idea.',
+      explanation:
+        'The waste in the brute force is the map to the faster idea. Edge cases and code come after the idea.',
     },
     {
       prompt: 'Run Boyer-Moore voting on `[1, 1, 2, 2, 2]`. What is the final candidate?',
       options: ['1', '2', 'none', 'It depends on the order of the loop'],
       answer: 1,
-      explanation: '1 (count 1), 1 (2), 2 (1), 2 (0), then 2 becomes candidate with count 1. Answer: 2.',
+      explanation:
+        '1 (count 1), 1 (2), 2 (1), 2 (0), then 2 becomes candidate with count 1. Answer: 2.',
     },
     {
       prompt: 'Boyer-Moore returns `3` on `[1, 2, 3]`. Why is that not a bug in this problem?',
@@ -588,13 +707,15 @@ const lesson: Lesson = {
         'It is a bug: Boyer-Moore is wrong',
       ],
       answer: 1,
-      explanation: 'The trick relies on the "more than half" promise. Without it, you add a second pass to verify the candidate.',
+      explanation:
+        'The trick relies on the "more than half" promise. Without it, you add a second pass to verify the candidate.',
     },
   ],
   takeaways: [
-    'Understand → examples → brute → waste → optimize → dry run → edge cases → code. Every time.',
-    'The brute force is not wasted effort: its repeated work points straight at the better idea.',
-    'Read every guarantee in the statement; tricks like voting only work because of one.',
+    'State the input, output, and promises before choosing a solution.',
+    'Use a correct brute force to find repeated work you could remove.',
+    'Dry-run a faster idea and check allowed edge cases before coding it.',
+    'Vote cancellation relies on the promise that one value appears more than half the time.',
   ],
 };
 

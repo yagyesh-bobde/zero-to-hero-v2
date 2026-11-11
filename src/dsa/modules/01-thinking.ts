@@ -10,55 +10,62 @@ const mod: Module = {
   number: 1,
   part: 'foundations',
   title: 'How to think about a problem',
-  tagline: 'Big-O from constraints, pseudocode, and a repeatable way to go from brute force to optimal.',
+  tagline: 'Start with small examples, count the work, and turn a plain-word plan into code.',
   draft: false,
   intro:
-    'Most problems feel hard because you do not know where to start. This module gives you a start every time: count steps to see if an idea is fast enough, read the constraints to know how fast it must be, plan in pseudocode, and follow one solving loop from brute force to the best answer. You will also learn the JavaScript traps that quietly break correct ideas. After it, easy array problems should feel routine, and you will know how to begin any medium.',
+    'You can write loops and functions, but a new problem can still leave you wondering where to start. Begin with a small example, try a direct solution, and see which work you can avoid repeating. You will learn how to compare the work and memory of two plans, read the problem’s limits, and write a plan before coding. JavaScript examples show how to turn that plan into a working answer.',
   lessons: [bigO, constraints, pseudocode, solvingLoop, jsToolkit],
   patterns: [
     {
       name: 'Best so far',
       signals: [
-        'The answer is a pair `i < j`: buy then sell, left then right.',
-        'For a fixed right end, only the best left value matters (cheapest, biggest, smallest).',
-        'The brute force has an inner loop that only looks backwards for a max or min.',
+        'You choose an earlier position i and a later position j: i < j.',
+        'For a chosen later item, only the cheapest, largest, or smallest earlier value matters.',
+        'Or the next result can reuse a total you already calculated, as in Running Sum.',
       ],
-      template: `bestLeft ← value for index 0
-answer ← worst possible
-for j from 1 to n - 1:
-    answer ← better of (answer, combine(bestLeft, item j))
-    bestLeft ← better of (bestLeft, item j)
+      template: `remembered ← first item or starting total
+answer ← starting answer for this problem
+for each next item in order:
+    use remembered to work out the next answer
+    update remembered with what later items need
 return answer`,
       examples: ['thinking-best-stock', 'thinking-best-sightseeing-pair', 'thinking-running-sum'],
     },
     {
       name: 'Streak counter',
       signals: [
-        '"Consecutive", "in a row", "contiguous", "longest streak".',
-        'Count windows made only of one kind of item (each run of length L ends L windows).',
-        'Today\'s run can be built from yesterday\'s run.',
+        'The problem says “consecutive”, “in a row”, or “contiguous”: neighboring items with no gaps.',
+        'You need the longest run, or the number of valid windows (subarrays) inside runs.',
+        'The run ending here either extends the previous run or starts over.',
       ],
-      template: `current ← 0
+      template: `run ← 0
 answer ← 0
-for i from 0 to n - 1:
-    if item i continues the run:
-        current ← current + 1
+for each item in order:
+    if it continues the run:
+        run ← run + 1
     else:
-        current ← 1 if item i starts a new run, else 0
-    answer ← update answer using current
+        run ← 1 if this item starts a valid run, otherwise 0
+    update answer using run
+    // longest run: keep max(answer, run)
+    // count windows: add run to answer
 return answer`,
-      examples: ['thinking-max-consecutive-ones', 'thinking-zero-filled-subarrays', 'thinking-smooth-descent'],
+      examples: [
+        'thinking-max-consecutive-ones',
+        'thinking-zero-filled-subarrays',
+        'thinking-smooth-descent',
+      ],
     },
     {
       name: 'Fix the middle',
       signals: [
-        'Count triples `i < j < k` with a rule linking the middle to both sides.',
-        'Constraints allow O(n²) but not O(n³) (n around 1,000 to 5,000).',
+        'You count teams of three positions i < j < k, keeping their left-to-right order.',
+        'The middle item decides which choices on the left and right fit.',
+        'The input size makes checking all triples too costly, but O(n²) work looks practical.',
       ],
       template: `total ← 0
 for j from 1 to n - 2:
-    left ← count of i < j that fit with item j
-    right ← count of k > j that fit with item j
+    left ← number of fitting choices before j
+    right ← number of fitting choices after j
     total ← total + left × right
 return total`,
       examples: ['thinking-count-teams'],
@@ -66,20 +73,21 @@ return total`,
     {
       name: 'Track the top few',
       signals: [
-        'Only the biggest (or smallest) one, two or three values matter.',
-        'A sort would work, but you only need a few winners, not the full order.',
-        'A strong promise like "more than half" lets one candidate stand for the whole array.',
+        'Only the largest or smallest two or three values affect the answer.',
+        'Sorting would work, but most of that order is never used.',
+        'Check whether repeated values get separate places or only different values count.',
       ],
       template: `first ← none
 second ← none
 for each x in list:
-    if first is none or x beats first:
+    // if only different values count, skip repeats first
+    if first is none or x > first:
         second ← first
         first ← x
-    else if second is none or x beats second:
+    else if second is none or x > second:
         second ← x
 return first, second`,
-      examples: ['thinking-max-product-two', 'thinking-third-max', 'thinking-majority-element'],
+      examples: ['thinking-max-product-two', 'thinking-third-max'],
     },
   ],
   practice: [
@@ -87,61 +95,61 @@ return first, second`,
       title: 'Find Numbers with Even Number of Digits',
       leetcode: 1295,
       difficulty: 'easy',
-      hint: 'Count the digits of each number by dividing by 10 until it hits 0.',
+      hint: 'Count digits by repeatedly dividing by 10 and rounding down. For 123, you get 123 → 12 → 1 → 0: three digits.',
     },
     {
       title: 'Shuffle the Array',
       leetcode: 1470,
       difficulty: 'easy',
-      hint: 'Item i of the first half lands at 2i. Where does item i of the second half land?',
+      hint: 'Try [a, b, x, y]: the result should be [a, x, b, y]. Copy one item from each half in turn.',
     },
     {
       title: 'Find the Highest Altitude',
       leetcode: 1732,
       difficulty: 'easy',
-      hint: 'Carry a running total like Running Sum, and do not forget the starting altitude 0.',
+      hint: 'Start at altitude 0. Add each gain to your current altitude and keep the highest altitude seen.',
     },
     {
       title: 'Three Consecutive Odds',
       leetcode: 1550,
       difficulty: 'easy',
-      hint: 'A streak counter that resets on every even number.',
+      hint: 'Keep a count of odd numbers in a row. Reset it at an even number. Stop when it reaches 3.',
     },
     {
       title: 'Maximum Ascending Subarray Sum',
       leetcode: 1800,
       difficulty: 'easy',
-      hint: 'A streak counter whose streak holds a sum, and breaks when the next value is not bigger.',
+      hint: 'Keep the sum of the increasing run ending here. If the next value is not bigger, start a new sum at that value.',
     },
     {
       title: 'Maximum Difference Between Increasing Elements',
       leetcode: 2016,
       difficulty: 'easy',
-      hint: 'The stock problem in disguise, but watch what to return when nothing ever increases.',
+      hint: 'Remember the smallest earlier value, as in the stock problem. Check what this problem asks you to return when no later value is larger.',
     },
     {
       title: 'Maximum Product Difference Between Two Pairs',
       leetcode: 1913,
       difficulty: 'easy',
-      hint: 'You need only the two biggest and the two smallest values. One pass can track all four.',
+      hint: 'Try a few pairs by hand. Which two large values and which two small values matter for the answer?',
     },
     {
       title: 'How Many Numbers Are Smaller Than the Current Number',
       leetcode: 1365,
       difficulty: 'easy',
-      hint: 'Read the limits: is O(n²) allowed? Then ask what values ≤ 100 lets you do instead.',
+      hint: 'With at most 500 numbers, checking every pair may fit. The values are also small; could one counter for each possible value help?',
     },
     {
       title: 'Sequential Digits',
       leetcode: 1291,
       difficulty: 'medium',
-      hint: 'Fewer than 40 numbers have sequential digits at all. Generate them, then filter by the range.',
+      hint: 'For example, 123 and 234 have each digit 1 larger than the previous digit. Try building such numbers from each starting digit, then keep those inside the requested range.',
     },
     {
       title: 'Partitioning Into Minimum Number Of Deci-Binary Numbers',
       leetcode: 1689,
       difficulty: 'medium',
-      hint: 'Work a few small examples by hand. Which single digit forces the answer?',
+      hint: 'Each deci-binary number uses only digits 0 and 1. For a small example like 32, how many 1s must add up in the tens column?',
     },
   ],
 };

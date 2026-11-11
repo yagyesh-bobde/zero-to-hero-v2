@@ -3,35 +3,28 @@ import type { Lesson } from '../types';
 const lesson: Lesson = {
   id: 'constraints',
   title: 'Constraints pick the target',
-  summary: 'Read the size limits first: they tell you how fast your answer must be.',
+  summary: 'Use the size limits to decide whether checking every choice is practical.',
   minutes: 18,
   blocks: [
     {
       kind: 'callout',
       tone: 'story',
       title: 'Sports day relay teams',
-      text: 'On sports day, 1,000 kids stand in one line, each with a different speed rating. The coach wants every possible 3-kid relay team where, walking down the line, the ratings go **strictly up** or **strictly down**. The sign-up sheet has to print the number before the races start.',
+      text: 'A coach lines up five runners with different speed ratings: `[2, 5, 3, 4, 1]`. Pick three runners without changing their order in the line. How many teams have ratings that go up at every step, or down at every step?',
     },
     {
       kind: 'text',
-      text: 'Ratings `[2, 5, 3, 4, 1]`. Pick positions `i < j < k`. Valid teams: `(2, 3, 4)` going up, `(5, 4, 1)` and `(5, 3, 1)` going down. Answer: `3`.',
+      text: 'The teams are `(2, 3, 4)`, `(5, 3, 1)`, and `(5, 4, 1)`: answer `3`. The runners need not stand next to each other. “Strictly up” means every next rating is bigger; “strictly down” means every next rating is smaller. Three chosen runners form a **triple**. Positions `i < j < k` name the first, middle, and last runner.',
     },
     {
       kind: 'text',
-      text: 'Before you think of any idea, read the limits under the problem: `3 ≤ n ≤ 1000`. That one line tells you how fast you need to be. A judge gives you about one second, and a computer does roughly **10⁸ simple steps per second**. So plug the biggest `n` into your Big-O and check that it stays under about 10⁸.',
+      text: '**Constraints** are the limits and promises listed under a problem. `3 ≤ n ≤ 1000` says there are at least 3 runners and at most 1,000. `≤` means “less than or equal to”; `≥` means “greater than or equal to”. Use the largest allowed input to check your idea.',
     },
     {
-      kind: 'table',
-      title: 'Cheat sheet: constraint → target',
-      head: ['Biggest n', 'Steps at that n', 'Target', 'Usual idea'],
-      rows: [
-        ['n ≤ 10', '10! ≈ 3.6·10⁶', 'O(n!)', 'try every order (module 9)'],
-        ['n ≤ 20', '2²⁰ ≈ 10⁶', 'O(2ⁿ)', 'try every subset (module 9)'],
-        ['n ≤ 500', '500³ ≈ 1.25·10⁸', 'O(n³)', 'three nested loops'],
-        ['n ≤ 5,000', '5000² = 2.5·10⁷', 'O(n²)', 'every pair, loop in a loop'],
-        ['n ≤ 10⁶', '~2·10⁷', 'O(n log n) or O(n)', 'sort, one pass, hash map, two pointers'],
-        ['n up to 10⁹ or more', 'cannot even loop', 'O(log n) or O(1)', 'binary search, math'],
-      ],
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Read the condition for a team',
+      text: '`and` requires both checks to pass. `or` needs at least one side to pass. So `(a < b and b < c) or (a > b and b > c)` accepts either two upward steps or two downward steps. The parentheses group each kind of team.',
     },
     {
       kind: 'code',
@@ -51,24 +44,56 @@ const lesson: Lesson = {
     },
     {
       kind: 'text',
-      text: 'Count it: three nested loops is **O(n³)**. At `n = 1000` that is about `1000³ / 6 ≈ 1.7·10⁸` triples. Over budget, and the cheat sheet agrees: `n ≤ 1000` sits between the n³ row (500) and the n² row (5,000), so aim for **O(n²)**. That target is a big clue: "two loops, not three". **Spot the waste**: for each middle kid, the brute force re-pairs every left kid with every right kid, one by one, when it only needs *how many* there are on each side.',
+      text: 'Three loops try every group of three. With 5 runners you check 10 groups. With 1,000 runners you check 166,167,000 groups. That growth is **O(n³)**: `n³` means `n × n × n`.',
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'A work estimate, not a stopwatch',
+      text: 'You may see a rough budget of `10⁸`, or 100 million simple operations per second. Real speed depends on the machine, language, and work in each loop. A group check takes several operations. Hundreds of millions of checks are a warning; look for much less work.',
+    },
+    {
+      kind: 'text',
+      text: 'For one middle runner, the brute force tries each left runner with each right runner. Let’s count those choices instead of listing them. If there are 2 suitable runners on the left and 3 on the right, you get `2 × 3 = 6` teams. Each left choice works with each right choice.',
     },
     {
       kind: 'callout',
       tone: 'insight',
-      title: 'Fix the middle',
-      text: 'Pick the middle kid `j`. Count kids on the left who are slower (`lessLeft`) and faster (`moreLeft`), and the same on the right. Every slower-left kid pairs with every faster-right kid: `lessLeft × moreRight` going-up teams. Downward is `moreLeft × lessRight`. Counting is one loop per middle, so O(n) per middle and **O(n²)** total.',
+      title: 'Keep one middle runner fixed',
+      text: 'For an increasing team, choose a smaller rating on the left and a bigger rating on the right. For a decreasing team, choose a bigger rating on the left and a smaller rating on the right. Multiply each pair of counts, then add the two results.',
+    },
+    {
+      kind: 'text',
+      text: 'In `[2, 5, 3, 4, 1]`, fix the middle rating `3`. On the left, `2` is smaller and `5` is bigger. On the right, `1` is smaller and `4` is bigger. You get `1 × 1` increasing team and `1 × 1` decreasing team: `(2, 3, 4)` and `(5, 3, 1)`.',
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Read the counting table',
+      text: 'Each row tries one middle position `j`. `lessLeft` counts smaller ratings before it; `moreLeft` counts bigger ones before it. `lessRight` and `moreRight` do the same after it. The first and last runners cannot be the middle of a team.',
     },
     {
       kind: 'trace',
       title: 'Fix the middle on [2, 5, 3, 4, 1]',
-      columns: ['middle j', 'rating', 'lessLeft', 'moreLeft', 'lessRight', 'moreRight', 'teams added'],
+      columns: [
+        'middle j',
+        'rating',
+        'lessLeft',
+        'moreLeft',
+        'lessRight',
+        'moreRight',
+        'teams added',
+      ],
       rows: [
         [1, 5, 1, 0, 3, 0, '1·0 + 0·3 = 0'],
         [2, 3, 1, 1, 1, 1, '1·1 + 1·1 = 2'],
         [3, 4, 2, 1, 1, 0, '2·0 + 1·1 = 1'],
       ],
       note: 'The first and last kid can never be in the middle, so we skip them. Total: 0 + 2 + 1 = **3**.',
+    },
+    {
+      kind: 'text',
+      text: 'All ratings are different. At position `j`, there are `j` runners to the left. So `moreLeft = j - lessLeft`. With middle position 2, there are 2 runners on the left; if 1 is smaller, the other 1 is bigger. The same subtraction works on the right.',
     },
     {
       kind: 'code',
@@ -112,26 +137,77 @@ const lesson: Lesson = {
 }`,
     },
     {
+      kind: 'text',
+      text: 'For each middle runner, you read the other ratings once. About 1,000 middle choices × 1,000 visits gives about 1 million visits: O(n²) time. The four counters use O(1) extra space. In the comparison, `10⁶` is 1 million and `1.7·10⁸` is about 170 million.',
+    },
+    {
       kind: 'compare',
       title: 'Count number of teams (n ≤ 1000)',
       rows: [
-        { approach: 'Every triple', time: 'O(n³)', space: 'O(1)', note: '~1.7·10⁸ steps at n = 1000. Too slow for the limit.' },
-        { approach: 'Fix the middle', time: 'O(n²)', space: 'O(1)', note: '~10⁶ steps. Exactly what the constraint asked for.' },
+        {
+          approach: 'Every triple',
+          time: 'O(n³)',
+          space: 'O(1)',
+          note: '~1.7·10⁸ steps at n = 1000. Too slow for the limit.',
+        },
+        {
+          approach: 'Fix the middle',
+          time: 'O(n²)',
+          space: 'O(1)',
+          note: '~10⁶ steps. Exactly what the constraint asked for.',
+        },
       ],
     },
     {
-      kind: 'list',
-      items: [
-        '**Values are small** (like `1 ≤ x ≤ 100`): you can use an array of 101 counters instead of sorting or searching.',
-        '**The input is sorted**: think binary search (module 5) or two pointers (module 3).',
-        '**A grid with `m, n ≤ 50`**: visiting every cell (2,500 cells) is cheap. Just do it.',
-        '**"Return the answer modulo 10⁹ + 7"**: the real answer is huge, so you are counting ways, often with DP (module 16).',
-        '**n is tiny but the brute force is easy**: brute force *is* the intended answer. Do not over-engineer.',
+      kind: 'table',
+      title: 'Growth shapes you will meet later',
+      head: ['Name', 'Small example', 'What grows'],
+      rows: [
+        [
+          'O(log n), read “O of log n”',
+          '16 choices → 8 → 4 → 2 → 1: 4 halvings',
+          'Each step cuts the choices roughly in half. log₂ n counts these halvings; the small 2 means “halve”, rather than divide by some other number. Module 5 teaches this search.',
+        ],
+        [
+          'O(n log n)',
+          'For n = 16, n × log₂ n = 16 × 4 = 64',
+          'Work like visiting all items over several halving levels. Sorting often has this cost. “Sort” means put values in order.',
+        ],
+        [
+          'O(2ⁿ)',
+          '3 yes/no choices give 2 × 2 × 2 = 8 combinations',
+          'Every extra choice doubles the combinations. A subset is one selection of items, possibly none. Module 9 tries these selections.',
+        ],
+        [
+          'O(n!)',
+          '4! = 4 × 3 × 2 × 1 = 24 orders',
+          'The ! means multiply all whole numbers from 1 to n. Trying every order grows very quickly.',
+        ],
+      ],
+    },
+    {
+      kind: 'table',
+      title: 'Use limits as clues, then check the actual work',
+      head: ['Largest input', 'Rough count', 'What to consider'],
+      rows: [
+        ['10 items', '10! = 3,628,800 orders', 'Trying every order may fit.'],
+        ['20 items', '2²⁰ = 1,048,576 selections', 'Trying every selection may fit.'],
+        ['500 items', '500³ = 125,000,000', 'Three full loops are already risky.'],
+        ['5,000 items', '5,000² = 25,000,000', 'Two full loops may fit if each check is cheap.'],
+        [
+          '1,000,000 items',
+          'One pass: 1 million; n log₂ n: about 20 million',
+          'Look for one pass or sorting, rather than every pair.',
+        ],
       ],
     },
     {
       kind: 'text',
-      text: '**The pattern: fix the middle.** Reach for it when you count triples `i < j < k` with a rule that links the middle to both sides. Instead of choosing all three, fix `j`, count good partners on each side, and multiply.',
+      text: 'A grid is an array of rows. With 2 rows and 3 columns, you read 6 cells. If `m` is the number of rows and `n` is the number of columns, reading every cell takes **O(m·n)** time. The dot means multiply. Different letters can measure different parts of the input.',
+    },
+    {
+      kind: 'text',
+      text: '**Pattern: fix the middle.** Use it when you count triples and the middle item determines which left and right items fit. Count the partners on each side, then multiply. For the 200-song practice problem below, checking every pair is already small enough; a faster method is optional.',
     },
     {
       kind: 'code',
@@ -147,8 +223,8 @@ return total`,
     {
       kind: 'callout',
       tone: 'trap',
-      title: 'Passing the examples is not passing',
-      text: 'The examples have 5 numbers, so even an O(n³) idea finishes instantly. The hidden tests use the **biggest** `n` from the constraints. Always plug that `n` into your Big-O *before* coding, or you will hit "Time Limit Exceeded" on test 40 of 50.',
+      title: 'Examples are smaller than the full tests',
+      text: 'An idea that is fast on five items may be slow on 1,000. Check the largest allowed size before coding. “Time Limit Exceeded” means a test took longer than the allowed time. The size table gives clues, so still count what your own loops do.',
     },
   ],
   problems: [
@@ -159,29 +235,33 @@ return total`,
       leetcode: 1395,
       pattern: 'Fix the middle',
       statement:
-        'Kids stand in a line with **different** speed ratings `rating`. A team is 3 kids at positions `i < j < k` whose ratings go strictly up (`rating[i] < rating[j] < rating[k]`) or strictly down. Return how many teams you can form. A kid can be in many teams.',
+        'Runners stand in a line with different ratings in `rating`. Choose three positions `i < j < k`, without changing their order. Count teams whose ratings go up at both steps or down at both steps. For `[1, 2, 3, 4]`, the teams are `(1,2,3)`, `(1,2,4)`, `(1,3,4)`, and `(2,3,4)`: return `4`. A runner may appear in several teams.',
       examples: [
         { input: 'rating = [2,5,3,4,1]', output: '3', explain: '(2,3,4), (5,4,1) and (5,3,1).' },
         { input: 'rating = [2,1,3]', output: '0' },
         { input: 'rating = [1,2,3,4]', output: '4' },
       ],
-      constraints: ['3 ≤ n ≤ 1000', '1 ≤ rating[i] ≤ 10⁵', 'all ratings are different'],
+      constraints: [
+        'There are 3 to 1,000 runners.',
+        'Each rating is from 1 to 100,000.',
+        'All ratings are different.',
+      ],
       hints: [
-        'n ≤ 1000, so O(n³) (about 1.7·10⁸) is too slow. Aim for O(n²).',
-        'Every team has a middle kid. Try fixing the middle kid `j` instead of choosing all three.',
-        'For middle `j`, count kids on the left who are slower and faster, and the same on the right.',
-        'Teams with middle `j` = `lessLeft × moreRight + moreLeft × lessRight`.',
+        'Every team has exactly one middle runner. What happens if you choose that runner first?',
+        'For one middle rating, count smaller and bigger ratings on each side.',
+        'If 2 smaller left ratings can each pair with 3 bigger right ratings, that makes 2 × 3 = 6 increasing teams.',
+        'Add lessLeft × moreRight for increasing teams and moreLeft × lessRight for decreasing teams. Repeat for each middle position.',
       ],
       approaches: [
         {
           name: 'Every triple',
-          idea: 'Three nested loops check every `i < j < k`. Correct because it looks at every possible team, but it is O(n³).',
+          idea: 'Try every three positions in increasing order. Keep the team if its ratings increase twice or decrease twice. It checks every possibility, but the three loops take O(n³) time.',
           time: 'O(n³)',
           space: 'O(1)',
         },
         {
           name: 'Fix the middle',
-          idea: 'Every team has exactly one middle kid. For a fixed middle, any slower kid on the left can pair with any faster kid on the right (and the mirror for going down), so you multiply counts instead of listing teams.',
+          idea: 'Let’s count partners instead of listing teams. For a middle rating of 3 in `[2, 5, 3, 4, 1]`, 2 can pair with 4 to go up, and 5 can pair with 1 to go down. Multiply the smaller-left and bigger-right counts, then add bigger-left × smaller-right; repeat for every middle.',
           pseudo: `function numTeams(rating):
     teams ← 0
     for j from 1 to n - 2:
@@ -261,21 +341,29 @@ return total`,
       leetcode: 2006,
       pattern: 'Read the constraints',
       statement:
-        'A music app pairs songs for a smooth mix when their tempo levels differ by exactly `k`. Given the levels `nums`, return how many pairs `i < j` have `|nums[i] - nums[j]| = k`.',
+        'A music app pairs songs whose tempo levels differ by exactly `k`. Count pairs of different positions `i < j` in `nums`. The notation `|a - b|` means the distance between a and b, ignoring the sign: both `|1 - 2|` and `|2 - 1|` are 1. For `[1, 2, 2, 1]` and `k = 1`, each of the two 1s pairs with each of the two 2s: return `2 × 2 = 4`.',
       examples: [
-        { input: 'nums = [1,2,2,1], k = 1', output: '4', explain: 'Each 1 pairs with each 2: 2 × 2 = 4 pairs.' },
+        {
+          input: 'nums = [1,2,2,1], k = 1',
+          output: '4',
+          explain: 'Each 1 pairs with each 2: 2 × 2 = 4 pairs.',
+        },
         { input: 'nums = [3,2,1,5,4], k = 2', output: '3', explain: '(3,1), (3,5), (2,4).' },
       ],
-      constraints: ['1 ≤ n ≤ 200', '1 ≤ nums[i] ≤ 100', '1 ≤ k ≤ 99'],
+      constraints: [
+        'There are 1 to 200 songs.',
+        'Each level is from 1 to 100.',
+        'k is from 1 to 99.',
+      ],
       hints: [
-        'Look at the constraints before looking for a clever idea. How many pairs can there be at most?',
-        'n ≤ 200 means at most about 20,000 pairs. That is tiny.',
-        'Two nested loops, `j` starting at `i + 1`, and count when `Math.abs(nums[i] - nums[j]) === k`.',
+        'At most 200 songs means fewer than 20,000 different pairs. Do you need a faster method than trying them all?',
+        'Start the second position after the first, so you never pair a song with itself or count a pair twice.',
+        'Check every i and j with j > i. Math.abs(nums[i] - nums[j]) gives their nonnegative difference. Add 1 when it equals k.',
       ],
       approaches: [
         {
           name: 'Check every pair (the right call here)',
-          idea: 'With n ≤ 200 there are at most ~20,000 pairs, far below the ~10⁸ budget. Brute force is correct, simple, and fast enough, so it is the intended answer. (Module 2 shows an O(n) counting version for when n is huge.)',
+          idea: 'For each song, check the songs after it. Math.abs turns a negative difference positive, so both 1 - 2 and 2 - 1 give a distance of 1. At most 200 songs means only 19,900 pairs, so this direct O(n²) plan is practical.',
           pseudo: `function countKDifference(nums, k):
     pairs ← 0
     for i from 0 to n - 1:
@@ -320,7 +408,8 @@ return total`,
         { name: 'duplicates on both sides', args: [[1, 1, 2, 2], 1], expected: 4 },
         { name: 'widest gap', args: [[100, 1], 99], expected: 1 },
       ],
-      takeaway: 'Small n means brute force is the answer. Check the limits before reaching for a trick.',
+      takeaway:
+        'Small limits can make checking every pair a good choice. Estimate the work before adding a faster method.',
     },
     {
       id: 'thinking-richest-customer',
@@ -329,20 +418,28 @@ return total`,
       leetcode: 1672,
       pattern: 'Read the constraints',
       statement:
-        'A banking app has a grid `accounts`: row `i` is a customer, column `j` is a bank, and `accounts[i][j]` is the money customer `i` keeps in bank `j`. A customer\'s wealth is the total across all their banks. Return the wealth of the richest customer.',
+        'A bank app stores balances in a grid `accounts`, an array of row arrays. Each row belongs to one customer; each number in the row is money at one bank. Return the largest row total. For `[[1, 5], [7, 3]]`, the totals are 6 and 10, so return `10`.',
       examples: [
         { input: 'accounts = [[1,2,3],[3,2,1]]', output: '6', explain: 'Both customers have 6.' },
-        { input: 'accounts = [[1,5],[7,3],[3,5]]', output: '10', explain: 'The second customer has 7 + 3 = 10.' },
+        {
+          input: 'accounts = [[1,5],[7,3],[3,5]]',
+          output: '10',
+          explain: 'The second customer has 7 + 3 = 10.',
+        },
       ],
-      constraints: ['1 ≤ m, n ≤ 50', '1 ≤ accounts[i][j] ≤ 100'],
+      constraints: [
+        'There are 1 to 50 customers (m rows).',
+        'Each customer has 1 to 50 bank balances (n columns).',
+        'Each balance is from 1 to 100.',
+      ],
       hints: [
-        'The grid has at most 50 × 50 = 2,500 cells. Can you afford to look at every cell?',
-        'Sum each row, keep the biggest sum.',
+        'Work out each customer’s total by hand. Does any balance have to be skipped?',
+        'Start a fresh wealth total at 0 for each row. Add its balances, then compare that total with richest.',
       ],
       approaches: [
         {
           name: 'Sum every row',
-          idea: 'Every cell can change the answer, so you must read every cell at least once. Reading each exactly once is therefore the best possible: O(m·n).',
+          idea: 'Add all balances for one customer, then keep the largest customer total. Reset wealth to 0 before each new row so customers do not get mixed together. With m rows and n columns you visit m × n cells, giving O(m·n) time and just a few variables of extra space.',
           pseudo: `function maximumWealth(accounts):
     richest ← 0
     for each row in accounts:
@@ -379,46 +476,96 @@ return total`,
   return richest;
 }`,
       tests: [
-        { name: 'tie', args: [[[1, 2, 3], [3, 2, 1]]], expected: 6 },
-        { name: 'middle customer', args: [[[1, 5], [7, 3], [3, 5]]], expected: 10 },
-        { name: 'square grid', args: [[[2, 8, 7], [7, 1, 3], [1, 9, 5]]], expected: 17 },
+        {
+          name: 'tie',
+          args: [
+            [
+              [1, 2, 3],
+              [3, 2, 1],
+            ],
+          ],
+          expected: 6,
+        },
+        {
+          name: 'middle customer',
+          args: [
+            [
+              [1, 5],
+              [7, 3],
+              [3, 5],
+            ],
+          ],
+          expected: 10,
+        },
+        {
+          name: 'square grid',
+          args: [
+            [
+              [2, 8, 7],
+              [7, 1, 3],
+              [1, 9, 5],
+            ],
+          ],
+          expected: 17,
+        },
         { name: 'one cell', args: [[[5]]], expected: 5 },
         { name: 'one bank each', args: [[[1], [2], [3]]], expected: 3 },
         { name: 'one customer', args: [[[1, 1, 1, 1]]], expected: 4 },
-        { name: 'close race', args: [[[10, 1], [1, 10], [5, 6]]], expected: 11 },
+        {
+          name: 'close race',
+          args: [
+            [
+              [10, 1],
+              [1, 10],
+              [5, 6],
+            ],
+          ],
+          expected: 11,
+        },
       ],
-      takeaway: 'If every input value can change the answer, reading each one once is already optimal.',
+      takeaway:
+        'When every value can affect the answer, visiting every value once is already enough.',
     },
   ],
   quiz: [
     {
-      prompt: 'The limits say `n ≤ 10⁵`. Your idea is O(n²). What happens?',
+      prompt:
+        'There can be 100,000 items. Your idea checks roughly n × n pairs. What should you do?',
       options: [
-        'Fine: 10⁵ is small',
-        'About 10¹⁰ steps: far too slow, aim for O(n log n) or O(n)',
-        'About 10⁷ steps: fine',
-        'It depends only on the examples',
+        'Assume it is fast because the example is small',
+        'Look for less work: that is about 10 billion checks',
+        'Count only 100,000 checks',
+        'Ignore the limits',
       ],
       answer: 1,
-      explanation: '(10⁵)² = 10¹⁰, about 100 times over the ~10⁸ budget. Expect "Time Limit Exceeded".',
+      explanation:
+        '100,000 × 100,000 is 10 billion. Reading each item once, or sorting, would involve far less work.',
     },
     {
-      prompt: 'The limits say `n ≤ 20`. Is trying every subset (O(2ⁿ)) OK?',
-      options: ['No, exponential is always too slow', 'Yes: 2²⁰ is about 10⁶ steps', 'Only if n ≤ 10', 'Only with a hash map'],
+      prompt: 'There are at most 20 items. Is trying every subset, O(2ⁿ), worth considering?',
+      options: [
+        'No, it can never fit',
+        'Yes: 2²⁰ is about 1 million selections',
+        'Only if there is one item',
+        'Only after sorting',
+      ],
       answer: 1,
-      explanation: '2²⁰ ≈ 1,000,000. A tiny n is often the problem quietly telling you to try everything.',
+      explanation:
+        'A subset is a selection of items. Each item can be in or out. With 20 items, there are 1,048,576 selections. Check the work per selection too.',
     },
     {
-      prompt: 'Ratings `[1, 4, 2, 5]`. How many teams have the kid rated `4` (index 1) in the middle?',
+      prompt:
+        'Ratings `[1, 4, 2, 5]`. How many teams have the kid rated `4` (index 1) in the middle?',
       options: ['0', '1', '2', '3'],
       answer: 1,
-      explanation: 'lessLeft = 1 (the 1), moreLeft = 0, lessRight = 1 (the 2), moreRight = 1 (the 5). Teams = 1·1 + 0·1 = 1, the team (1, 4, 5).',
+      explanation:
+        'lessLeft = 1 (the 1), moreLeft = 0, lessRight = 1 (the 2), moreRight = 1 (the 5). Teams = 1·1 + 0·1 = 1, the team (1, 4, 5).',
     },
   ],
   takeaways: [
-    'Plug the biggest n into your Big-O. Stay under about 10⁸ steps.',
-    'Use the cheat sheet backwards: the limit tells you the target, and the target hints at the idea.',
-    'Small limits mean brute force is fine; small *values* mean you can use an array of counters.',
+    'Constraints tell you the allowed sizes and the promises your code may rely on.',
+    'Estimate work at the largest size. Timing budgets are rough clues, not guarantees.',
+    'For triples, fixing the middle can turn listing choices into multiplying counts.',
   ],
 };
 

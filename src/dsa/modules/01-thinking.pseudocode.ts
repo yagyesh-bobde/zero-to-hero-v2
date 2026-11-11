@@ -14,28 +14,42 @@ const lesson: Lesson = {
     },
     {
       kind: 'text',
-      text: 'Days `[1, 1, 0, 1, 1, 1]`. The runs of 1s have lengths 2 and 3, so the answer is `3`. Before writing any JavaScript, you will plan it in **pseudocode**: the steps in plain words, with no fighting over `let` vs `const` or `<` vs `<=` while you are still finding the idea.',
+      text: 'Days are `[1, 1, 0, 1, 1, 1]`. The two runs of 1s have lengths 2 and 3, so return `3`. **Consecutive** means next to each other, with no gaps. Let’s plan the steps in pseudocode before worrying about JavaScript punctuation.',
     },
     {
       kind: 'table',
-      title: 'Course pseudocode, and the JavaScript it becomes',
-      head: ['Pseudocode', 'Means', 'JavaScript'],
+      title: 'Read each line as an instruction',
+      head: ['Pseudocode', 'Read it as', 'JavaScript'],
       rows: [
-        ['`best ← 0`', 'store 0 in best', '`let best = 0`'],
-        ['`if x = 1:`', 'compare (not store)', '`if (x === 1) {`'],
-        ['`for i from 0 to n - 1:`', 'both ends included', '`for (let i = 0; i < n; i++)`'],
-        ['`for each x in nums:`', 'every item, in order', '`for (const x of nums)`'],
-        ['`≠  ≤  ≥  and  or  not`', 'plain-word logic', '`!==  <=  >=  &&  ||  !`'],
-        ['4-space indent after `:`', 'the block inside', '`{ ... }`'],
+        ['`current ← 0`', 'Store 0 in current.', '`let current = 0;`'],
+        ['`if x = 1:`', 'Ask whether x equals 1.', '`if (x === 1) {`'],
+        [
+          '`for i from 0 to 2:`',
+          'Visit 0, 1, and 2; both ends count.',
+          '`for (let i = 0; i <= 2; i++) {`',
+        ],
+        ['`for each x in nums:`', 'Read each value, in order.', '`for (const x of nums) {`'],
+        [
+          '`≠`, `and`, `or`, `not`',
+          'Not equal; both true; either true; opposite.',
+          '`!==`, `&&`, `||`, `!`',
+        ],
+        [
+          'Indented lines after `:`',
+          'Do these lines inside that loop or condition.',
+          'Lines inside `{ ... }`',
+        ],
       ],
     },
     {
-      kind: 'list',
-      items: [
-        '**Too vague**: "find the longest run of 1s". That is the question again, not a plan.',
-        '**Too much code**: `for (let i=0;i<nums.length;i++){if(nums[i]===1)...`. You are writing JavaScript early and thinking about brackets.',
-        '**Just right**: every line is one small action a friend could do by hand, and each name says what it holds.',
-      ],
+      kind: 'text',
+      text: 'Try the obvious plan: start at each day and count the 1s until you reach a 0 or the end. On `[1, 1, 0]`, starting at index 0 gives length 2. Starting at index 1 gives length 1. Starting at index 2 gives length 0. Keep the biggest length: `2`.',
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Read the while condition',
+      text: '`length` starts at 0. `start + length` is the next position to check. `while` repeats as long as its condition is true. Check that the position is below `n` before reading it; then check that the value there is 1. `and` requires both checks to pass.',
     },
     {
       kind: 'code',
@@ -52,7 +66,7 @@ const lesson: Lesson = {
     },
     {
       kind: 'text',
-      text: '**Spot the waste.** On `[1, 1, 1, 1, 0]`, starting at day 0 walks 4 days. Starting at day 1 walks the *same* days again (3 of them), then day 2 walks 2… All ones gives about `n²/2` steps. Every walk re-counts a streak we already measured.',
+      text: 'This works, but on `[1, 1, 1, 0]` you count 3 ones, then count 2 of those same ones, then count 1 again. A long run causes O(n²) work. Let’s remember the run we have already counted, so each day needs just one visit.',
     },
     {
       kind: 'callout',
@@ -76,6 +90,12 @@ const lesson: Lesson = {
     return best`,
     },
     {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'Run the plan by hand',
+      text: 'A **dry run** means following your plan on a small example without executing code. In the table, each row is one day. `current` and `best` show their values after reading that day. At a 0, only `current` resets; the record stays.',
+    },
+    {
       kind: 'trace',
       title: 'Dry run on [1, 1, 0, 1, 1, 1]',
       columns: ['i', 'nums[i]', 'current', 'best', 'what happened'],
@@ -87,12 +107,12 @@ const lesson: Lesson = {
         [4, 1, 2, 2, 'ties the record'],
         [5, 1, 3, 3, 'new record'],
       ],
-      note: 'A **dry run** means running your plan by hand on a small example, one row per loop step. Do it before you type code: it catches most bugs for free.',
+      note: 'At the last day, current reaches 3. The final best is 3, so that is the output.',
     },
     {
       kind: 'code',
       lang: 'js',
-      title: 'Translated line by line',
+      title: 'Translate the plan into JavaScript',
       code: `function findMaxConsecutiveOnes(nums) {
   let current = 0;
   let best = 0;
@@ -111,13 +131,23 @@ const lesson: Lesson = {
       kind: 'compare',
       title: 'Longest streak of 1s',
       rows: [
-        { approach: 'Walk from every start', time: 'O(n²)', space: 'O(1)', note: 'Re-walks the same streak many times.' },
-        { approach: 'Carry the current streak', time: 'O(n)', space: 'O(1)', note: 'One look per day, two variables.' },
+        {
+          approach: 'Walk from every start',
+          time: 'O(n²)',
+          space: 'O(1)',
+          note: 'Re-walks the same streak many times.',
+        },
+        {
+          approach: 'Carry the current streak',
+          time: 'O(n)',
+          space: 'O(1)',
+          note: 'One look per day, two variables.',
+        },
       ],
     },
     {
       kind: 'text',
-      text: '**The pattern: streak counter.** Reach for it when the problem says "consecutive", "in a row", "contiguous run of the same kind" or "longest streak". The run that ends at day `i` is built from the run that ended at day `i - 1`, so you never look back.',
+      text: '**Pattern: streak counter.** “Consecutive”, “in a row”, and “contiguous” all mean no gaps. Keep the length of the run ending at the item you just read. Update your answer as the run grows. For a longest run, keep the biggest length. For counting all runs, you may need to add lengths instead.',
     },
     {
       kind: 'code',
@@ -139,6 +169,16 @@ return answer`,
       title: 'The streak at the very end',
       text: 'A common version only updates `best` when it sees a `0` ("the streak just ended, record it"). On `[0, 1, 1, 1]` the last streak never meets a `0`, so it returns 0 instead of 3. Update `best` on every step, or once more after the loop.',
     },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'From longest run to number of windows',
+      text: 'A **subarray**, also called a window here, is one or more neighboring array items. In `[0, 0]`, there are 3 zero-only windows: the first zero, the second zero, and both together. At the first zero, 1 window ends. At the second zero, 2 end. Add `1 + 2 = 3`; this is the idea behind the last practice problem.',
+    },
+    {
+      kind: 'text',
+      text: 'For the score-log problem below, **simulation** means following the given actions in order. You already know how: start with a value, read an action, update it, and repeat. Pseudocode makes this plan explicit before you choose JavaScript syntax.',
+    },
   ],
   problems: [
     {
@@ -148,27 +188,27 @@ return answer`,
       leetcode: 485,
       pattern: 'Streak counter',
       statement:
-        'Your fitness app logs `nums`: `1` for a day you hit your goal, `0` for a day you missed. Return the length of your longest run of `1`s in a row.',
+        'Your fitness app records 1 for a day you hit your goal and 0 for a day you missed. Return the longest run of 1s in a row in `nums`. For `[1, 1, 0, 1]`, the run lengths are 2 and 1, so return `2`.',
       examples: [
         { input: 'nums = [1,1,0,1,1,1]', output: '3' },
         { input: 'nums = [1,0,1,1,0,1]', output: '2' },
       ],
-      constraints: ['1 ≤ n ≤ 10⁵', 'nums[i] is 0 or 1'],
+      constraints: ['There are 1 to 100,000 days.', 'Every value is 0 or 1.'],
       hints: [
-        'Write the plan in pseudocode first. What two numbers do you need to remember while walking?',
-        '`current` = length of the run ending today. `best` = longest run so far.',
-        'On a 1: `current + 1`, then update `best`. On a 0: `current = 0`. Check that a run at the very end still counts.',
+        'Read `[1, 1, 0, 1]` from left to right. How does the current run length change at each value?',
+        'Keep current for the run ending here and best for the longest run seen.',
+        'On 1, add 1 to current and update best. On 0, set current to 0. Update best as a run grows so a run at the end is counted.',
       ],
       approaches: [
         {
           name: 'Walk from every start',
-          idea: 'From each day, walk right while you see 1s. Correct, but it re-walks the same streak from every starting point inside it.',
+          idea: 'Start at every position and count 1s until you reach 0 or the end. In `[1, 1, 0]`, the first two starts count some of the same days. It is correct, but a long run repeats work.',
           time: 'O(n²)',
           space: 'O(1)',
         },
         {
           name: 'Carry the current streak',
-          idea: 'The streak ending today is the streak ending yesterday plus one, or zero if today is a 0. So one pass with two variables measures every streak exactly once.',
+          idea: 'Let’s reuse the run already counted. In `[1, 1, 0, 1]`, current goes 1 → 2 → 0 → 1, while best stays at 2 after reaching it. One visit per value and two counters give O(n) time and O(1) extra space.',
           pseudo: `function findMaxConsecutiveOnes(nums):
     current ← 0
     best ← 0
@@ -233,12 +273,15 @@ return answer`,
       leetcode: 2011,
       pattern: 'Simulation',
       statement:
-        'A score counter `X` starts at `0`. Two developers wrote the log in different styles: `"++X"` and `"X++"` both mean add 1, `"--X"` and `"X--"` both mean subtract 1. Given the log `operations`, return the final value of `X`.',
+        'A score X starts at 0. In the log `operations`, both `"++X"` and `"X++"` mean add 1; both `"--X"` and `"X--"` mean subtract 1. Return the final score. For `["--X", "X++", "X++"]`, it goes `0 → -1 → 0 → 1`, so return `1`. Treat each log entry as text to read.',
       examples: [
         { input: 'operations = ["--X","X++","X++"]', output: '1', explain: '0 - 1 + 1 + 1 = 1.' },
         { input: 'operations = ["++X","++X","X++"]', output: '3' },
       ],
-      constraints: ['1 ≤ n ≤ 100', 'each operation is one of "++X", "X++", "--X", "X--"'],
+      constraints: [
+        'There are 1 to 100 operations.',
+        'Each entry is "++X", "X++", "--X", or "X--".',
+      ],
       hints: [
         'Write the plan in words first: start at 0, go through each log line, change X.',
         'You do not need to check all four spellings. Which character is always a `+` or a `-`, no matter the style?',
@@ -247,13 +290,13 @@ return answer`,
       approaches: [
         {
           name: 'Check all four spellings',
-          idea: 'Compare each operation with `"++X"`, `"X++"`, `"--X"`, `"X--"`. Correct but wordy, and easy to typo.',
+          idea: 'Read the log in order. Compare each entry with the four allowed spellings, then add or subtract 1. This directly follows the rules and takes O(n) time.',
           time: 'O(n)',
           space: 'O(1)',
         },
         {
           name: 'Look at the middle character',
-          idea: 'Every operation is 3 characters, and whichever side the X is on, the middle character is always the sign. So `op[1]` alone tells you add or subtract.',
+          idea: 'Let’s use the shared detail in both spellings. Index 1 is the middle character, and it is always + for addition or - for subtraction. Read op[1] and update x; the time is still O(n), but there are fewer cases to write.',
           pseudo: `function finalValueAfterOperations(operations):
     x ← 0
     for each op in operations:
@@ -304,31 +347,38 @@ return answer`,
       leetcode: 2348,
       pattern: 'Streak counter',
       statement:
-        'A server monitor logs the number of errors each minute in `nums`. A **quiet window** is one or more minutes **in a row** that all have `0` errors. Return how many quiet windows there are. Windows that overlap still count separately.',
+        'A server logs error counts each minute in `nums`. Count **subarrays** made only of zeros: one or more neighboring minutes with no errors. Overlapping windows count separately. For `[0, 0, 2, 0]`, count the first zero, the second zero, the first two together, and the last zero: return `4`.',
       examples: [
         {
           input: 'nums = [1,3,0,0,2,0,0,4]',
           output: '6',
           explain: 'Four windows of one zero, and two windows of two zeros.',
         },
-        { input: 'nums = [0,0,0,2,0,0]', output: '9', explain: 'The run of 3 zeros gives 6 windows, the run of 2 gives 3.' },
+        {
+          input: 'nums = [0,0,0,2,0,0]',
+          output: '9',
+          explain: 'The run of 3 zeros gives 6 windows, the run of 2 gives 3.',
+        },
       ],
-      constraints: ['1 ≤ n ≤ 10⁵', '-10⁹ ≤ nums[i] ≤ 10⁹'],
+      constraints: [
+        'There are 1 to 100,000 numbers.',
+        'Each number is from -1,000,000,000 to 1,000,000,000.',
+      ],
       hints: [
-        'n ≤ 10⁵, so checking every window (O(n²)) is too slow. Think about runs of zeros.',
-        'Look at the windows that **end** at the current zero. If the current run of zeros has length `L`, how many windows end here?',
-        'Exactly `L` of them (lengths 1, 2, …, L). So add the current run length to the answer on every zero.',
+        'In `[0, 0, 0]`, list just the windows that end at the last position. How many are there?',
+        'There are 3: the last zero, the last two zeros, and all three. A run of length L has L windows ending here.',
+        'On each zero, increase run by 1 and add run to total. On any other value, reset run to 0.',
       ],
       approaches: [
         {
           name: 'Extend from every start',
-          idea: 'From each index, extend right while you see zeros, counting one window per step. Correct, but a long run of zeros gets re-walked from every start.',
+          idea: 'Start at each position and extend right while the values stay zero. Count each extension as one window. A long zero run gets visited again from many starts, so this can take O(n²) time.',
           time: 'O(n²)',
           space: 'O(1)',
         },
         {
           name: 'Add the run length at each zero',
-          idea: 'Count each window at its last minute. If the run of zeros ending here has length `L`, the windows ending here have lengths 1 to `L`, which is `L` windows. Adding `L` on every zero counts every window exactly once.',
+          idea: 'Let’s count windows at their last position to avoid revisiting them. In `[0, 0, 0]`, the successive positions end 1, 2, and 3 windows, for 6 in total. Keep the zero-run length, add it to total at each zero, and reset it at other values.',
           pseudo: `function zeroFilledSubarray(nums):
     run ← 0
     total ← 0
@@ -383,7 +433,8 @@ return answer`,
         { name: 'lonely zeros', args: [[1, 0, 1, 0, 1]], expected: 2 },
         { name: 'negatives around', args: [[-1, 0, 0, -1]], expected: 3 },
       ],
-      takeaway: 'To count windows, count each one at its right end: a run of length L ends L windows there.',
+      takeaway:
+        'Count each window at its last position. A zero run of length L gives L windows ending there.',
     },
   ],
   quiz: [
@@ -394,7 +445,8 @@ return answer`,
       explanation: 'Course ranges include both ends: i = 1, 2, 3, 4.',
     },
     {
-      prompt: 'In course pseudocode, what is the difference between `best ← current` and `best = current`?',
+      prompt:
+        'In course pseudocode, what is the difference between `best ← current` and `best = current`?',
       options: [
         'None, they are the same',
         '`←` stores a value; `=` asks whether two values are equal',
@@ -402,19 +454,22 @@ return answer`,
         '`←` is only for arrays',
       ],
       answer: 1,
-      explanation: 'The arrow means "put this value into that name". `=` is a question with a yes/no answer, like `===` in JavaScript.',
+      explanation:
+        'The arrow means "put this value into that name". `=` is a question with a yes/no answer, like `===` in JavaScript.',
     },
     {
-      prompt: 'A version updates `best` only when it sees a `0`. What does it return for `[0, 1, 1, 1]`?',
+      prompt:
+        'A version updates `best` only when it sees a `0`. What does it return for `[0, 1, 1, 1]`?',
       options: ['0', '1', '3', '4'],
       answer: 0,
-      explanation: 'The streak of three 1s is never followed by a 0, so it is never recorded. The fix: update `best` on every step.',
+      explanation:
+        'The streak of three 1s is never followed by a 0, so it is never recorded. The fix: update `best` on every step.',
     },
   ],
   takeaways: [
-    'Pseudocode is the plan: one small action per line, clear names, no syntax worries.',
-    'Dry-run the plan on a tiny example in a table before writing JavaScript.',
-    '"In a row" or "consecutive" usually means a streak counter: build today\'s run from yesterday\'s.',
+    'Write one small action per line of pseudocode, with names that say what you remember.',
+    'Dry-run the plan by hand. Track each variable after each item.',
+    'For items in a row, carry the current run length instead of counting it again.',
   ],
 };
 

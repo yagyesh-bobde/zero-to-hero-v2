@@ -17,18 +17,31 @@ const lesson: Lesson = {
       text: 'The **majority** is the value that appears more than half the time. In `[2, 1, 2]`, candidate 2 has 2 of the 3 votes, so return `2`. In `[5]`, return `5`. A value appearing exactly half the time would not be a majority.',
     },
     {
-      kind: 'list',
-      ordered: true,
-      items: [
-        '**Understand**: say what goes in, what comes out, and what is promised.',
-        '**Examples**: work a small case by hand, then try a different one.',
-        '**Brute force**: write an obvious correct plan and count its work.',
-        '**Spot the waste**: find what the plan repeats or forgets.',
-        '**Optimize**: change the plan to do less work or use less memory.',
-        '**Dry run**: follow the new plan by hand.',
-        '**Edge cases**: check boundary situations, such as one item or all values equal.',
-        '**Code**: translate the plan and test it.',
-      ],
+      kind: 'diagram',
+      title: 'The solving loop, from question to code',
+      art: `Understand the input, output, and promises
+    |
+    v
+Try small examples <----------------------+
+    |                                     |
+    v                                     |
+Write the obvious plan (brute force)      |
+    |                                     |
+    v                                     |
+Spot the repeated work                    |
+    |                                     |
+    v                                     |
+Improve the plan                          |
+    |                                     |
+    v                                     |
+Follow the plan by hand (dry run)         |
+    |                                     |
+    v                                     |
+Do the edge cases pass? --no--------------+
+    | yes
+    v
+Code and test`,
+      caption: 'If a check fails, return to examples and fix the plan before coding.',
     },
     {
       kind: 'text',
@@ -49,7 +62,7 @@ const lesson: Lesson = {
     },
     {
       kind: 'text',
-      text: 'For `[2, 1, 2]`, the brute force can count the votes for 2 twice: once for each place 2 appears. Sorting is one improvement. It puts equal votes together, and a group longer than half the array must cover the middle position. For `[2, 1, 2]`, sorted order is `[1, 2, 2]`; the middle is 2.',
+      text: 'The inner loop recounts a value whenever the outer loop reaches it again. Sorting is one improvement. It puts equal votes together, and a group longer than half the array must cover the middle position. For `[2, 1, 2]`, sorted order is `[1, 2, 2]`; the middle is 2.',
     },
     {
       kind: 'text',
@@ -59,109 +72,214 @@ const lesson: Lesson = {
       kind: 'callout',
       tone: 'insight',
       title: 'Remember the votes that have not paired off',
-      text: 'Keep a `candidate`, the name on the votes you are holding, and a `count`, how many are left unmatched. A matching vote raises the count. A different vote pairs off with one held vote and lowers it. At zero, you hold no votes, so the next vote starts a new group. This method is called **Boyer-Moore voting**.',
+      text: 'Keep a `candidate`, the name on the votes you are holding, and a `count`, how many are left unmatched. A matching vote raises the count. A different vote pairs off with one held vote and lowers it. At zero, the next vote starts a new group. This method is called **Boyer-Moore voting**. The held-vote lists below explain the two variables; the code does not store those lists.',
     },
     {
-      kind: 'callout',
-      tone: 'tip',
-      title: 'Count is not the total number of votes',
-      text: 'On `[2, 1, 2]`, your count goes `1 → 0 → 1`. Candidate 2 received 2 votes, but the final count is only 1 because a pair was removed. Use Next below to follow the same rule on seven votes.',
+      kind: 'text',
+      text: 'Use `[3, 3, 2, 3]` and watch which votes remain after pairing off different names.',
     },
     {
       kind: 'steps',
-      title: '6. Dry run on [2, 2, 1, 1, 1, 2, 2]',
+      title: 'Matching votes keep the lead on [3, 3, 2, 3]',
+      frames: [
+        {
+          cells: [3, 3, 2, 3],
+          vars: {
+            'candidate (held name)': 'none',
+            'count (unmatched votes)': 0,
+            'votes still held': 'none',
+          },
+          note: 'Start with no held votes because we have not read any yet.',
+        },
+        {
+          cells: [3, 3, 2, 3],
+          pointers: { 'read vote': 0 },
+          active: [0],
+          vars: {
+            'candidate (held name)': 3,
+            'count (unmatched votes)': 1,
+            'votes still held': '[3]',
+          },
+          note: 'The count was zero, so choose 3 and count this vote once.',
+        },
+        {
+          cells: [3, 3, 2, 3],
+          pointers: { 'read vote': 1 },
+          active: [1],
+          done: [0],
+          vars: {
+            'candidate (held name)': 3,
+            'count (unmatched votes)': 2,
+            'votes still held': '[3, 3]',
+          },
+          note: 'This 3 matches the held name, so keep both votes.',
+        },
+        {
+          cells: [3, 3, 2, 3],
+          pointers: { 'read vote': 2 },
+          active: [2],
+          done: [0, 1],
+          vars: {
+            'candidate (held name)': 3,
+            'count (unmatched votes)': 1,
+            'votes still held': '[3]',
+            'pair removed': 'one 3 and this 2',
+          },
+          note: 'This 2 differs from 3, so pair it with one held 3.',
+        },
+        {
+          cells: [3, 3, 2, 3],
+          pointers: { 'read vote': 3 },
+          active: [3],
+          done: [0, 1, 2],
+          vars: {
+            'candidate (held name)': 3,
+            'count (unmatched votes)': 2,
+            'votes still held': '[3, 3]',
+          },
+          note: 'The last 3 matches, so the unmatched count rises to 2.',
+        },
+        {
+          cells: [3, 3, 2, 3],
+          found: [0, 1, 3],
+          done: [2],
+          vars: {
+            'answer (candidate)': 3,
+            'count (unmatched votes)': 2,
+            'actual votes for 3': '3 of 4',
+          },
+          note: 'Return 3 because the promised majority survives removing different pairs.',
+        },
+      ],
+    },
+    {
+      kind: 'text',
+      text: 'Pairing removed one vote for each name, leaving 3 ahead; `count` is the unmatched votes, not the total votes for 3.',
+    },
+    {
+      kind: 'text',
+      text: 'Use `[2, 2, 1, 1, 1, 2, 2]` and watch the trap: a zero count lets the next vote replace the candidate.',
+    },
+    {
+      kind: 'steps',
+      title: 'A candidate can change on [2, 2, 1, 1, 1, 2, 2]',
       frames: [
         {
           cells: [2, 2, 1, 1, 1, 2, 2],
           pointers: {
-            i: 0,
+            'read vote': 0,
           },
           active: [0],
           vars: {
-            candidate: 2,
-            count: 1,
+            'candidate (held name)': 2,
+            'count (unmatched votes)': 1,
+            'votes still held': '[2]',
           },
-          note: 'Count is 0, so the first vote, 2, becomes the candidate.',
+          note: 'The count was zero, so choose 2 and count this vote once.',
         },
         {
           cells: [2, 2, 1, 1, 1, 2, 2],
           pointers: {
-            i: 1,
+            'read vote': 1,
           },
           active: [1],
           done: [0],
           vars: {
-            candidate: 2,
-            count: 2,
+            'candidate (held name)': 2,
+            'count (unmatched votes)': 2,
+            'votes still held': '[2, 2]',
           },
           note: 'Another 2 matches the candidate: count goes up.',
         },
         {
           cells: [2, 2, 1, 1, 1, 2, 2],
           pointers: {
-            i: 2,
+            'read vote': 2,
           },
           active: [2],
           done: [0, 1],
           vars: {
-            candidate: 2,
-            count: 1,
+            'candidate (held name)': 2,
+            'count (unmatched votes)': 1,
+            'votes still held': '[2]',
+            'pair removed': 'one 2 and this 1',
           },
           note: 'A 1 cancels one of the 2s: count goes down.',
         },
         {
           cells: [2, 2, 1, 1, 1, 2, 2],
           pointers: {
-            i: 3,
+            'read vote': 3,
           },
           active: [3],
           done: [0, 1, 2],
           vars: {
-            candidate: 2,
-            count: 0,
+            'candidate (held name)': '2, but no votes held',
+            'count (unmatched votes)': 0,
+            'votes still held': 'none',
+            'pair removed': 'the remaining 2 and this 1',
           },
-          note: 'Another 1 cancels the last 2. Everything so far has paired off.',
+          note: 'This 1 pairs with the last held 2, leaving no unmatched votes.',
         },
         {
           cells: [2, 2, 1, 1, 1, 2, 2],
           pointers: {
-            i: 4,
+            'read vote': 4,
           },
           active: [4],
           done: [0, 1, 2, 3],
           vars: {
-            candidate: 1,
-            count: 1,
+            'candidate (held name)': 1,
+            'count (unmatched votes)': 1,
+            'votes still held': '[1]',
           },
-          note: 'Count is 0, so 1 becomes the new candidate.',
+          note: 'The count was zero, so choose 1 and count this vote once.',
         },
         {
           cells: [2, 2, 1, 1, 1, 2, 2],
           pointers: {
-            i: 5,
+            'read vote': 5,
           },
           active: [5],
           done: [0, 1, 2, 3, 4],
           vars: {
-            candidate: 1,
-            count: 0,
+            'candidate (held name)': '1, but no votes held',
+            'count (unmatched votes)': 0,
+            'votes still held': 'none',
+            'pair removed': 'the held 1 and this 2',
           },
-          note: 'A 2 cancels the 1. Count is back to 0.',
+          note: 'This 2 pairs with the held 1, bringing the count back to zero.',
         },
         {
           cells: [2, 2, 1, 1, 1, 2, 2],
           pointers: {
-            i: 6,
+            'read vote': 6,
           },
-          found: [6],
+          active: [6],
           done: [0, 1, 2, 3, 4, 5],
           vars: {
-            candidate: 2,
-            count: 1,
+            'candidate (held name)': 2,
+            'count (unmatched votes)': 1,
+            'votes still held': '[2]',
           },
-          note: 'Count is 0, so the last 2 becomes the candidate. It survives: the answer is 2.',
+          note: 'The count was zero, so the last 2 starts a new held group.',
+        },
+        {
+          cells: [2, 2, 1, 1, 1, 2, 2],
+          found: [0, 1, 5, 6],
+          done: [2, 3, 4],
+          vars: {
+            'answer (candidate)': 2,
+            'count (unmatched votes)': 1,
+            'actual votes for 2': '4 of 7',
+          },
+          note: 'Return 2 because the majority promise makes the surviving candidate the winner.',
         },
       ],
+    },
+    {
+      kind: 'text',
+      text: 'A zero count means all earlier votes paired off, so the next vote can safely start a new held group.',
     },
     {
       kind: 'callout',
@@ -183,15 +301,6 @@ const lesson: Lesson = {
         else:
             count ← count - 1
     return candidate`,
-    },
-    {
-      kind: 'list',
-      items: [
-        '**One vote** `[5]`: choose 5, count becomes 1, return 5.',
-        '**All equal** `[4, 4, 4]`: the count reaches 3, return 4.',
-        '**A late change** `[1, 2, 2]`: the first pair cancels, then the last 2 becomes the candidate.',
-        '**Negative candidate names** `[-1, -1, 2]`: values are labels; only equality matters. Return -1.',
-      ],
     },
     {
       kind: 'callout',

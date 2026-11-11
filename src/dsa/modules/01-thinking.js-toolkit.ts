@@ -61,18 +61,200 @@ return wrong`,
       text: 'A **comparator** is a function that tells sort which of two values belongs first. `(a, b) => a - b` returns a negative value if a is smaller, zero if equal, and a positive value if a is bigger. For 9 and 10, `9 - 10 = -1`, so 9 comes first. Use it after making the copy.',
     },
     {
-      kind: 'trace',
-      title: 'Dry run on [1, 1, 4, 2, 1, 3]',
-      columns: ['i', 'heights[i]', 'expected[i]', 'wrong so far'],
-      rows: [
-        [0, 1, 1, 0],
-        [1, 1, 1, 0],
-        [2, 4, 1, 1],
-        [3, 2, 2, 1],
-        [4, 1, 3, 2],
-        [5, 3, 4, 3],
+      kind: 'diagram',
+      title: 'Keep the original, compare with a sorted copy',
+      art: `Copy the original heights
+    |
+    v
+Sort the copy from small to big
+    |
+    v
+Read the next position <-----------------+
+    |                                    |
+    v                                    |
+Original differs from copy?              |
+    | yes              | no              |
+    v                  |                 |
+Add 1 to wrong         |                 |
+    |                  |                 |
+    +------------------+                 |
+    |                                    |
+    v                                    |
+More positions? --yes--------------------+
+    | no
+    v
+Return wrong`,
+      caption: 'Sort a separate copy, then count each position whose two heights differ.',
+    },
+    {
+      kind: 'text',
+      text: 'Use `[2, 1, 3]` and watch each original height get compared with the same position in a sorted copy.',
+    },
+    {
+      kind: 'steps',
+      title: 'Keep both lines on [2, 1, 3]',
+      frames: [
+        {
+          cells: [2, 1, 3],
+          vars: {
+            'heights (original)': '[2, 1, 3]',
+            'expected (sorted copy)': 'not made yet',
+            'wrong (different positions)': 0,
+          },
+          note: 'Keep this original order because we need it for the comparisons.',
+        },
+        {
+          cells: [2, 1, 3],
+          active: [0, 1, 2],
+          vars: {
+            'heights (original)': '[2, 1, 3]',
+            'expected (sorted copy)': '[1, 2, 3]',
+            'wrong (different positions)': 0,
+          },
+          note: 'Copy with `[...heights]` and sort with `a - b` so only the copy changes.',
+        },
+        {
+          cells: [2, 1, 3],
+          pointers: { 'compare position': 0 },
+          active: [0],
+          vars: {
+            'expected (sorted copy)': '[1, 2, 3]',
+            'original vs expected': '2 vs 1',
+            'wrong (different positions)': 1,
+          },
+          note: 'At position 0, 2 differs from 1, so add one to wrong.',
+        },
+        {
+          cells: [2, 1, 3],
+          pointers: { 'compare position': 1 },
+          active: [1],
+          done: [0],
+          vars: {
+            'expected (sorted copy)': '[1, 2, 3]',
+            'original vs expected': '1 vs 2',
+            'wrong (different positions)': 2,
+          },
+          note: 'At position 1, 1 differs from 2, so add one more to wrong.',
+        },
+        {
+          cells: [2, 1, 3],
+          pointers: { 'compare position': 2 },
+          active: [2],
+          done: [0, 1],
+          vars: {
+            'expected (sorted copy)': '[1, 2, 3]',
+            'original vs expected': '3 vs 3',
+            'wrong (different positions)': 2,
+          },
+          note: 'At position 2, both heights are 3, so wrong stays 2.',
+        },
+        {
+          cells: [2, 1, 3],
+          found: [0, 1],
+          done: [2],
+          vars: { 'expected (sorted copy)': '[1, 2, 3]', 'answer (wrong)': 2 },
+          note: 'Return 2 because the highlighted positions differ from the sorted line.',
+        },
       ],
-      note: '`expected` is the sorted **copy** `[1, 1, 1, 2, 3, 4]`; `heights` is untouched.',
+    },
+    {
+      kind: 'text',
+      text: 'Sorting a copy kept the original line available, so we could find the two positions that differ.',
+    },
+    {
+      kind: 'text',
+      text: 'Use the already ordered `[9, 10, 100]` and watch how copying alone still lets a sort without a number comparator give the wrong order.',
+    },
+    {
+      kind: 'steps',
+      title: 'The number-order trap on [9, 10, 100]',
+      frames: [
+        {
+          cells: [9, 10, 100],
+          vars: {
+            'heights (original)': '[9, 10, 100]',
+            'expected (copy)': 'not made yet',
+            'wrong (different positions)': 0,
+          },
+          note: 'The heights are already in number order, so the correct answer must be 0.',
+        },
+        {
+          cells: [9, 10, 100],
+          active: [0, 1, 2],
+          vars: {
+            'heights (original)': '[9, 10, 100]',
+            'expected (copy)': '[9, 10, 100]',
+            operation: 'expected = [...heights]',
+          },
+          note: 'Make a separate copy so sorting it will preserve the original.',
+        },
+        {
+          cells: [9, 10, 100],
+          active: [0, 1, 2],
+          vars: {
+            'heights (original)': '[9, 10, 100]',
+            'expected (copy)': '[10, 100, 9]',
+            operation: 'expected.sort()',
+          },
+          note: 'Sorting as text puts 10 and 100 before 9 because their text starts with 1.',
+        },
+        {
+          cells: [9, 10, 100],
+          active: [0, 1, 2],
+          vars: {
+            'heights (original)': '[9, 10, 100]',
+            'expected (sorted copy)': '[9, 10, 100]',
+            operation: 'expected.sort((a, b) => a - b)',
+            'wrong (different positions)': 0,
+          },
+          note: 'Fix the copy with `a - b` so it follows number order before comparing.',
+        },
+        {
+          cells: [9, 10, 100],
+          pointers: { 'compare position': 0 },
+          active: [0],
+          vars: {
+            'expected (sorted copy)': '[9, 10, 100]',
+            'original vs expected': '9 vs 9',
+            'wrong (different positions)': 0,
+          },
+          note: 'At position 0, both heights are 9, so wrong stays 0.',
+        },
+        {
+          cells: [9, 10, 100],
+          pointers: { 'compare position': 1 },
+          active: [1],
+          done: [0],
+          vars: {
+            'expected (sorted copy)': '[9, 10, 100]',
+            'original vs expected': '10 vs 10',
+            'wrong (different positions)': 0,
+          },
+          note: 'At position 1, both heights are 10, so wrong stays 0.',
+        },
+        {
+          cells: [9, 10, 100],
+          pointers: { 'compare position': 2 },
+          active: [2],
+          done: [0, 1],
+          vars: {
+            'expected (sorted copy)': '[9, 10, 100]',
+            'original vs expected': '100 vs 100',
+            'wrong (different positions)': 0,
+          },
+          note: 'At position 2, both heights are 100, so wrong stays 0.',
+        },
+        {
+          cells: [9, 10, 100],
+          done: [0, 1, 2],
+          vars: { 'expected (sorted copy)': '[9, 10, 100]', 'answer (wrong)': 0 },
+          note: 'Return 0 because no positions differ after sorting by number value.',
+        },
+      ],
+    },
+    {
+      kind: 'text',
+      text: 'Copying preserved the original, and the number comparator made every comparison use the right order.',
     },
     {
       kind: 'code',
@@ -166,23 +348,23 @@ return wrong`,
     {
       kind: 'diagram',
       title: 'Why new Array(3).fill([]) bites',
-      art: `new Array(3).fill([])
+      art: `Make rows with fill([])
+    |
+    v
+All three slots point to one row
+    |
+    v
+grid[0].push(5) -> [[5], [5], [5]]
 
-  grid[0] ──┐
-  grid[1] ──┼──>  [ ]     one shared array
-  grid[2] ──┘
-
-  grid[0].push(5)  ->  [[5], [5], [5]]
-
-Array.from({ length: 3 }, () => [])
-
-  grid[0] ──>  [ ]
-  grid[1] ──>  [ ]        three separate arrays
-  grid[2] ──>  [ ]
-
-  grid[0].push(5)  ->  [[5], [], []]`,
+Make rows with Array.from(..., () => [])
+    |
+    v
+Each slot points to its own new row
+    |
+    v
+grid[0].push(5) -> [[5], [], []]`,
       caption:
-        '`fill(value)` puts the **same** value in every slot. For arrays that means the same array. `Array.from` calls the function once per slot, so each row is new.',
+        'fill([]) shares one row; Array.from calls the function for each slot to create separate rows.',
     },
     {
       kind: 'code',

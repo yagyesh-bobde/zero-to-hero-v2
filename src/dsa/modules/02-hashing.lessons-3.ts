@@ -46,89 +46,196 @@ export const prefixLesson: Lesson = {
       text: 'After reading 2, your total is 2. Add 5 to get 7. Add 1 to get 8. This is a **running total**: keep the total so far and add the next number. A **prefix** is the part from the start, so these saved totals are called **prefix sums**.',
     },
     {
-      kind: 'list',
-      items: [
-        'Before reading any numbers, the total is 0. Save it as `pre[0] = 0`.',
-        'After 2, save `pre[1] = 2`. After 2 and 5, save `pre[2] = 7`. The slot number tells you how many input numbers you have added.',
-        'For hours 1 through 3, take `pre[4] = 12`, the total of 2, 5, 1, 4. Remove `pre[1] = 2`, which is before your range. You get `12 - 2 = 10`.',
-        'In general, use `pre[right + 1] - pre[left]`. The `+ 1` includes the number at right. You need n + 1 slots to save both the empty start and the n totals.',
-      ],
-      ordered: true,
-    },
-    {
-      kind: 'steps',
-      title: 'Building pre for nums = [2, 5, 1, 4, 3]',
-      frames: [
-        {
-          cells: [0, '', '', '', '', ''],
-          pointers: {
-            i: 0,
-          },
-          found: [0],
-          vars: {
-            'pre[i]': 'sum of first i numbers',
-          },
-          note: '`pre` has n + 1 slots. `pre[0] = 0`: the sum of zero numbers.',
-        },
-        {
-          cells: [0, 2, '', '', '', ''],
-          pointers: {
-            i: 1,
-          },
-          active: [1],
-          vars: {
-            step: 'pre[1] = pre[0] + nums[0] = 0 + 2',
-          },
-          note: 'Each slot is the previous slot plus one more number.',
-        },
-        {
-          cells: [0, 2, 7, '', '', ''],
-          pointers: {
-            i: 2,
-          },
-          active: [2],
-          vars: {
-            step: 'pre[2] = 2 + 5',
-          },
-          note: 'Running total after two hours: 7.',
-        },
-        {
-          cells: [0, 2, 7, 8, 12, 15],
-          pointers: {
-            i: 5,
-          },
-          active: [3, 4, 5],
-          vars: {
-            step: '8 = 7 + 1, 12 = 8 + 4, 15 = 12 + 3',
-          },
-          note: 'Keep going to the end. One pass, O(n), done once.',
-        },
-        {
-          cells: [0, 2, 7, 8, 12, 15],
-          pointers: {
-            left: 1,
-            'right+1': 4,
-          },
-          found: [1, 4],
-          vars: {
-            'sum(1..3)': 'pre[4] - pre[1] = 12 - 2 = 10',
-          },
-          note: 'Query (1, 3): total of the first 4 numbers minus total of the first 1. That is 5 + 1 + 4 = 10.',
-        },
-      ],
+      kind: 'text',
+      text: 'Save `pre[0] = 0` for the empty start and `pre[i]` for the total of the first i numbers. Use `pre[right + 1] - pre[left]` to include right and remove everything before left. The array needs n + 1 slots; the animations show only the slots filled so far.',
     },
     {
       kind: 'diagram',
-      title: 'Why the subtraction works',
-      art: `nums:      2    5    1    4    3
-index:     0    1    2    3    4
-
-pre[4] = [ 2 + 5 + 1 + 4 ]          = 12
-pre[1] = [ 2 ]                      =  2
-            ---------------
-pre[4] - pre[1] =  5 + 1 + 4        = 10`,
-      caption:
-        'Both totals include the same first part. Subtracting cancels it and leaves exactly the range you asked for.',
+      title: 'Save totals once, then answer each range',
+      art: `Start pre with the empty total 0
+        |
+        v
+Add the next input to the last saved total
+        |
+        v
+Save the new total; repeat for every input
+        |
+        v
+For a query, read pre[right + 1] and pre[left]
+        |
+        v
+Subtract the total before the range`,
+      caption: 'A slot in pre stores the sum of that many input numbers.',
+    },
+    {
+      kind: 'text',
+      text: 'Use `[2, 5, 1, 4, 3]` with query `[1, 3]` and watch `pre` grow; slot 2 holds 7 because the first two input numbers add to 7.',
+    },
+    {
+      kind: 'steps',
+      title: 'Build saved totals, then add hours 1 through 3',
+      frames: [
+        {
+          cells: [2, 5, 1, 4, 3],
+          vars: {
+            'pre (saved totals)': '[0]',
+            'numbers added': 0,
+          },
+          note: 'Save 0 for the empty start so ranges beginning at index 0 use the same rule.',
+        },
+        {
+          cells: [2, 5, 1, 4, 3],
+          pointers: { current: 0 },
+          active: [0],
+          done: [],
+          vars: {
+            'pre (saved totals)': '[0, 2]',
+            'numbers added': 1,
+          },
+          note: 'Add 2 to 0 and save 2 as the total after the first number.',
+        },
+        {
+          cells: [2, 5, 1, 4, 3],
+          pointers: { current: 1 },
+          active: [1],
+          done: [0],
+          vars: {
+            'pre (saved totals)': '[0, 2, 7]',
+            'numbers added': 2,
+          },
+          note: 'Add 5 to 2 and save 7 as the total of the first 2 numbers.',
+        },
+        {
+          cells: [2, 5, 1, 4, 3],
+          pointers: { current: 2 },
+          active: [2],
+          done: [0, 1],
+          vars: {
+            'pre (saved totals)': '[0, 2, 7, 8]',
+            'numbers added': 3,
+          },
+          note: 'Add 1 to 7 and save 8 as the total of the first 3 numbers.',
+        },
+        {
+          cells: [2, 5, 1, 4, 3],
+          pointers: { current: 3 },
+          active: [3],
+          done: [0, 1, 2],
+          vars: {
+            'pre (saved totals)': '[0, 2, 7, 8, 12]',
+            'numbers added': 4,
+          },
+          note: 'Add 4 to 8 and save 12 as the total of the first 4 numbers.',
+        },
+        {
+          cells: [2, 5, 1, 4, 3],
+          pointers: { current: 4 },
+          active: [4],
+          done: [0, 1, 2, 3],
+          vars: {
+            'pre (saved totals)': '[0, 2, 7, 8, 12, 15]',
+            'numbers added': 5,
+          },
+          note: 'Add 3 to 12 and save 15 as the total of the first 5 numbers.',
+        },
+        {
+          cells: [2, 5, 1, 4, 3],
+          active: [1, 2, 3],
+          done: [0, 4],
+          found: [1, 2, 3],
+          vars: {
+            'pre (saved totals)': '[0, 2, 7, 8, 12, 15]',
+            left: 1,
+            right: 3,
+            'range sum': 'pre[4] - pre[1] = 12 - 2 = 10',
+          },
+          note: 'For indexes 1 through 3, remove the earlier 2 from 12 to leave 5 + 1 + 4 = 10.',
+        },
+      ],
+    },
+    {
+      kind: 'text',
+      text: 'Subtracting the saved total before the range removes the numbers you did not ask for.',
+    },
+    {
+      kind: 'text',
+      text: 'Use `[-2, 0, 3]` with queries `[0, 2]` and `[1, 2]` and watch the same subtraction work with negative totals and a range starting at 0.',
+    },
+    {
+      kind: 'steps',
+      title: 'Negative totals and a range from the start',
+      frames: [
+        {
+          cells: [-2, 0, 3],
+          vars: {
+            'pre (saved totals)': '[0]',
+            'numbers added': 0,
+          },
+          note: 'Save 0 before any numbers so there is a total before index 0.',
+        },
+        {
+          cells: [-2, 0, 3],
+          pointers: { current: 0 },
+          active: [0],
+          vars: {
+            'pre (saved totals)': '[0, -2]',
+            'numbers added': 1,
+          },
+          note: 'Add -2 to 0 and save -2 because saved totals can be negative.',
+        },
+        {
+          cells: [-2, 0, 3],
+          pointers: { current: 1 },
+          active: [1],
+          done: [0],
+          vars: {
+            'pre (saved totals)': '[0, -2, -2]',
+            'numbers added': 2,
+          },
+          note: 'Add 0 to -2 and save -2 again because each input needs its own total slot.',
+        },
+        {
+          cells: [-2, 0, 3],
+          pointers: { current: 2 },
+          active: [2],
+          done: [0, 1],
+          vars: {
+            'pre (saved totals)': '[0, -2, -2, 1]',
+            'numbers added': 3,
+          },
+          note: 'Add 3 to -2 and save 1 as the total of all three numbers.',
+        },
+        {
+          cells: [-2, 0, 3],
+          active: [0, 1, 2],
+          done: [],
+          found: [0, 1, 2],
+          vars: {
+            'pre (saved totals)': '[0, -2, -2, 1]',
+            left: 0,
+            right: 2,
+            'range sum': 'pre[3] - pre[0] = 1 - 0 = 1',
+          },
+          note: 'For indexes 0 through 2, subtract the empty total 0 to get -2 + 0 + 3 = 1.',
+        },
+        {
+          cells: [-2, 0, 3],
+          active: [1, 2],
+          done: [0],
+          found: [1, 2],
+          vars: {
+            'pre (saved totals)': '[0, -2, -2, 1]',
+            left: 1,
+            right: 2,
+            'range sum': 'pre[3] - pre[1] = 1 - (-2) = 3',
+          },
+          note: 'For indexes 1 through 2, subtract -2 to remove the first number and get 0 + 3 = 3.',
+        },
+      ],
+    },
+    {
+      kind: 'text',
+      text: 'Saved totals need not increase; subtraction still removes exactly the numbers before the range.',
     },
     {
       kind: 'code',
@@ -156,16 +263,8 @@ pre[4] - pre[1] =  5 + 1 + 4        = 10`,
       text: '**Related task: multiply everything except one number.** Multiplying numbers gives their **product**. In `[2, 3, 4]`, the answer for position 1 is `2 * 4 = 8`. Save products from the left and from the right, then multiply them. A **suffix** is the part that ends at the end of the array; a suffix product multiplies that part.',
     },
     {
-      kind: 'trace',
-      title: 'nums = [1, 2, 3, 4]',
-      columns: ['i', 'nums[i]', 'left of i', 'right of i', 'answer'],
-      rows: [
-        [0, 1, 1, '2·3·4 = 24', 24],
-        [1, 2, 1, '3·4 = 12', 12],
-        [2, 3, '1·2 = 2', 4, 8],
-        [3, 4, '1·2·3 = 6', 1, 6],
-      ],
-      note: 'The answer at each position is left product times right product. Start an empty side at 1 because multiplying by 1 leaves the other side unchanged. Save a side’s product before including the current number.',
+      kind: 'text',
+      text: 'Start an empty side’s product at 1 because multiplying by 1 changes nothing. Save each side’s product before including the current number. The Product of Array Except Self practice below shows the two passes in code.',
     },
     {
       kind: 'compare',
@@ -548,28 +647,193 @@ export const prefixHashLesson: Lesson = {
       text: 'The total through `[1, 2, 1]` is 4. Removing the total 1 from before the last two days leaves `4 - 1 = 3`. So when the current total is 4 and you want 3, ask for earlier total `4 - 3 = 1`. In general, the earlier total you need is `current total - k`.',
     },
     {
-      kind: 'list',
-      items: [
-        'Start with total 0 before any days. Save `0 → 1`: total 0 has appeared once. In `{0: 1}`, 0 is the total and 1 is its count. This is an initial entry, not a day in the input.',
-        'Read 1: current total is 1. You need earlier total `1 - 3 = -2`. None is saved. Save `1 → 1`.',
-        'Read 2: current total is 3. You need earlier total `3 - 3 = 0`. Its saved count is 1, so count `[1, 2]`. Then save `3 → 1`. Without the starting entry, you would miss this stretch from day 0.',
-        'Read 1: current total is 4. You need earlier total `4 - 3 = 1`. Its count is 1, so count `[2, 1]`. Then save `4 → 1`. The answer is 2.',
-        'The map saves total → number of earlier appearances. For [0, 0] with k = 0, the first 0 matches once, then raises the saved count of total 0 to 2. The second 0 matches twice, giving 3 stretches overall: the first zero, the second zero, and both together.',
-      ],
-      ordered: true,
+      kind: 'text',
+      text: 'The map `seen` saves running total -> number of appearances; `3 -> 2` means the running total has been 3 twice, not that the input contained two 3s. Start with `0 -> 1` for the empty start, and save each new total only after asking about earlier totals.',
     },
     {
-      kind: 'trace',
-      title: 'Try a longer ledger: nums = [1, 2, 1, -1, 2], k = 3',
-      columns: ['x', 'prefix', 'need', 'found', 'total', 'map after'],
-      rows: [
-        [1, 1, -2, 0, 0, '{0:1, 1:1}'],
-        [2, 3, 0, 1, 1, '{0:1, 1:1, 3:1}'],
-        [1, 4, 1, 1, 2, '{0:1, 1:1, 3:1, 4:1}'],
-        [-1, 3, 0, 1, 3, '{0:1, 1:1, 3:2, 4:1}'],
-        [2, 5, 2, 0, 3, '{0:1, 1:1, 3:2, 4:1, 5:1}'],
+      kind: 'diagram',
+      title: 'Count stretches ending at the next item',
+      art: `Add the next item to the running total
+        |
+        v
+Needed earlier total = running total - target
+        |
+        v
+Is that earlier total saved?
+  | yes                       | no
+  v                           v
+Add its saved count       Add nothing
+  |                           |
+  +-------------+-------------+
+                v
+Save one more appearance of the running total
+                |
+                v
+Take the next item`,
+      caption: 'Ask about earlier totals before saving the current one so you count only non-empty stretches.',
+    },
+    {
+      kind: 'text',
+      text: 'Use `[1, 2, 1, -1, 2]` with target `k = 3` and watch `prefix` (the running total), `count` (the answer), and every entry in `seen` after each item.',
+    },
+    {
+      kind: 'steps',
+      title: 'Count three stretches, including a withdrawal',
+      frames: [
+        {
+          cells: [1, 2, 1, -1, 2],
+          vars: {
+            'prefix (running total)': 0,
+            'seen (total -> times seen)': '0 -> 1',
+            'count (answer)': 0,
+          },
+          note: 'Save total 0 once before any input so a stretch can begin at index 0.',
+        },
+        {
+          cells: [1, 2, 1, -1, 2],
+          pointers: { current: 0 },
+          active: [0],
+          done: [],
+          found: [],
+          vars: {
+            'prefix (running total)': 1,
+            'earlier total needed': '1 - 3 = -2',
+            'new stretches': 0,
+            'count (answer)': 0,
+            'seen (total -> times seen)': '0 -> 1, 1 -> 1',
+          },
+          note: 'Need total -2, but it has not appeared, so save total 1 with no new stretch.',
+        },
+        {
+          cells: [1, 2, 1, -1, 2],
+          pointers: { current: 1 },
+          active: [1],
+          done: [],
+          found: [0, 1],
+          vars: {
+            'prefix (running total)': 3,
+            'earlier total needed': '3 - 3 = 0',
+            'new stretches': 1,
+            'count (answer)': 1,
+            'seen (total -> times seen)': '0 -> 1, 1 -> 1, 3 -> 1',
+          },
+          note: 'The starting total 0 gives one stretch, [1, 2], so add 1 before saving total 3.',
+        },
+        {
+          cells: [1, 2, 1, -1, 2],
+          pointers: { current: 2 },
+          active: [2],
+          done: [0],
+          found: [1, 2],
+          vars: {
+            'prefix (running total)': 4,
+            'earlier total needed': '4 - 3 = 1',
+            'new stretches': 1,
+            'count (answer)': 2,
+            'seen (total -> times seen)': '0 -> 1, 1 -> 1, 3 -> 1, 4 -> 1',
+          },
+          note: 'Earlier total 1 leaves [2, 1], so add 1 before saving total 4.',
+        },
+        {
+          cells: [1, 2, 1, -1, 2],
+          pointers: { current: 3 },
+          active: [3],
+          done: [],
+          found: [0, 1, 2, 3],
+          vars: {
+            'prefix (running total)': 3,
+            'earlier total needed': '3 - 3 = 0',
+            'new stretches': 1,
+            'count (answer)': 3,
+            'seen (total -> times seen)': '0 -> 1, 1 -> 1, 3 -> 2, 4 -> 1',
+          },
+          note: 'Earlier total 0 gives [1, 2, 1, -1], then total 3 gets its second appearance.',
+        },
+        {
+          cells: [1, 2, 1, -1, 2],
+          pointers: { current: 4 },
+          active: [4],
+          done: [0, 1, 2, 3],
+          found: [],
+          vars: {
+            'prefix (running total)': 5,
+            'earlier total needed': '5 - 3 = 2',
+            'new stretches': 0,
+            'count (answer)': 3,
+            'seen (total -> times seen)': '0 -> 1, 1 -> 1, 3 -> 2, 4 -> 1, 5 -> 1',
+          },
+          note: 'No earlier total 2 exists, so save total 5 and keep the answer at 3.',
+        },
       ],
-      note: 'prefix is the current running total; need is prefix - k; found is how often need appeared earlier. total is the answer so far. Each map entry is running total:count. At -1 the running total returns to 3, so its saved count becomes 2.',
+    },
+    {
+      kind: 'text',
+      text: 'An earlier total tells you where to cut off the start; subtracting it leaves a stretch with the target sum.',
+    },
+    {
+      kind: 'text',
+      text: 'Use `[0, 0]` with target `k = 0` and watch one saved total represent several possible starts; ask for its old count before increasing it.',
+    },
+    {
+      kind: 'steps',
+      title: 'Two zeros make three stretches',
+      frames: [
+        {
+          cells: [0, 0],
+          vars: {
+            'prefix (running total)': 0,
+            'seen (total -> times seen)': '0 -> 1',
+            'count (answer)': 0,
+          },
+          note: 'The starting total 0 has appeared once before the array, so save count 1.',
+        },
+        {
+          cells: [0, 0],
+          pointers: { current: 0 },
+          active: [0],
+          done: [],
+          found: [0],
+          vars: {
+            'prefix (running total)': 0,
+            'earlier total needed': '0 - 0 = 0',
+            'new stretches': '1: index 0 alone',
+            'count (answer)': 1,
+            'seen (total -> times seen)': '0 -> 2',
+          },
+          note: 'The first 0 matches the starting total once, then raises the saved count to 2.',
+        },
+        {
+          cells: [0, 0],
+          pointers: { current: 1 },
+          active: [1],
+          done: [],
+          found: [0, 1],
+          vars: {
+            'prefix (running total)': 0,
+            'earlier total needed': '0 - 0 = 0',
+            'new stretches': '2: [0] at index 1, and [0, 0]',
+            'count (answer)': 3,
+            'seen (total -> times seen)': '0 -> 3',
+          },
+          note: 'The second 0 matches two earlier totals, giving index 1 alone and indexes 0 through 1.',
+        },
+        {
+          cells: [0, 0],
+          done: [],
+          found: [0, 1],
+          vars: {
+            'prefix (running total)': 0,
+            'seen (total -> times seen)': '0 -> 3',
+            'count (answer)': '1 + 2 = 3',
+            'all matching index ranges': '0..0, 1..1, 0..1',
+          },
+          note: 'Return 3 because each single zero and the pair form different non-empty stretches.',
+        },
+      ],
+    },
+    {
+      kind: 'text',
+      text: 'Counts preserve different starting positions with the same total, and the starting `0 -> 1` counts stretches that begin at index 0.',
     },
     {
       kind: 'code',
@@ -604,120 +868,136 @@ export const prefixHashLesson: Lesson = {
       text: '**Next task: the longest balanced stretch.** In `[0, 1, 0, 1]`, all 4 items form a stretch with two 0s and two 1s. Call that stretch **balanced**. This time you want a length, so the map must save where a total first appeared instead of how often.',
     },
     {
-      kind: 'list',
-      items: [
-        'Treat a 0 as -1 and a 1 as +1. The pair `[0, 1]` now adds to `-1 + 1 = 0`. Equal numbers of 0s and 1s cancel out.',
-        'Before index 0, the total is 0. Save `0 → -1`, using the imaginary position -1 to mean “before the array”. This is `{0: -1}`: its value is an index, not a count.',
-        'At index 0, total is -1. Save its first index: `-1 → 0`. At index 1, total is 0 again. The stretch after index -1 has sum 0 and length `1 - (-1) = 2`.',
-        'At index 2, total is -1 again. Keep its first index 0. At index 3, total is 0 again: length `3 - (-1) = 4`. Keeping the earliest matching position gives the longest stretch.',
-      ],
-      ordered: true,
+      kind: 'text',
+      text: 'Read each 0 as -1 and each 1 as +1, so a balanced stretch adds to 0. The map `first` saves total -> first input index; `-1 -> 0` means total -1 first appeared at index 0. Keep the earliest index to leave room for the longest stretch.',
+    },
+    {
+      kind: 'text',
+      text: 'Use `[0, 1, 0, 0, 1, 1, 0]` and watch repeated totals find a balanced stretch while their first saved indexes stay unchanged.',
     },
     {
       kind: 'steps',
-      title: 'nums = [0, 1, 0, 0, 1, 1, 0], 0 counts as -1',
+      title: 'Keep the first index to find six balanced items',
       frames: [
         {
           cells: [0, 1, 0, 0, 1, 1, 0],
           vars: {
-            prefix: 0,
-            first: '{0:-1}',
-            best: 0,
+            'prefix (running total)': 0,
+            'first (total -> first index)': '0 -> -1',
+            'best (longest length)': 0,
           },
-          note: 'Initial entry: running total 0 at position -1, just before the array.',
+          note: 'Save total 0 at index -1 because that position means before the first input.',
         },
         {
           cells: [0, 1, 0, 0, 1, 1, 0],
           pointers: {
-            i: 0,
+            current: 0,
           },
           active: [0],
+          done: [],
+          found: [],
           vars: {
-            prefix: -1,
-            first: '{0:-1, -1:0}',
-            best: 0,
+            'prefix (running total)': -1,
+            'first (total -> first index)': '0 -> -1, -1 -> 0',
+            'best (longest length)': 0,
           },
-          note: 'A 0 adds -1. Total -1 is new: remember its first index, 0.',
+          note: 'Read 0 as -1 and save its first index 0 because total -1 is new.',
         },
         {
           cells: [0, 1, 0, 0, 1, 1, 0],
           pointers: {
-            i: 1,
+            current: 1,
           },
+          active: [1],
+          done: [],
           found: [0, 1],
           vars: {
-            prefix: 0,
-            first: '{0:-1, -1:0}',
-            best: 2,
+            'prefix (running total)': 0,
+            'first (total -> first index)': '0 -> -1, -1 -> 0',
+            'best (longest length)': 2,
           },
-          note: 'Total 0 again. First seen at -1, so indexes 0..1 are balanced: length 1 - (-1) = 2.',
+          note: 'Read 1 as +1; total 0 was at -1, so [0, 1] is balanced with length 1 - (-1) = 2.',
         },
         {
           cells: [0, 1, 0, 0, 1, 1, 0],
           pointers: {
-            i: 2,
+            current: 2,
           },
+          active: [2],
+          done: [0],
           found: [1, 2],
           vars: {
-            prefix: -1,
-            first: '{0:-1, -1:0}',
-            best: 2,
+            'prefix (running total)': -1,
+            'first (total -> first index)': '0 -> -1, -1 -> 0',
+            'best (longest length)': 2,
           },
-          note: 'Total -1, first seen at 0: length 2 - 0 = 2. Do not overwrite the first index.',
+          note: 'Total -1 was first at 0, so [1, 0] has length 2 - 0 = 2 and the first index stays 0.',
         },
         {
           cells: [0, 1, 0, 0, 1, 1, 0],
           pointers: {
-            i: 3,
+            current: 3,
           },
           active: [3],
+          done: [0],
+          found: [1, 2],
           vars: {
-            prefix: -2,
-            first: '{0:-1, -1:0, -2:3}',
-            best: 2,
+            'prefix (running total)': -2,
+            'first (total -> first index)': '0 -> -1, -1 -> 0, -2 -> 3',
+            'best (longest length)': 2,
           },
-          note: 'Total -2 is new. Remember index 3.',
+          note: 'Read 0 as -1 and save index 3 because total -2 has not appeared before.',
         },
         {
           cells: [0, 1, 0, 0, 1, 1, 0],
           pointers: {
-            i: 4,
+            current: 4,
           },
+          active: [4],
+          done: [0],
           found: [1, 2, 3, 4],
           vars: {
-            prefix: -1,
-            first: '{0:-1, -1:0, -2:3}',
-            best: 4,
+            'prefix (running total)': -1,
+            'first (total -> first index)': '0 -> -1, -1 -> 0, -2 -> 3',
+            'best (longest length)': 4,
           },
-          note: 'Total -1, first at 0: indexes 1..4 (1, 0, 0, 1) are balanced. Length 4.',
+          note: 'Total -1 was first at 0, so [1, 0, 0, 1] has length 4 - 0 = 4.',
         },
         {
           cells: [0, 1, 0, 0, 1, 1, 0],
           pointers: {
-            i: 5,
+            current: 5,
           },
+          active: [5],
+          done: [],
           found: [0, 1, 2, 3, 4, 5],
           vars: {
-            prefix: 0,
-            first: '{0:-1, -1:0, -2:3}',
-            best: 6,
+            'prefix (running total)': 0,
+            'first (total -> first index)': '0 -> -1, -1 -> 0, -2 -> 3',
+            'best (longest length)': 6,
           },
-          note: 'Total 0, first at -1: indexes 0..5 are balanced. Length 6. The initial entry made this one possible.',
+          note: 'Total 0 was first at -1, so the first six items balance with length 5 - (-1) = 6.',
         },
         {
           cells: [0, 1, 0, 0, 1, 1, 0],
           pointers: {
-            i: 6,
+            current: 6,
           },
+          active: [6],
+          done: [0],
           found: [1, 2, 3, 4, 5, 6],
           vars: {
-            prefix: -1,
-            first: '{0:-1, -1:0, -2:3}',
-            best: 6,
+            'prefix (running total)': -1,
+            'first (total -> first index)': '0 -> -1, -1 -> 0, -2 -> 3',
+            'best (longest length)': 6,
           },
-          note: 'Total -1, first at 0: length 6 again. Answer: 6.',
+          note: 'Total -1 was first at 0, so the last six items also balance and the answer stays 6.',
         },
       ],
+    },
+    {
+      kind: 'text',
+      text: 'Equal totals enclose a balanced stretch; keeping the first index makes that stretch as long as possible.',
     },
     {
       kind: 'list',
@@ -754,13 +1034,13 @@ export const prefixHashLesson: Lesson = {
       title: 'Template: count stretches with a target sum',
       code: `seen ← map with {0: 1}             // total → earlier appearances
 prefix ← 0
-answer ← 0
+count ← 0
 for each x in nums:
     prefix ← prefix + x
     need ← prefix - k
-    answer ← answer + (seen[need] or 0)
+    count ← count + (seen[need] or 0)
     seen[prefix] ← (seen[prefix] or 0) + 1
-return answer`,
+return count`,
     },
     {
       kind: 'callout',

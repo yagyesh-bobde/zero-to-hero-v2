@@ -78,87 +78,155 @@ export const groupingLesson: Lesson = {
       ordered: true,
     },
     {
+      kind: 'diagram',
+      title: 'Find a word\'s group',
+      art: `Take the next word
+        |
+        v
+Sort its letters and join them into a key
+        |
+        v
+Is the key already in groups?
+  | yes                 | no
+  v                     v
+Keep its list       Create an empty list
+  |                     |
+  +----------+----------+
+             v
+Add the original word, then take the next word`,
+      caption: 'The key finds the list; the list keeps the original words.',
+    },
+    {
+      kind: 'text',
+      text: 'Use `["eat", "tea", "tan", "ate"]` and watch each sorted key find its list in `groups`; `aet -> [eat, tea]` means those original words share the key `aet`.',
+    },
+    {
       kind: 'steps',
-      title: 'One pass, key = sorted letters',
+      title: 'Shared letters find the same group',
       frames: [
         {
-          cells: ['eat', 'tea', 'tan', 'ate', 'nat', 'bat'],
-          pointers: {
-            i: 0,
+          cells: ['eat', 'tea', 'tan', 'ate'],
+          vars: {
+            'groups (key -> original words)': 'empty',
           },
+          note: 'Start with no groups because no words have been read.',
+        },
+        {
+          cells: ['eat', 'tea', 'tan', 'ate'],
+          pointers: { current: 0 },
           active: [0],
           vars: {
             key: 'aet',
-            groups: '{aet:[eat]}',
+            'groups (key -> original words)': 'aet -> [eat]',
           },
-          note: '`eat` sorted is `aet`. New key, so start a new group.',
+          note: '`eat` gives key `aet`, so create its list and add `eat`.',
         },
         {
-          cells: ['eat', 'tea', 'tan', 'ate', 'nat', 'bat'],
-          pointers: {
-            i: 1,
-          },
+          cells: ['eat', 'tea', 'tan', 'ate'],
+          pointers: { current: 1 },
           active: [1],
           done: [0],
+          found: [0, 1],
           vars: {
             key: 'aet',
-            groups: '{aet:[eat,tea]}',
+            'groups (key -> original words)': 'aet -> [eat, tea]',
           },
-          note: '`tea` also sorts to `aet`. Same key, same group.',
+          note: '`tea` also gives `aet`, so add it to the existing list.',
         },
         {
-          cells: ['eat', 'tea', 'tan', 'ate', 'nat', 'bat'],
-          pointers: {
-            i: 2,
-          },
+          cells: ['eat', 'tea', 'tan', 'ate'],
+          pointers: { current: 2 },
           active: [2],
           done: [0, 1],
           vars: {
             key: 'ant',
-            groups: '{aet:[eat,tea], ant:[tan]}',
+            'groups (key -> original words)': 'aet -> [eat, tea]; ant -> [tan]',
           },
-          note: '`tan` sorts to `ant`. New group.',
+          note: '`tan` gives a new key `ant`, so start a separate list.',
         },
         {
-          cells: ['eat', 'tea', 'tan', 'ate', 'nat', 'bat'],
-          pointers: {
-            i: 3,
-          },
+          cells: ['eat', 'tea', 'tan', 'ate'],
+          pointers: { current: 3 },
           active: [3],
-          done: [0, 1, 2],
+          done: [2],
+          found: [0, 1, 3],
           vars: {
             key: 'aet',
-            groups: '{aet:[eat,tea,ate], ant:[tan]}',
+            'groups (key -> original words)': 'aet -> [eat, tea, ate]; ant -> [tan]',
           },
-          note: '`ate` → `aet`. Joins the first group. No comparing with other words at all.',
-        },
-        {
-          cells: ['eat', 'tea', 'tan', 'ate', 'nat', 'bat'],
-          pointers: {
-            i: 4,
-          },
-          active: [4],
-          done: [0, 1, 2, 3],
-          vars: {
-            key: 'ant',
-            groups: '{aet:[3 words], ant:[tan,nat]}',
-          },
-          note: '`nat` → `ant`. Joins `tan`.',
-        },
-        {
-          cells: ['eat', 'tea', 'tan', 'ate', 'nat', 'bat'],
-          pointers: {
-            i: 5,
-          },
-          active: [5],
-          done: [0, 1, 2, 3, 4],
-          vars: {
-            key: 'abt',
-            groups: '{aet:[3], ant:[2], abt:[bat]}',
-          },
-          note: "`bat` → `abt`. Its own group. The map's values are the answer.",
+          note: '`ate` gives `aet`, so the final groups are `[eat, tea, ate]` and `[tan]`.',
         },
       ],
+    },
+    {
+      kind: 'text',
+      text: 'A shared key lets you find the right group without comparing the new word with earlier words.',
+    },
+    {
+      kind: 'text',
+      text: 'Use `["", "a", "", "a"]` and watch empty words and repeated words stay in the answer; `""` marks an empty string in the cells and the map.',
+    },
+    {
+      kind: 'steps',
+      title: 'Empty words and duplicates still belong',
+      frames: [
+        {
+          cells: ['""', 'a', '""', 'a'],
+          vars: {
+            'groups (key -> original words)': 'empty',
+          },
+          note: 'The map starts empty because even an empty word must be read first.',
+        },
+        {
+          cells: ['""', 'a', '""', 'a'],
+          pointers: { current: 0 },
+          active: [0],
+          vars: {
+            key: '"" (empty string)',
+            'groups (key -> original words)': '"" -> [""]',
+          },
+          note: 'The empty word gives key `""`, so create a list holding that word.',
+        },
+        {
+          cells: ['""', 'a', '""', 'a'],
+          pointers: { current: 1 },
+          active: [1],
+          done: [0],
+          vars: {
+            key: 'a',
+            'groups (key -> original words)': '"" -> [""]; a -> [a]',
+          },
+          note: '`a` gives a different key, so it needs its own list.',
+        },
+        {
+          cells: ['""', 'a', '""', 'a'],
+          pointers: { current: 2 },
+          active: [2],
+          done: [1],
+          found: [0, 2],
+          vars: {
+            key: '"" (empty string)',
+            'groups (key -> original words)': '"" -> ["", ""]; a -> [a]',
+          },
+          note: 'The next empty word has the same key, so keep both copies in its list.',
+        },
+        {
+          cells: ['""', 'a', '""', 'a'],
+          pointers: { current: 3 },
+          active: [3],
+          done: [0, 2],
+          found: [1, 3],
+          vars: {
+            key: 'a',
+            'groups (key -> original words)': '"" -> ["", ""]; a -> [a, a]',
+          },
+          note: 'The second `a` joins the first because grouping keeps every input word.',
+        },
+      ],
+    },
+    {
+      kind: 'text',
+      text: 'The map keeps one list per key, but that list keeps every copy of a word.',
     },
     {
       kind: 'code',
@@ -200,10 +268,10 @@ export const groupingLesson: Lesson = {
       title: 'Why the separator matters',
       art: `counts of letters a, b:
 
-word A: a × 1, b × 11    word B: a × 11, b × 1
+word A: a x 1, b x 11    word B: a x 11, b x 1
 
-join('')  → "111"   and   "111"    (same: WRONG)
-join('#') → "1#11"  and   "11#1"   (different: right)`,
+join('')  -> "111"   and   "111"    (same: WRONG)
+join('#') -> "1#11"  and   "11#1"   (different: right)`,
       caption:
         'A separator is a character placed between numbers. It keeps 1 followed by 11 different from 11 followed by 1.',
     },
@@ -572,6 +640,74 @@ export const setsLesson: Lesson = {
       text: 'A **hash set**, called `Set` in JavaScript, stores each distinct value once. Distinct means different: adding 4 twice still leaves one 4 in the set. Use `seen.add(4)` to save it and `seen.has(4)` to ask whether it is present. Like a map lookup, this takes O(1) on average: roughly steady work as the set grows.',
     },
     {
+      kind: 'diagram',
+      title: 'Ask before adding a song id',
+      art: `Take the next song id
+        |
+        v
+Is it already in seen?
+  | yes              | no
+  v                  v
+Return true      Add it to seen
+                     |
+                     v
+           More ids? Take the next one
+           No more ids? Return false`,
+      caption: 'Checking before adding tells you whether an earlier song had this id.',
+    },
+    {
+      kind: 'text',
+      text: 'Use `[4, 7, 4]` and watch `seen` grow until a song id repeats; each number inside the set is an id already read.',
+    },
+    {
+      kind: 'steps',
+      title: 'Spot the repeated song id',
+      frames: [
+        {
+          cells: [4, 7, 4],
+          vars: {
+            'seen (distinct song ids)': 'empty',
+          },
+          note: 'Start with no saved song ids because none have been checked.',
+        },
+        {
+          cells: [4, 7, 4],
+          pointers: { current: 0 },
+          active: [0],
+          vars: {
+            'seen (distinct song ids)': '{4}',
+          },
+          note: '4 is absent, so save it for later checks.',
+        },
+        {
+          cells: [4, 7, 4],
+          pointers: { current: 1 },
+          active: [1],
+          done: [0],
+          vars: {
+            'seen (distinct song ids)': '{4, 7}',
+          },
+          note: '7 is absent too, so save it beside 4.',
+        },
+        {
+          cells: [4, 7, 4],
+          pointers: { current: 2 },
+          active: [2],
+          done: [1],
+          found: [0, 2],
+          vars: {
+            'seen (distinct song ids)': '{4, 7}',
+            answer: 'true',
+          },
+          note: '4 is already saved, so the two 4s prove the answer is true.',
+        },
+      ],
+    },
+    {
+      kind: 'text',
+      text: 'A set answers whether a value appeared before; the second 4 proves there is a duplicate.',
+    },
+    {
       kind: 'code',
       lang: 'pseudo',
       title: 'Plan: check for a duplicate',
@@ -623,91 +759,142 @@ return false`,
       text: 'The number 1 starts the streak because 0 is missing. The number 2 does not start it because 1 exists. For any `x`, count upward only if `x - 1` is absent. Every streak now gets one count-up walk.',
     },
     {
+      kind: 'diagram',
+      title: 'Count a streak only from its first day',
+      art: `Build present from all input days
+        |
+        v
+Take the next distinct day x
+        |
+        v
+Is the previous day x - 1 present?
+  | yes                    | no
+  v                        v
+Skip this day      Count upward until a day is missing
+  |                        |
+  |                Keep the longest length in best
+  |                        |
+  +------------+-----------+
+               v
+        Take the next distinct day`,
+      caption: 'Saving all days first lets you find a streak even when the input is out of order.',
+    },
+    {
+      kind: 'text',
+      text: 'Use `[4, 1, 3, 2]` and watch `present` grow before searching for streaks; each saved number is a day, and `best` is the largest number of days in any streak found so far.',
+    },
+    {
       kind: 'steps',
-      title: 'Set = {100, 4, 200, 1, 3, 2}',
+      title: 'Build the set, then find days 1 through 4',
       frames: [
         {
-          cells: [100, 4, 200, 1, 3, 2],
-          pointers: {
-            x: 0,
-          },
-          active: [0],
+          cells: [4, 1, 3, 2],
           vars: {
-            'x - 1 in set?': '99: no',
-            streak: '100',
-            best: 1,
+            'present (distinct days)': 'empty',
+            'best (longest length)': 0,
           },
-          note: '100 is a start (no 99). 101 is missing, so the streak is 1.',
+          note: 'Start with an empty set because no days have been saved.',
         },
         {
-          cells: [100, 4, 200, 1, 3, 2],
-          pointers: {
-            x: 1,
+          cells: [4, 1, 3, 2],
+          pointers: { current: 0 },
+          active: [0],
+          done: [],
+          vars: {
+            'present (distinct days)': '{4}',
+            'best (longest length)': 0,
           },
+          note: 'Add day 4 so later checks can ask whether it exists.',
+        },
+        {
+          cells: [4, 1, 3, 2],
+          pointers: { current: 1 },
           active: [1],
           done: [0],
           vars: {
-            'x - 1 in set?': '3: yes',
-            best: 1,
+            'present (distinct days)': '{4, 1}',
+            'best (longest length)': 0,
           },
-          note: '4 has a 3 before it, so it is in the middle of a streak. Skip it.',
+          note: 'Add day 1 so later checks can ask whether it exists.',
         },
         {
-          cells: [100, 4, 200, 1, 3, 2],
-          pointers: {
-            x: 2,
-          },
+          cells: [4, 1, 3, 2],
+          pointers: { current: 2 },
           active: [2],
           done: [0, 1],
           vars: {
-            'x - 1 in set?': '199: no',
-            streak: '200',
-            best: 1,
+            'present (distinct days)': '{4, 1, 3}',
+            'best (longest length)': 0,
           },
-          note: '200 is a start, but 201 is missing. Length 1.',
+          note: 'Add day 3 so later checks can ask whether it exists.',
         },
         {
-          cells: [100, 4, 200, 1, 3, 2],
-          pointers: {
-            x: 3,
-          },
-          active: [3, 5, 4, 1],
-          done: [0, 2],
+          cells: [4, 1, 3, 2],
+          pointers: { current: 3 },
+          active: [3],
+          done: [0, 1, 2],
           vars: {
-            'x - 1 in set?': '0: no',
-            streak: '1, 2, 3, 4',
-            best: 4,
+            'present (distinct days)': '{4, 1, 3, 2}',
+            'best (longest length)': 0,
           },
-          note: '1 is a start. Walk up: 2 yes, 3 yes, 4 yes, 5 no. Length 4.',
+          note: 'Add day 2 so later checks can ask whether it exists.',
         },
         {
-          cells: [100, 4, 200, 1, 3, 2],
-          pointers: {
-            x: 4,
-          },
-          active: [4],
-          done: [0, 1, 2, 3],
+          cells: [4, 1, 3, 2],
+          pointers: { current: 0 },
+          active: [0],
           vars: {
-            'x - 1 in set?': '2: yes',
-            best: 4,
+            'present (distinct days)': '{4, 1, 3, 2}',
+            'previous day': '3 is present',
+            'best (longest length)': 0,
           },
-          note: '3 is in the middle (2 exists). Skip.',
+          note: 'Skip 4 because day 3 exists, so 4 is not the start of a streak.',
         },
         {
-          cells: [100, 4, 200, 1, 3, 2],
-          pointers: {
-            x: 5,
-          },
-          active: [5],
-          found: [3, 5, 4, 1],
-          done: [0, 2],
+          cells: [4, 1, 3, 2],
+          pointers: { current: 1 },
+          active: [1],
+          done: [],
+          found: [1, 3, 2, 0],
           vars: {
-            'x - 1 in set?': '1: yes',
-            best: 4,
+            'present (distinct days)': '{4, 1, 3, 2}',
+            'streak in order': '1, 2, 3, 4',
+            'length (days in this streak)': 4,
+            'best (longest length)': 4,
           },
-          note: '2 is in the middle too. Done: the answer is 4, and each number was walked over at most once.',
+          note: 'Start at 1 because 0 is absent, then find 2, 3, and 4 before missing 5.',
+        },
+        {
+          cells: [4, 1, 3, 2],
+          pointers: { current: 2 },
+          active: [2],
+          done: [0, 1],
+          found: [1, 3, 2, 0],
+          vars: {
+            'present (distinct days)': '{4, 1, 3, 2}',
+            'previous day': '2 is present',
+            'best (longest length)': 4,
+          },
+          note: 'Skip 3 because 2 exists and the walk from 1 already covered it.',
+        },
+        {
+          cells: [4, 1, 3, 2],
+          pointers: { current: 3 },
+          active: [3],
+          done: [],
+          found: [1, 3, 2, 0],
+          vars: {
+            'present (distinct days)': '{4, 1, 3, 2}',
+            'previous day': '1 is present',
+            'best (longest length)': 4,
+          },
+          note: 'Skip 2 because 1 exists, leaving the longest streak length at 4.',
         },
       ],
+    },
+    {
+      kind: 'text',
+      text: 'The set ignores input order, and checking for a missing previous day counts each streak only once.',
     },
     {
       kind: 'code',
